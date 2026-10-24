@@ -179,9 +179,9 @@ The exercise library includes Little paths (1 minute), Round and round
 (1 minute) and My letter L (2 minutes). A parent signs the unified care consent
 once, when adding the child; the therapist records the child's assessment and prescribes
 suitable activities. The current prototype consent version is CONNECTED-DEMO-3.
-Consent is taken only when a child is added, so a child whose consent predates
-this version has no current consent until re-added (or the demo is reseeded);
-prior signed records are retained.
+Consent is taken only when a child is added and never expires: a child signed
+under an earlier version keeps that consent, and each record keeps the version
+that was signed.
 The child sees an animated, replayable stroke guide and numbered instructions,
 practises on paper, chooses a JPEG/PNG photo, checks its preview and sends it.
 In a freshly seeded demo, `patient@melo.test` is a synthetic 7-year-old with these
@@ -269,7 +269,7 @@ the current API intentionally has no path for accepting an accuracy score.
 Corrections never overwrite the automated snapshot, and later recognition cannot
 overwrite a correction. Reports/corrections are excluded from child and parent API
 views; only explicit clinician feedback is shown. The parent's unified care
-consent is now `CONNECTED-DEMO-3`, including voice-analysis disclosures. Older
-consent does not count for new word submissions, and optional analysis is
+consent is now `CONNECTED-DEMO-3`, including voice-analysis disclosures. Consent
+signed under an earlier version still counts, and optional analysis is
 only invoked when the parent agrees to it. Approved wording and guardian identity
 verification remain deployment requirements.

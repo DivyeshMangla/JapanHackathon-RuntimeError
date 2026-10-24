@@ -27,8 +27,6 @@ class BackendFamilyRepository implements FamilyRepository {
     final record = await _client.get('/patients/$childId');
     final consent = record['consent'];
     if (consent is! JsonObject || consent['status'] != 'approved') return null;
-    final form = await consentForm();
-    if (consent['version'] != form.version) return null;
     final checks = consent['checks'];
     return ChildConsent(
       version: consent['version']! as String,

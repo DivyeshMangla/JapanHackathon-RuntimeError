@@ -4,8 +4,8 @@ import 'consent.dart';
 abstract interface class FamilyRepository {
   Future<ConsentForm> consentForm();
 
-  /// The child's current approved consent, or null when none is signed for
-  /// the current version.
+  /// The consent signed when the child was added, or null when there is
+  /// none. It never expires, whatever its version.
   Future<ChildConsent?> consentFor(String childId);
 
   /// Creates the parent's child together with the signed consent, which is

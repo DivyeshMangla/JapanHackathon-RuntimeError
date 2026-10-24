@@ -167,7 +167,8 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
             // A child never signs in with a password; the parent opens child mode instead.
             db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,therapist_id,parent_id,created_at,participant_code) VALUES (?,?,?,?,?,?,?,?,?,?)')
               .run(id, childName, `child-${id}@family.melo.invalid`, hash, 'patient', 'active', u.therapist_id, u.id, now(), nextParticipantCode(db));
-            // Consent is signed once, with the account. The parent is the child's legal guardian, so their signature is the approval.
+            // Consent is signed once, with the account, and never expires: later consent versions apply only to children added after them.
+            // The parent is the child's legal guardian, so their signature is the approval.
             db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at,approved_by,approved_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run(randomUUID(), id, consentVersion, signer, png, JSON.stringify(c.checks), 'approved', now(), u.id, now());
             db.exec('COMMIT');
           } catch (error) { db.exec('ROLLBACK'); throw error; }
@@ -222,7 +223,6 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
             if (!consent || consent.status !== 'approved') fail(409, 'Approve consent before prescribing a plan.');
             if (p.status !== 'active') fail(409, 'Patient account is disabled.');
             if (!Array.isArray(b.exercises) || b.exercises.length < 1 || b.exercises.length > 6 || new Set(b.exercises).size !== b.exercises.length || !b.exercises.every(e => motorExercises.some(x => x.id === e))) fail(400, 'Choose one to six different exercises from the library.');
-            if (b.exercises.some(id => id.startsWith('motor-')) && consent.version !== consentVersion) fail(409, 'The adult or guardian must sign the updated consent before motor practice.');
             if (b.exercises.some(id => id.startsWith('motor-')) && b.sessionsPerDay !== 1) fail(400, 'Motor practice starts with one gentle round per day. Choose one session per day.');
             const planId = randomUUID();
             db.prepare('INSERT INTO plans VALUES (?,?,?,?,?,?,?,?,?)').run(planId,id,u.id,consent.id,text(b.title,'Plan title'),JSON.stringify(b.exercises),integer(b.sessionsPerDay,'Sessions per day',1,5),typeof b.notes === 'string' ? b.notes.slice(0,2000) : '',now());

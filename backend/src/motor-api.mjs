@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { audit, now, consentVersion } from './db.mjs';
+import { audit, now } from './db.mjs';
 import { motorExercises, photoType } from './motor.mjs';
 
 export function motorApi({
@@ -32,7 +32,6 @@ export function motorApi({
     const c = consent(id);
     return (
       c?.status === 'approved' &&
-      c.version === consentVersion &&
       JSON.parse(c.checks).analysis === true
     );
   };
@@ -82,7 +81,7 @@ export function motorApi({
         requireRole(u, 'patient');
         const b = await body(req, 9 * 1024 * 1024);
         const c = consent(p.id);
-        if (c?.status !== 'approved' || c.version !== consentVersion)
+        if (c?.status !== 'approved')
           fail(409, 'Your therapist must approve consent first.');
         const plan = db
           .prepare('SELECT * FROM plans WHERE id=? AND patient_id=?')

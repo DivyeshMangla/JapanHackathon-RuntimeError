@@ -329,7 +329,8 @@ test('child motor practice: consent, photo integrity, real analysis seam, review
   assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,409);
   const priorConsent=randomUUID();
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(priorConsent,patient.id,'CONNECTED-DEMO-1','Earlier signer',png,JSON.stringify({analysis:true}),'approved',now());
-  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,409);
+  // Consent never expires: an older version still counts, so only the missing plan stops this upload.
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,400);
   const parent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,patient.id);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),patient.id,consentVersion,'Synthetic Parent',png,JSON.stringify({adult:true,participation:true,dataSharing:true,analysis:true}),'approved',now());
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM consents WHERE patient_id=?').get(patient.id).n,2);

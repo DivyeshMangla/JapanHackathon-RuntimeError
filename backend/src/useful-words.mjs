@@ -51,7 +51,7 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
   };
   const therapist = u => { if (u.role !== 'therapist') fail(403,'Only the assigned therapist can do this.'); };
   // The parent's signed care consent covers word practice, so there is no separate form.
-  const parentConsent = patientId => db.prepare("SELECT checks FROM consents WHERE patient_id=? AND status='approved' AND version=? ORDER BY signed_at DESC, rowid DESC LIMIT 1").get(patientId, consentVersion);
+  const parentConsent = patientId => db.prepare("SELECT checks FROM consents WHERE patient_id=? AND status='approved' ORDER BY signed_at DESC, rowid DESC LIMIT 1").get(patientId);
   const summary = (a, includeAnalysis) => ({ id:a.id, wordId:a.wordId, word:a.word, date:a.date, transcript:a.transcript,
     transcriptionStatus:a.transcriptionStatus, feedback:a.feedback, hasFeedbackAudio:!!a.feedbackAudio, reviewed:a.reviewed,
     ...(includeAnalysis ? {analysisReport:a.analysisReport || pronunciationReport(a.word,a.transcript,a.transcriptionStatus==='pending'?'pending':a.transcriptionStatus==='failed'?'failed':'complete'),analysisCorrection:a.analysisCorrection || null} : {}) });
