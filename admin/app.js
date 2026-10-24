@@ -950,6 +950,8 @@ function motorMarkup(submissions) {
       ${
         s.report
           ? html`<p>${esc(s.report.observations)}</p>
+        ${s.report.expectedResult ? `<p><strong>Expected result:</strong> ${esc(s.report.expectedResult)}</p>` : ''}
+        ${s.report.comparison ? `<p><strong>Compared with the example:</strong> ${esc(s.report.comparison)}</p>` : ''}
         <dl class="motor-metrics"><dt>Alignment</dt><dd>${esc(s.report.alignment.replaceAll('_', ' '))}</dd><dt>Formation</dt><dd>${esc(s.report.formation.replaceAll('_', ' '))}</dd><dt>Spacing</dt><dd>${esc(s.report.spacing.replaceAll('_', ' '))}</dd></dl>
         ${s.report.imageQuality === 'retake' ? '<p>A clearer photo may be needed. Check the original.</p>' : ''}
         <p>${esc(s.report.suggestion)}</p><small>Model: ${esc(s.report.model)} · ${esc(s.report.generatedAt)} · unvalidated visual observations</small>`

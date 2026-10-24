@@ -583,11 +583,11 @@
   "motorReplay": "Show me the strokes",
   "motorPracticeIntro": "Watch the demo. Try it slowly on paper. A grown-up can help you send a photo to your therapist.",
   "motorComfort": "Sit comfortably, support your feet and rest your forearm. Relax your hand. Take a break whenever you need one; stop if your hand hurts or feels tired.",
-  "motorChoosePhoto": "Take a photo",
+  "motorChoosePhoto": "Choose practice photo",
   "motorSendPhoto": "Send to my therapist",
   "motorOriginalPhoto": "Original, unedited practice photo",
   "motorInvalidPhoto": "This photo could not be displayed. Choose a different JPEG or PNG.",
-  "motorPhotoInstructions": "Tap Take a photo to open the camera. Photograph just the paper in good light. Keep the whole exercise in view, without faces or names. Check the preview before sending.",
+  "motorPhotoInstructions": "Take a photo or choose one from your gallery. Keep the whole paper in view, without faces or names. Check the preview before sending. Your original photo is shared with your therapist. If you agreed to automated analysis, a draft comparison report is prepared in the background for your therapist to review.",
   "motorDailyGuidance": "One gentle round each day: about 4 minutes for all three activities, with breaks. Your therapist chooses which tasks suit you. Practice may help you build skills over time.",
   "motorReviewTitle": "Handwriting photos and review",
   "motorReportCaution": "Automated visual observations are provisional. Check the original before giving feedback. A still photo cannot assess grip, pressure, movement, diagnose a condition or establish clinical improvement.",
@@ -693,7 +693,7 @@
       }
     }
   },
-  "drawingNewPhoto": "Retake photo",
+  "drawingNewPhoto": "Choose a different photo",
   "drawingSending": "Sending",
   "drawingSent": "Your drawing is on its way to your therapist.",
   "drawingWaitingTitle": "Not yet",
@@ -784,7 +784,7 @@
   },
   "childModeStartBody": "{name} will see only their words and drawing practice. Choose a four-digit PIN to use when returning to your account.",
   "@childModeStartBody": {
-    "description": "Explains that leaving child mode needs the parent's password.",
+    "description": "Explains that leaving child mode needs the parent's PIN.",
     "placeholders": {
       "name": {
         "type": "String"
@@ -799,5 +799,12 @@
   "childModeChecking": "Checking",
   "childModeWrongPassword": "That PIN is not right.",
   "childModePasswordRequired": "Enter a four-digit PIN.",
-  "parentConsentMissing": "No consent is on file for this child. Contact your therapist."
+  "parentConsentMissing": "No consent is on file for this child. Contact your therapist.",
+  "motorTakePhoto": "Take a practice photo",
+  "motorRetakePhoto": "Take another photo",
+  "motorCameraUnavailable": "Could not open the camera. Check camera access and try again.",
+  "motorReportTarget": "Expected result: {target}",
+  "@motorReportTarget": {"placeholders": {"target": {"type": "String"}}},
+  "motorReportComparison": "Compared with the example: {comparison}",
+  "@motorReportComparison": {"placeholders": {"comparison": {"type": "String"}}}
 }

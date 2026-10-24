@@ -188,8 +188,9 @@ In a freshly seeded demo, `patient@melo.test` is a synthetic 7-year-old with the
 three activities assigned; `meera@melo.test` is the assigned therapist. Both use
 `VoiceDemo!2026`. Existing seeded workspaces are not overwritten.
 
-The current photo picker uses the device's files/photo library; take a photo with
-the device camera first. No new mobile dependency is needed.
+The drawing screen can open the device camera or choose a JPEG/PNG from the photo
+library. Captures are previewed and uploaded without cropping, resizing or
+recompression. Only the screen preview is decoded at a smaller size.
 
 The original bytes are retained privately, alongside an analysis report and
 separate therapist feedback. Photo access and feedback follow current assignment,
@@ -198,15 +199,16 @@ One completed activity per plan/exercise/local practice date contributes to the
 practice log, even if the child submits another attempt. Daily photo status is
 shown separately from a therapist's evaluation. Uploads are online and retryable
 with the same ID; the preview remains on screen if upload fails. They are not
-added to the offline audio outbox. Photos are bounded to 6 MB and 24 megapixels.
+added to the offline audio outbox. Original photos are bounded to 20 MB and 24 megapixels. JPEG motion-photo
+trailers are preserved with the rest of the original file.
 
 Start a local [Ollama](https://docs.ollama.com/quickstart) server and download a
 vision-capable model before using automated analysis:
 
 ```bash
-ollama pull gemma3:4b
 ollama serve
-# In another terminal, start this backend with Node 24+:
+# In another terminal, download the model, then start the Node 24+ backend:
+ollama pull gemma3:4b
 npm run demo
 ```
 
@@ -218,9 +220,16 @@ on the chosen model. This repository does not bundle model weights. No clinicall
 validated motor assessment model is included. Outputs describe visible formation,
 alignment and spacing only, using qualitative categories. They cannot determine
 grip, pencil pressure, movement, diagnosis, or improvement from a single photo.
-They must be checked against the original by a therapist.
+The model receives the original photo and a rendered reference for the exercise
+(three lines, two circles or three Ls). Its report includes the expected result,
+visible observations, a separate comparison, alignment/formation/spacing and a
+practice suggestion. The assigned therapist can view both the report and original
+photo in the app and browser dashboard. Reports must be checked against the
+original by a therapist.
 
-Analysis runs in a bounded serial queue with a 90-second per-image timeout.
+Analysis runs on the care-service computer in a bounded serial queue, independently
+of the phone screen, with a five-minute per-image timeout for CPU inference.
+Override this with `MOTOR_ML_TIMEOUT_MS` if needed.
 Pending work survives restart. If inference fails or the model is unavailable,
 the photo remains available for human review and the assigned therapist can retry.
 If optional automated analysis was declined, the model is never called.

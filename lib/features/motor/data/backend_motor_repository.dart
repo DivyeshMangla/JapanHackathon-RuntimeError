@@ -140,6 +140,8 @@ class BackendMotorRepository implements MotorRepository {
               spacing: report['spacing']! as String,
               model: report['model']! as String,
               imageQuality: report['imageQuality']! as String,
+              comparison: report['comparison'] as String?,
+              expectedResult: report['expectedResult'] as String?,
             )
           : null,
     );

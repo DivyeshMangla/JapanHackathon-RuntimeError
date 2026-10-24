@@ -91,6 +91,7 @@ extension FailureText on AppLocalizations {
     SensorFailure() => failureSensor,
     MediaFailure(:final problem) => switch (problem) {
       MediaProblem.unavailable => failureMediaUnavailable,
+      MediaProblem.cameraUnavailable => motorCameraUnavailable,
       MediaProblem.tooLarge => failureMediaTooLarge,
     },
     NetworkFailure(:final problem, :final serverMessage) => switch (problem) {

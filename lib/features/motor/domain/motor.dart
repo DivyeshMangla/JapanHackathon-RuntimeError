@@ -33,6 +33,8 @@ class MotorReport {
     required this.spacing,
     required this.model,
     required this.imageQuality,
+    this.comparison,
+    this.expectedResult,
   });
 
   final String observations;
@@ -42,6 +44,8 @@ class MotorReport {
   final String spacing;
   final String model;
   final String imageQuality;
+  final String? comparison;
+  final String? expectedResult;
 }
 
 /// One photo of a child's drawing.
