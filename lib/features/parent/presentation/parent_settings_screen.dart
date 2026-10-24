@@ -7,14 +7,12 @@ import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/failure_feedback.dart';
 import '../../../shared/widgets/ink_card.dart';
-import '../../../shared/widgets/link_code_card.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import 'controllers/family_controllers.dart';
 import 'practice_reminders.dart';
 
-/// The parent's code for setting up the child's device, their therapist,
-/// practice reminders on this phone, and sign out.
+/// The parent's therapist, practice reminders on this phone, and sign out.
 class ParentSettingsScreen extends ConsumerWidget {
   const ParentSettingsScreen({super.key});
 
@@ -23,19 +21,11 @@ class ParentSettingsScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final parent = ref.watch(currentUserProvider);
     final therapist = ref.watch(familyTherapistProvider).value;
-    final code = parent.linkCode;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navSettings)),
       body: PageList(
         children: [
-          if (code != null)
-            LinkCodeCard(
-              title: l10n.parentCodeTitle,
-              code: code,
-              message: l10n.parentCodeHowTo,
-            ),
           if (therapist != null) ...[
-            const SizedBox(height: AppSpacing.md),
             InkCard(
               child: ListTile(
                 contentPadding: EdgeInsets.zero,

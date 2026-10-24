@@ -6,9 +6,6 @@ import '../../motor/presentation/child_drawing_screen.dart';
 import '../../motor/presentation/motor_practice_screen.dart';
 import '../../useful_words/presentation/word_screens.dart';
 import 'child_home_screen.dart';
-import 'exercise_detail_screen.dart';
-import 'today_exercises_screen.dart';
-import 'voice_diary_screen.dart';
 
 /// The child's area: one home of picture buttons, each opening its own
 /// page with a back button, so there is no tab bar to learn.
@@ -16,31 +13,6 @@ final patientRoutes = GoRoute(
   path: AppRoutes.patient,
   builder: (context, state) => const SignedInGate(child: ChildHomeScreen()),
   routes: [
-    GoRoute(
-      path: 'exercises',
-      builder: (context, state) =>
-          const SignedInGate(child: TodayExercisesScreen()),
-      routes: [
-        GoRoute(
-          path: ':exerciseId',
-          builder: (context, state) => SignedInGate(
-            child: ExerciseDetailScreen(
-              exerciseId: state.pathParameters['exerciseId']!,
-            ),
-          ),
-          routes: [
-            GoRoute(
-              path: 'diary',
-              builder: (context, state) => SignedInGate(
-                child: VoiceDiaryScreen(
-                  exerciseId: state.pathParameters['exerciseId']!,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
     GoRoute(
       path: 'words',
       builder: (context, state) =>

@@ -63,17 +63,34 @@ class BackendAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<User> setUpChild({
-    required String parentCode,
-    required String childName,
-  }) async {
-    final response = await _client.post(
-      '/auth/child',
-      body: {'parentCode': parentCode.trim(), 'childName': childName.trim()},
-    );
+  Future<User> startChildMode(String childId) async =>
+      _adopt(await _client.post('/patients/$childId/child-mode'));
+
+  @override
+  Future<User?> endChildMode(String password) async {
+    try {
+      return _adopt(
+        await _client.post(
+          '/auth/end-child-mode',
+          body: {'password': password},
+        ),
+      );
+    } on NetworkFailure catch (failure) {
+      // A wrong password keeps the child where they are.
+      if (failure.status == 403) return null;
+      rethrow;
+    }
+  }
+
+  /// Switches this device to the session in [response]. People the previous
+  /// account could see are forgotten, so the child never sees the parent's
+  /// list or the other way round.
+  Future<User> _adopt(JsonObject response) async {
     await _client.setToken(response['token'] as String?);
     final user = userFromApi(response.object('user'));
-    _users.remember(user, current: true);
+    _users
+      ..forget()
+      ..remember(user, current: true);
     return user;
   }
 

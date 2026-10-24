@@ -51,14 +51,6 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _WelcomeChoice(
-                  icon: LucideIcons.smile,
-                  color: AppColors.teal,
-                  title: l10n.welcomeChild,
-                  description: l10n.welcomeChildHint,
-                  onTap: () => context.push(AppRoutes.childSetup),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _WelcomeChoice(
                   icon: LucideIcons.stethoscope,
                   color: AppColors.orchid,
                   title: l10n.welcomeTherapist,

@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import '../../../core/network/backend_client.dart';
+import '../../auth/data/backend_user_repository.dart';
+import '../../auth/domain/user.dart';
 import '../domain/consent.dart';
 import '../domain/family_repository.dart';
 
-/// Consent through the care service, which treats a parent's signature as
-/// the approval.
+/// Children and their consent through the care service, which treats a
+/// parent's signature as the approval.
 class BackendFamilyRepository implements FamilyRepository {
   BackendFamilyRepository(this._client);
 
@@ -37,22 +39,28 @@ class BackendFamilyRepository implements FamilyRepository {
   }
 
   @override
-  Future<void> signConsent({
-    required String childId,
+  Future<User> addChild({
+    required String childName,
     required String version,
     required String signerName,
     required Set<ConsentStatement> agreed,
     required List<int> signaturePng,
-  }) => _client.post(
-    '/patients/$childId/consent',
-    body: {
-      'version': version,
-      'signerName': signerName.trim(),
-      'checks': {
-        for (final statement in ConsentStatement.values)
-          statement.name: agreed.contains(statement),
+  }) async {
+    final response = await _client.post(
+      '/children',
+      body: {
+        'childName': childName.trim(),
+        'consent': {
+          'version': version,
+          'signerName': signerName.trim(),
+          'checks': {
+            for (final statement in ConsentStatement.values)
+              statement.name: agreed.contains(statement),
+          },
+          'signaturePng': base64Encode(signaturePng),
+        },
       },
-      'signaturePng': base64Encode(signaturePng),
-    },
-  );
+    );
+    return userFromApi(response.object('user'));
+  }
 }

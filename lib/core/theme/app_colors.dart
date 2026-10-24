@@ -32,7 +32,6 @@ abstract final class AppColors {
   static const peach = Color(0xFFFFE3C4);
   static const purple = Color(0xFF6844D5);
   static const shadow = Color(0x1434408F);
-  static const onDarkMuted = Color(0xFFD3D6EE);
   static const pageGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

@@ -20,11 +20,10 @@ Other synthetic accounts use the same demo password:
 | Role | Sign in |
 | --- | --- |
 | Approved therapist | meera@melo.test, therapist code `MEERA7` |
-| Parent on Meera's caseload | parent@melo.test, parent code `PARENT` |
-| Child of that parent | no password: parent code `PARENT` and the name `Ananya` |
+| Parent on Meera's caseload | parent@melo.test; child mode opens their child Ananya |
 | Pending therapist | riya@melo.test |
 
-The demo seed creates therapists, six families (a parent and a child each) with signed consent, four approved exercises assigned to every child with two weeks of practice, and a drawing plan for Ananya. Demo seeding runs only when the database contains no accounts. It does not replace
+The demo seed creates therapists, six families (a parent and a child each) with signed consent, and a drawing plan for Ananya. Demo seeding runs only when the database contains no accounts. It does not replace
 an existing workspace. `npm run dev` starts the service without seeding. Stop it
 with Ctrl+C. Default binding is loopback only.
 
@@ -74,33 +73,29 @@ status. Send JSON with `Content-Type: application/json`.
 
 | Method / path | Access / purpose |
 | --- | --- |
-| GET `/health`, `/config` | Health, exercise library, current prototype consent |
+| GET `/health`, `/config` | Health, drawing exercises, current prototype consent |
 | POST `/auth/register` | Parent signup with a `therapistCode`, or pending therapist signup |
-| POST `/auth/child` | `{ parentCode, childName }`: signs a device in as that parent's child, creating the child the first time; returns a bearer token |
 | POST `/auth/login` | Email/password; `client: "mobile"` returns a bearer token |
 | GET `/auth/me` | Current active account |
 | POST `/auth/logout` | Revoke current session |
 | POST `/auth/password` | Verify current password and replace it; revoke all sessions |
-| GET `/library` | Exercise library (all roles) |
-| PUT `/library/:id` | Administrator saves an exercise |
+| POST `/children` | Parent adds a child with `{ childName, consent: { version, signerName, checks, signaturePng } }`; the account and the approved consent are created together, and this is the only place consent is taken |
+| POST `/patients/:id/child-mode` | The child's parent hands the device to the child: ends the parent's session and returns a bearer token for the child |
+| POST `/auth/end-child-mode` | `{ password }` from a child's session: checks the parent's password (five tries per 15 minutes), ends the child's session and returns a bearer token for the parent |
 | GET `/directory` | Names of the caller and, for a patient, their therapist |
-| GET/PUT/DELETE `/patients/:id/assignments[/:aid]` | Read (anyone with access); write by the assigned therapist or an administrator, approved exercises only |
-| GET/PUT/DELETE `/patients/:id/completions[/:cid]` | Read with `from`/`to` days; write by the patient only |
 | GET/PUT `/patients/:id/samples[/:rid]`, GET `/samples/:id/audio` | Voice samples; upload by the patient, each playback audited |
-| GET/PUT/DELETE `/patients/:id/diary[/:eid]` | Voice-use diary; write by the patient only |
 | GET/POST `/patients/:id/usage` | Usage log; append by the patient only |
 | GET/PUT `/study-settings` | Read by anyone signed in; write by an administrator |
-| GET `/assignments`, `/completions`, `/samples`, `/diary`, `/usage` | Administrator exports across all patients |
+| GET `/samples`, `/usage` | Administrator exports across all patients |
 | GET `/overview`, `/users`, `/audit` | Administrator dashboard data |
 | POST `/users` | Administrator creates a patient or an approved therapist |
 | PATCH `/users/:id` | Administrator approves/enables/disables account |
 | GET `/patients` | Administrator: all; therapist: assigned patients |
 | GET `/patients/:id` | Own patient record / assigned therapist / administrator |
 | PUT `/patients/:id/assignment` | Administrator assigns an active therapist |
-| POST `/patients/:id/consent` | The child's parent signs version, checks and PNG signature |
 | POST `/patients/:id/approve-consent` | Assigned therapist approves consent |
 | PUT `/patients/:id/forms` | Assigned therapist saves age, demographic and clinical forms |
-| POST `/patients/:id/plans` | Assigned therapist prescribes library exercises and dose |
+| POST `/patients/:id/plans` | Assigned therapist prescribes drawing exercises and dose |
 | POST `/patients/:id/progress` | Patient sends an idempotent completed practice event |
 | POST `/patients/:id/recordings` | Patient sends idempotent base64 WAV upload |
 | GET `/recordings/:id/audio` | Patient owner / assigned therapist / administrator; each play is audited |

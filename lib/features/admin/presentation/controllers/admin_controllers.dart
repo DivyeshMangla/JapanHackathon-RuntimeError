@@ -13,12 +13,7 @@ import '../../../audit/presentation/controllers/access_log_controllers.dart';
 import '../../../auth/data/auth_repository_providers.dart';
 import '../../../auth/domain/user.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../../../exercises/data/exercise_repository_providers.dart';
-import '../../../exercises/domain/adherence.dart';
-import '../../../exercises/domain/exercise.dart';
-import '../../../exercises/presentation/controllers/exercise_controllers.dart';
 import '../../../recordings/data/recording_repository_providers.dart';
-import '../../../study/domain/participant_status.dart';
 import '../../../therapist/domain/participant_summary.dart';
 import '../../../therapist/presentation/controllers/caseload_controllers.dart';
 import '../../../usage/data/usage_log_providers.dart';
@@ -29,7 +24,7 @@ final usersByRoleProvider = FutureProvider.family<List<User>, UserRole>(
   (ref, role) => ref.watch(userRepositoryProvider).listByRole(role),
 );
 
-/// Every enrolled patient with activity and status, by participant code.
+/// Every enrolled patient with their voice samples.
 final studyParticipantsProvider = FutureProvider<List<ParticipantSummary>>((
   ref,
 ) async {
@@ -50,14 +45,7 @@ final studyOverviewProvider = FutureProvider<StudyOverview>((ref) async {
   return StudyOverview(
     enrolled: participants.length,
     therapists: therapists.length,
-    overallAdherence: Adherence.rate([
-      for (final p in participants) ...p.activity.recent,
-    ]),
-    lowAdherence: participants.where((p) => p.lowAdherence).length,
-    statusCounts: {
-      for (final status in ParticipantStatus.values)
-        status: participants.where((p) => p.status == status).length,
-    },
+    voiceSamples: participants.fold(0, (sum, p) => sum + p.recordings.length),
   );
 });
 
@@ -103,32 +91,8 @@ class AdminActions {
   }
 }
 
-final libraryActionsProvider = Provider<LibraryActions>(LibraryActions.new);
-
-/// Exercise library management. Any content change needs approval again.
-class LibraryActions {
-  LibraryActions(this._ref);
-
-  final Ref _ref;
-
-  Future<void> save(Exercise exercise) async {
-    await _ref.read(exerciseRepositoryProvider).save(exercise);
-    _ref.invalidate(exerciseLibraryProvider);
-  }
-
-  Future<void> approve(Exercise exercise) => save(
-    exercise.approve(by: _ref.read(currentUserProvider).id, at: DateTime.now()),
-  );
-
-  Future<void> setArchived(Exercise exercise, bool archived) =>
-      save(exercise.withArchived(archived));
-}
-
 enum ExportKind {
-  completions('completions'),
-  assignments('assignments'),
   recordings('recording-metadata'),
-  voiceDiary('voice-use-diary'),
   usageLog('usage-log');
 
   const ExportKind(this.slug);
@@ -161,27 +125,9 @@ class ExportActions {
         .read(userRepositoryProvider)
         .listByRole(UserRole.patient);
     final codes = CsvExport.participantCodes(patients);
-    final library = {
-      for (final e in await _ref.read(exerciseRepositoryProvider).all())
-        e.id: e,
-    };
     final csv = switch (kind) {
-      ExportKind.completions => CsvExport.completions(
-        completions: await _ref.read(completionRepositoryProvider).all(),
-        codes: codes,
-        exercises: library,
-      ),
-      ExportKind.assignments => CsvExport.assignments(
-        schedules: await _ref.read(scheduleRepositoryProvider).all(),
-        codes: codes,
-        exercises: library,
-      ),
       ExportKind.recordings => CsvExport.recordings(
         recordings: await _ref.read(recordingRepositoryProvider).all(),
-        codes: codes,
-      ),
-      ExportKind.voiceDiary => CsvExport.voiceDiary(
-        entries: await _ref.read(voiceDiaryRepositoryProvider).all(),
         codes: codes,
       ),
       ExportKind.usageLog => CsvExport.usageLog(

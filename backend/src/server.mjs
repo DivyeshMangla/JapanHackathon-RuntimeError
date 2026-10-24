@@ -31,9 +31,6 @@ function json(res, status, value) { res.writeHead(status, { 'Content-Type': 'app
 
 export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = process.env.DATA_DIR || resolve(root, 'data'), secureCookies = process.env.NODE_ENV === 'production', origin = process.env.PUBLIC_ORIGIN, transcriber } = {}) {
   const db = openDatabase(dataDir);
-  const libraryExercises = () => db.prepare('SELECT body FROM exercise_library ORDER BY id').all().map(r => JSON.parse(r.body));
-  // Motor practice ships with the service; the rest comes from the library.
-  const planExercises = () => [...motorExercises, ...libraryExercises().map(e => ({ id: e.id, name: e.title, description: e.summary }))];
   const findUser = id => db.prepare('SELECT * FROM users WHERE id=?').get(id);
   const requireRole = (u, ...roles) => { if (!roles.includes(u.role)) fail(403, 'You do not have access to this action.'); };
   const accessPatient = (u, id) => {
@@ -68,7 +65,7 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
       const allowedOrigin = origin || `http://${req.headers.host}`;
       if (req.headers.origin && req.headers.origin !== allowedOrigin) fail(403, 'Cross-origin requests are not allowed.');
       if (path === '/api/health') return json(res, 200, { status: 'ok' });
-      if (path === '/api/config') return json(res, 200, { demo: db.prepare("SELECT value FROM settings WHERE key='demo'").get()?.value === 'true', consentVersion, consentText, exercises: planExercises(), motorGuidance });
+      if (path === '/api/config') return json(res, 200, { demo: db.prepare("SELECT value FROM settings WHERE key='demo'").get()?.value === 'true', consentVersion, consentText, exercises: motorExercises, motorGuidance });
       if (path === '/api/auth/login' && method === 'POST') {
         const b = await body(req); const email = text(b.email, 'Email').toLowerCase(); const password = text(b.password, 'Password', 128);
         const key = `${req.socket.remoteAddress}:${email}`;
@@ -99,24 +96,6 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
         limitRegistration(req);
         return json(res, 201, { user: await createUser(b, null) });
       }
-      if (path === '/api/auth/child' && method === 'POST') {
-        const b = await body(req);
-        limitRegistration(req);
-        const parent = db.prepare("SELECT * FROM users WHERE link_code=? AND role='parent' AND status='active'").get(normalizeLinkCode(b.parentCode));
-        if (!parent) fail(400, 'That parent code was not found. It is on the parent’s Settings screen.');
-        // A child never types a password: the device keeps the session the parent's code opened.
-        // Setting up a second device, or the same one again, finds the child by name.
-        const childName = text(b.childName, 'Child’s name', 80);
-        const existing = db.prepare("SELECT * FROM users WHERE parent_id=? AND role='patient' AND name=? COLLATE NOCASE").get(parent.id, childName);
-        if (existing?.status === 'disabled') fail(403, 'This child’s account is disabled. Contact your therapist.');
-        const id = existing?.id || randomUUID();
-        if (!existing) {
-          db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,therapist_id,parent_id,created_at,participant_code) VALUES (?,?,?,?,?,?,?,?,?,?)')
-            .run(id, childName, `child-${id}@family.melo.invalid`, await hashPassword(randomUUID()), 'patient', 'active', parent.therapist_id, parent.id, now(), nextParticipantCode(db));
-        }
-        audit(db, parent.id, 'Set up child device', id);
-        return json(res, existing ? 200 : 201, { user: publicUser(findUser(id)), token: newSession(db, id) });
-      }
       if (path.startsWith('/api/')) {
         const u = authenticate(db, req); if (!u) fail(401, 'Please sign in.');
         if (await wordRoutes(req, res, url, u)) return;
@@ -125,6 +104,21 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
           db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(requestToken(req)));
           res.setHeader('Set-Cookie', `vp_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secureCookies ? '; Secure' : ''}`);
           return json(res, 200, { ok: true });
+        }
+        if (path === '/api/auth/end-child-mode' && method === 'POST') {
+          requireRole(u, 'patient'); const b = await body(req); const password = text(b.password, 'Password', 128);
+          const key = `child-mode:${u.id}`; const attempts = db.prepare('SELECT * FROM login_attempts WHERE key=?').get(key);
+          if (attempts?.reset_at > Date.now() && attempts.failures >= 5) fail(429, 'Too many attempts. Try again in 15 minutes.');
+          const parent = findUser(u.parent_id);
+          if (!parent || parent.status !== 'active' || !await verifyPassword(password, parent.password_hash)) {
+            db.prepare(`INSERT INTO login_attempts VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET
+              failures=CASE WHEN reset_at<? THEN 1 ELSE failures+1 END, reset_at=CASE WHEN reset_at<? THEN excluded.reset_at ELSE reset_at END`).run(key, Date.now() + 900000, Date.now(), Date.now());
+            fail(403, 'That password is not right.');
+          }
+          db.prepare('DELETE FROM login_attempts WHERE key=?').run(key);
+          db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(requestToken(req)));
+          audit(db, parent.id, 'Ended child mode', u.id);
+          return json(res, 200, { user: publicUser(parent), token: newSession(db, parent.id) });
         }
         if (path === '/api/auth/password' && method === 'POST') {
           const b = await body(req); const old = text(b.currentPassword, 'Current password', 128);
@@ -160,6 +154,26 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
           audit(db, u.id, target.status === 'pending' && b.status === 'active' ? 'Approved therapist' : `Account ${b.status}`, target.id, target.name);
           return json(res, 200, { user: publicUser(findUser(target.id)) });
         }
+        if (path === '/api/children' && method === 'POST') {
+          requireRole(u, 'parent'); const b = await body(req);
+          const childName = text(b.childName, 'Child’s name', 80); const c = b.consent || {};
+          if (c.version !== consentVersion || c.checks?.adult !== true || c.checks?.participation !== true || c.checks?.dataSharing !== true || typeof c.checks?.analysis !== 'boolean') fail(400, 'Complete all required consent items.');
+          const signer = text(c.signerName, 'Signer name'); const png = text(c.signaturePng, 'Signature', 700000);
+          if (!Buffer.from(png, 'base64').subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) fail(400, 'A PNG signature is required.');
+          if (db.prepare("SELECT 1 FROM users WHERE parent_id=? AND role='patient' AND name=? COLLATE NOCASE").get(u.id, childName)) fail(409, 'You already added a child with this name.');
+          const id = randomUUID(); const hash = await hashPassword(randomUUID());
+          db.exec('BEGIN');
+          try {
+            // A child never signs in with a password; the parent opens child mode instead.
+            db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,therapist_id,parent_id,created_at,participant_code) VALUES (?,?,?,?,?,?,?,?,?,?)')
+              .run(id, childName, `child-${id}@family.melo.invalid`, hash, 'patient', 'active', u.therapist_id, u.id, now(), nextParticipantCode(db));
+            // Consent is signed once, with the account. The parent is the child's legal guardian, so their signature is the approval.
+            db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at,approved_by,approved_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run(randomUUID(), id, consentVersion, signer, png, JSON.stringify(c.checks), 'approved', now(), u.id, now());
+            db.exec('COMMIT');
+          } catch (error) { db.exec('ROLLBACK'); throw error; }
+          audit(db, u.id, 'Added child with consent', id, childName);
+          return json(res, 201, { user: publicUser(findUser(id)) });
+        }
         if (path === '/api/patients' && method === 'GET') {
           requireRole(u, 'admin', 'therapist', 'parent');
           const rows = u.role === 'admin' ? db.prepare("SELECT * FROM users WHERE role='patient'").all()
@@ -167,7 +181,7 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
           return json(res, 200, { patients: rows.map(patientSummary) });
         }
         if (await motor.handle(req,res,path,u) !== false) return;
-        const patientMatch = path.match(/^\/api\/patients\/([^/]+)(?:\/(assignment|consent|approve-consent|forms|plans|progress|recordings))?$/);
+        const patientMatch = path.match(/^\/api\/patients\/([^/]+)(?:\/(assignment|child-mode|approve-consent|forms|plans|progress|recordings))?$/);
         if (patientMatch) {
           const id = patientMatch[1]; const action = patientMatch[2]; const p = accessPatient(u, id);
           if (!action && method === 'GET') return json(res, 200, { patient: patientSummary(p), consent: unpackConsent(consentFor(id)), plan: unpackPlan(planFor(id)),
@@ -182,15 +196,13 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
             audit(db, u.id, 'Updated assignment', id, `${p.name} → ${therapist?.name || 'Unassigned'}`);
             return json(res, 200, { patient: patientSummary(findUser(id)) });
           }
-          if (action === 'consent' && method === 'POST') {
-            requireRole(u, 'parent'); const b = await body(req);
-            if (consentFor(id)?.version === consentVersion) fail(409, 'Consent has already been submitted.');
-            if (b.version !== consentVersion || b.checks?.adult !== true || b.checks?.participation !== true || b.checks?.dataSharing !== true || typeof b.checks?.analysis !== 'boolean') fail(400, 'Complete all required consent items.');
-            const signer = text(b.signerName, 'Signer name'); const png = text(b.signaturePng, 'Signature', 700000);
-            if (!Buffer.from(png, 'base64').subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) fail(400, 'A PNG signature is required.');
-            // The parent is the child's legal guardian, so their signature is the approval.
-            db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at,approved_by,approved_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run(randomUUID(), id, consentVersion, signer, png, JSON.stringify(b.checks), 'approved', now(), u.id, now());
-            audit(db, u.id, 'Submitted consent', id); return json(res, 201, { consent: unpackConsent(consentFor(id)) });
+          if (action === 'child-mode' && method === 'POST') {
+            requireRole(u, 'parent');
+            if (p.status !== 'active') fail(403, 'This child’s account is disabled. Contact your therapist.');
+            // The parent's own session ends here, so leaving child mode needs the parent's password.
+            db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(requestToken(req)));
+            audit(db, u.id, 'Started child mode', id);
+            return json(res, 200, { user: publicUser(p), token: newSession(db, id) });
           }
           if (action === 'approve-consent' && method === 'POST') {
             requireRole(u, 'therapist'); const b = await body(req); const consent = consentFor(id);
@@ -209,7 +221,7 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
             requireRole(u, 'therapist'); const b = await body(req); const consent = consentFor(id);
             if (!consent || consent.status !== 'approved') fail(409, 'Approve consent before prescribing a plan.');
             if (p.status !== 'active') fail(409, 'Patient account is disabled.');
-            if (!Array.isArray(b.exercises) || b.exercises.length < 1 || b.exercises.length > 6 || new Set(b.exercises).size !== b.exercises.length || !b.exercises.every(e => planExercises().some(x => x.id === e))) fail(400, 'Choose one to six different exercises from the library.');
+            if (!Array.isArray(b.exercises) || b.exercises.length < 1 || b.exercises.length > 6 || new Set(b.exercises).size !== b.exercises.length || !b.exercises.every(e => motorExercises.some(x => x.id === e))) fail(400, 'Choose one to six different exercises from the library.');
             if (b.exercises.some(id => id.startsWith('motor-')) && consent.version !== consentVersion) fail(409, 'The adult or guardian must sign the updated consent before motor practice.');
             if (b.exercises.some(id => id.startsWith('motor-')) && b.sessionsPerDay !== 1) fail(400, 'Motor practice starts with one gentle round per day. Choose one session per day.');
             const planId = randomUUID();

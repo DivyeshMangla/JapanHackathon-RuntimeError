@@ -6,8 +6,8 @@ import '../../../core/routing/app_routes.dart';
 import '../../../core/routing/role_shell.dart';
 import '../../../core/utils/l10n.dart';
 import '../../auth/presentation/signed_in_gate.dart';
+import 'add_child_screen.dart';
 import 'child_detail_screen.dart';
-import 'consent_screen.dart';
 import 'parent_home_screen.dart';
 import 'parent_settings_screen.dart';
 
@@ -36,16 +36,13 @@ final parentRoutes = StatefulShellRoute.indexedStack(
           builder: (context, state) => const ParentHomeScreen(),
           routes: [
             GoRoute(
+              path: 'add-child',
+              builder: (context, state) => const AddChildScreen(),
+            ),
+            GoRoute(
               path: 'children/:childId',
               builder: (context, state) =>
                   ChildDetailScreen(childId: state.pathParameters['childId']!),
-              routes: [
-                GoRoute(
-                  path: 'consent',
-                  builder: (context, state) =>
-                      ConsentScreen(childId: state.pathParameters['childId']!),
-                ),
-              ],
             ),
           ],
         ),

@@ -8,14 +8,12 @@ import '../../../core/utils/l10n.dart';
 import '../../audit/presentation/access_log_screen.dart';
 import '../../auth/domain/user.dart';
 import '../../auth/presentation/signed_in_gate.dart';
-import 'exercise_editor_screen.dart';
-import 'exercise_library_screen.dart';
 import 'people_screen.dart';
 import 'study_overview_screen.dart';
 import 'study_settings_screen.dart';
 import 'user_form_screen.dart';
 
-/// Research admin area: study overview, people, exercise library, settings.
+/// Research admin area: study overview, people and settings.
 final adminRoutes = StatefulShellRoute.indexedStack(
   builder: (context, state, shell) => SignedInGate(
     child: RoleShell(
@@ -28,10 +26,6 @@ final adminRoutes = StatefulShellRoute.indexedStack(
         NavigationDestination(
           icon: const Icon(LucideIcons.users),
           label: context.l10n.navPeople,
-        ),
-        NavigationDestination(
-          icon: const Icon(LucideIcons.libraryBig),
-          label: context.l10n.navLibrary,
         ),
         NavigationDestination(
           icon: const Icon(LucideIcons.settings),
@@ -62,25 +56,6 @@ final adminRoutes = StatefulShellRoute.indexedStack(
                   state.uri.queryParameters['role'] ?? UserRole.parent.name,
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
-    ),
-    StatefulShellBranch(
-      routes: [
-        GoRoute(
-          path: AppRoutes.adminLibrary,
-          builder: (context, state) => const ExerciseLibraryScreen(),
-          routes: [
-            GoRoute(
-              path: ':exerciseId',
-              builder: (context, state) {
-                final id = state.pathParameters['exerciseId']!;
-                return ExerciseEditorScreen(
-                  exerciseId: id == 'new' ? null : id,
-                );
-              },
             ),
           ],
         ),

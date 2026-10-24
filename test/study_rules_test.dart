@@ -1,12 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:melo/features/admin/data/csv_export.dart';
 import 'package:melo/features/auth/domain/user.dart';
-import 'package:melo/features/exercises/domain/completion.dart';
-import 'package:melo/features/exercises/domain/exercise.dart';
 import 'package:melo/features/recordings/domain/probe_schedule.dart';
 import 'package:melo/features/recordings/domain/recording.dart';
 import 'package:melo/features/settings/domain/study_settings.dart';
-import 'package:melo/features/study/domain/participant_status.dart';
+import 'package:melo/features/usage/domain/usage_event.dart';
 
 Recording _probe(DateTime at) => Recording(
   id: 'r-$at',
@@ -19,38 +17,6 @@ Recording _probe(DateTime at) => Recording(
 );
 
 void main() {
-  group('status matrix (research doc 8.3)', () {
-    ParticipantStatus status(bool high, ProbeOutcome? probe) =>
-        ParticipantStatus.from(highAdherence: high, probe: probe);
-
-    test('maps every row of the matrix', () {
-      expect(status(true, ProbeOutcome.positive), ParticipantStatus.onTrack);
-      expect(status(true, ProbeOutcome.stable), ParticipantStatus.plateau);
-      expect(status(true, ProbeOutcome.mixed), ParticipantStatus.plateau);
-      expect(
-        status(false, ProbeOutcome.stable),
-        ParticipantStatus.adherenceProblem,
-      );
-      expect(
-        status(true, ProbeOutcome.negative),
-        ParticipantStatus.needsReview,
-      );
-      expect(
-        status(false, ProbeOutcome.negative),
-        ParticipantStatus.needsReview,
-      );
-      expect(
-        status(false, ProbeOutcome.positive),
-        ParticipantStatus.improvingDespiteLowPractice,
-      );
-    });
-
-    test('without a probe rating the status is undecided', () {
-      expect(status(true, null), ParticipantStatus.awaitingProbe);
-      expect(status(false, null), ParticipantStatus.awaitingProbe);
-    });
-  });
-
   group('probe schedule', () {
     final enrolled = DateTime(2026, 9, 1);
     const settings = StudySettings();
@@ -96,18 +62,15 @@ void main() {
     final codes = CsvExport.participantCodes([patient]);
 
     test('identifies patients by participant code only', () {
-      final csv = CsvExport.completions(
-        completions: [
-          Completion(
-            id: 'c1',
+      final csv = CsvExport.usageLog(
+        events: [
+          UsageEvent(
+            at: DateTime(2026, 10, 5, 9),
             patientId: 'u1',
-            exerciseId: 'ex',
-            day: DateTime(2026, 10, 5),
-            completedAt: DateTime(2026, 10, 5, 9),
+            action: UsageAction.signIn,
           ),
         ],
         codes: codes,
-        exercises: const {},
       );
       expect(csv, contains('P001'));
       expect(csv, isNot(contains('Grace')));
@@ -116,28 +79,16 @@ void main() {
     });
 
     test('quotes delimiters and defuses spreadsheet formulas', () {
-      final csv = CsvExport.completions(
-        completions: [
-          Completion(
-            id: 'c1',
+      final csv = CsvExport.usageLog(
+        events: [
+          UsageEvent(
+            at: DateTime(2026, 10, 5, 9),
             patientId: 'u1',
-            exerciseId: 'ex',
-            day: DateTime(2026, 10, 5),
-            completedAt: DateTime(2026, 10, 5, 9),
+            action: UsageAction.recordingSaved,
+            detail: '=HYPERLINK("x"), hum',
           ),
         ],
         codes: codes,
-        exercises: const {
-          'ex': Exercise(
-            id: 'ex',
-            title: '=HYPERLINK("x"), hum',
-            program: 'SOVT',
-            summary: '',
-            steps: [],
-            durationMinutes: 1,
-            repetitions: 1,
-          ),
-        },
       );
       expect(csv, contains('"\'=HYPERLINK(""x""), hum"'));
     });

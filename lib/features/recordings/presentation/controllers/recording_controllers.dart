@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../settings/presentation/controllers/study_settings_controller.dart';
-import '../../../study/domain/participant_status.dart';
 import '../../../study/presentation/controllers/study_controllers.dart';
 import '../../data/recording_repository_providers.dart';
 import '../../domain/probe_schedule.dart';
@@ -32,9 +31,4 @@ final probeDueProvider = FutureProvider.family<ProbeDue, String>((
 
 final analysisStatusProvider = FutureProvider.family<AnalysisStatus, Recording>(
   (ref, recording) => ref.watch(analysisServiceProvider).statusOf(recording),
-);
-
-final probeOutcomeProvider = FutureProvider.family<ProbeOutcome?, String>(
-  (ref, patientId) =>
-      ref.watch(analysisServiceProvider).probeOutcome(patientId),
 );

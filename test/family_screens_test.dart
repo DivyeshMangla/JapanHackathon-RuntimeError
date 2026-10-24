@@ -6,18 +6,17 @@ import 'package:melo/core/theme/app_theme.dart';
 import 'package:melo/core/utils/dates.dart';
 import 'package:melo/core/utils/l10n.dart';
 import 'package:melo/features/auth/domain/user.dart';
-import 'package:melo/features/auth/presentation/child_setup_screen.dart';
 import 'package:melo/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:melo/features/auth/presentation/parent_sign_up_screen.dart';
 import 'package:melo/features/auth/presentation/welcome_screen.dart';
-import 'package:melo/features/exercises/domain/adherence.dart';
-import 'package:melo/features/exercises/domain/patient_activity.dart';
-import 'package:melo/features/exercises/presentation/controllers/exercise_controllers.dart';
 import 'package:melo/features/motor/domain/motor.dart';
 import 'package:melo/features/motor/presentation/controllers/motor_controllers.dart';
+import 'package:melo/features/parent/domain/consent.dart';
+import 'package:melo/features/parent/presentation/add_child_screen.dart';
 import 'package:melo/features/parent/presentation/controllers/family_controllers.dart';
 import 'package:melo/features/parent/presentation/parent_home_screen.dart';
 import 'package:melo/features/patient/presentation/child_home_screen.dart';
+import 'package:melo/features/patient/presentation/leave_child_mode_dialog.dart';
 
 final _today = dateOnly(DateTime.now());
 
@@ -32,19 +31,6 @@ User _user(String id, UserRole role, String name) => User(
 
 final _child = _user('child', UserRole.patient, 'Ananya');
 final _parent = _user('parent', UserRole.parent, 'Priya Rao');
-
-PatientActivity _nothingAssigned() => PatientActivity(
-  today: _today,
-  schedules: const [],
-  exercises: const {},
-  completions: const [],
-  days: Adherence.daily(
-    schedules: const [],
-    completions: const [],
-    from: addDays(_today, 1 - historyDays),
-    to: _today,
-  ),
-);
 
 Future<void> _pump(
   WidgetTester tester,
@@ -80,13 +66,39 @@ void main() {
   for (final (name, screen) in [
     ('welcome', const WelcomeScreen()),
     ('parent sign-up', const ParentSignUpScreen()),
-    ('child setup', const ChildSetupScreen()),
   ]) {
     testWidgets('$name fits a narrow phone with enlarged text', (tester) async {
       await _pump(tester, screen);
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('the welcome page has no separate way in for a child', (
+    tester,
+  ) async {
+    await _pump(tester, const WelcomeScreen(), width: 390, scale: 1);
+    expect(find.text('Set up for my child'), findsNothing);
+  });
+
+  testWidgets('adding a child asks for the name and consent together', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const AddChildScreen(),
+      width: 390,
+      scale: 1,
+      overrides: [
+        consentFormProvider.overrideWith(
+          (ref) async =>
+              const ConsentForm(version: 'v1', text: 'Synthetic consent'),
+        ),
+      ],
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text("Child's first name"), findsOneWidget);
+    expect(find.text('Synthetic consent'), findsOneWidget);
+  });
 
   testWidgets('parent sign-up shows inline messages for empty fields', (
     tester,
@@ -100,7 +112,7 @@ void main() {
     expect(find.text('Use at least 10 characters.'), findsOneWidget);
   });
 
-  testWidgets('child home greets the child with three picture buttons', (
+  testWidgets('child home greets the child with two picture buttons', (
     tester,
   ) async {
     await _pump(
@@ -108,9 +120,6 @@ void main() {
       const ChildHomeScreen(),
       overrides: [
         currentUserProvider.overrideWithValue(_child),
-        patientActivityProvider.overrideWith(
-          (ref, id) async => _nothingAssigned(),
-        ),
         motorRecordProvider.overrideWith(
           (ref, id) async => const MotorRecord(
             planId: 'plan',
@@ -123,29 +132,39 @@ void main() {
     );
     expect(tester.takeException(), isNull);
     expect(find.text('Hi, Ananya!'), findsOneWidget);
-    for (final tile in ['Activities', 'Say a word', 'Drawing']) {
+    expect(find.bySemanticsLabel(RegExp('^Activities')), findsNothing);
+    for (final tile in ['Say a word', 'Drawing']) {
       expect(find.bySemanticsLabel(RegExp('^$tile')), findsOneWidget);
     }
     expect(find.bySemanticsLabel('Drawing, 0 of 1 done'), findsOneWidget);
   });
 
-  testWidgets('parent home asks for consent until it is signed', (
-    tester,
-  ) async {
+  testWidgets('leaving child mode needs a password', (tester) async {
+    await _pump(
+      tester,
+      const Scaffold(body: LeaveChildModeDialog()),
+      width: 390,
+      scale: 1,
+      overrides: [currentUserProvider.overrideWithValue(_child)],
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'Leave child mode'));
+    await tester.pumpAndSettle();
+    expect(find.text('Enter your password.'), findsOneWidget);
+  });
+
+  testWidgets('parent home offers child mode for each child', (tester) async {
     await _pump(
       tester,
       const ParentHomeScreen(),
       overrides: [
         currentUserProvider.overrideWithValue(_parent),
         familyChildrenProvider.overrideWith((ref) async => [_child]),
-        childConsentProvider.overrideWith((ref, id) async => null),
-        patientActivityProvider.overrideWith(
-          (ref, id) async => _nothingAssigned(),
-        ),
       ],
     );
     expect(tester.takeException(), isNull);
     expect(find.text('Ananya'), findsOneWidget);
-    expect(find.text('Sign consent'), findsOneWidget);
+    expect(find.text('Start child mode for Ananya'), findsOneWidget);
+    expect(find.text('Sign consent'), findsNothing);
+    expect(find.text('Add a child'), findsOneWidget);
   });
 }

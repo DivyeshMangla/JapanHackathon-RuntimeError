@@ -6,8 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/errors/app_failure.dart';
 import '../../../core/routing/app_routes.dart';
 import '../../../core/theme/app_tokens.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/formatting.dart';
 import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/buttons.dart';
@@ -104,10 +102,7 @@ class _ExportSectionState extends ConsumerState<_ExportSection> {
 
   static String _exportLabel(AppLocalizations l10n, ExportKind kind) =>
       switch (kind) {
-        ExportKind.completions => l10n.exportCompletions,
-        ExportKind.assignments => l10n.exportAssignments,
         ExportKind.recordings => l10n.exportRecordings,
-        ExportKind.voiceDiary => l10n.exportVoiceDiary,
         ExportKind.usageLog => l10n.exportUsageLog,
       };
 
@@ -148,7 +143,6 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
   bool _saving = false;
 
   bool get _changed =>
-      _draft.adherenceThreshold != widget.initial.adherenceThreshold ||
       _draft.probeIntervalDays != widget.initial.probeIntervalDays ||
       _draft.studyWeeks != widget.initial.studyWeeks;
 
@@ -173,67 +167,15 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ThresholdField(
-          value: _draft.adherenceThreshold,
-          onChanged: (v) =>
-              setState(() => _draft = _draft.copyWith(adherenceThreshold: v)),
-        ),
-        const SizedBox(height: AppSpacing.lg),
         _ProbeScheduleFields(
           draft: _draft,
           onChanged: (draft) => setState(() => _draft = draft),
         ),
-        const SizedBox(height: AppSpacing.lg),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
         PrimaryButton(
           label: _saving ? l10n.saving : l10n.saveSettings,
           icon: LucideIcons.check,
           onPressed: _saving || !_changed ? null : _save,
-        ),
-      ],
-    );
-  }
-}
-
-class _ThresholdField extends StatelessWidget {
-  const _ThresholdField({required this.value, required this.onChanged});
-
-  final double value;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionLabel(l10n.adherenceThresholdSection),
-        Row(
-          children: [
-            Expanded(
-              child: Slider(
-                value: value,
-                min: 0.5,
-                max: 1,
-                divisions: 10,
-                label: formatPercent(value),
-                semanticFormatterCallback: formatPercent,
-                onChanged: onChanged,
-              ),
-            ),
-            SizedBox(
-              width: AppSizes.valueColumn,
-              child: Text(
-                formatPercent(value),
-                textAlign: TextAlign.right,
-                style: AppTypography.monoLarge,
-              ),
-            ),
-          ],
-        ),
-        Text(
-          l10n.adherenceThresholdHelp,
-          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );

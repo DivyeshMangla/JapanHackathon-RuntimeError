@@ -65,13 +65,7 @@ final class NetworkFailure extends AppFailure {
   final String? serverMessage;
 }
 
-enum InputProblem {
-  emailTaken,
-  therapistRequired,
-  exerciseNotApproved,
-  consentRequired,
-  instructionsRequired,
-}
+enum InputProblem { emailTaken, therapistRequired }
 
 /// Input the user can correct.
 final class InvalidInputFailure extends AppFailure {

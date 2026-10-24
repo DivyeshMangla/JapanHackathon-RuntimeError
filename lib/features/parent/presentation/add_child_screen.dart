@@ -14,18 +14,19 @@ import '../../../shared/widgets/skeleton.dart';
 import '../domain/consent.dart';
 import 'controllers/family_controllers.dart';
 
-/// The parent reads the consent, answers each statement and signs for their
-/// child. Signing is offered only once every required statement is ticked.
-class ConsentScreen extends ConsumerStatefulWidget {
-  const ConsentScreen({super.key, required this.childId});
-
-  final String childId;
+/// The parent names their child, reads the consent, answers each statement
+/// and signs. This is the only place consent is asked for: the child's
+/// account and the signature are created together. Signing is offered only
+/// once the name and every required statement are filled in.
+class AddChildScreen extends ConsumerStatefulWidget {
+  const AddChildScreen({super.key});
 
   @override
-  ConsumerState<ConsentScreen> createState() => _ConsentScreenState();
+  ConsumerState<AddChildScreen> createState() => _AddChildScreenState();
 }
 
-class _ConsentScreenState extends ConsumerState<ConsentScreen> {
+class _AddChildScreenState extends ConsumerState<AddChildScreen> {
+  final _childName = TextEditingController();
   final _signer = TextEditingController();
   final _agreed = <ConsentStatement>{};
   bool _signing = false;
@@ -33,6 +34,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
 
   @override
   void dispose() {
+    _childName.dispose();
     _signer.dispose();
     super.dispose();
   }
@@ -41,6 +43,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
       ConsentStatement.values
           .where((statement) => statement.isRequired)
           .every(_agreed.contains) &&
+      _childName.text.trim().isNotEmpty &&
       _signer.text.trim().isNotEmpty;
 
   Future<void> _sign(List<int> png) async {
@@ -51,9 +54,9 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
     });
     try {
       await ref
-          .read(consentActionsProvider)
-          .sign(
-            childId: widget.childId,
+          .read(familyActionsProvider)
+          .addChild(
+            childName: _childName.text,
             signerName: _signer.text,
             agreed: _agreed,
             signaturePng: png,
@@ -73,7 +76,6 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final form = ref.watch(consentFormProvider);
-    final child = ref.watch(familyChildProvider(widget.childId)).value;
     String statementText(ConsentStatement statement) => switch (statement) {
       ConsentStatement.adult => l10n.consentAdult,
       ConsentStatement.participation => l10n.consentParticipation,
@@ -81,12 +83,19 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
       ConsentStatement.analysis => l10n.consentAnalysis,
     };
     return ActionPage(
-      title: l10n.consentTitle,
-      intro: child == null ? null : l10n.consentIntro(child.firstName),
+      title: l10n.addChildTitle,
+      intro: l10n.addChildIntro,
       onBack: _signing ? null : () => context.pop(),
       backLabel: l10n.back,
       error: _error,
       children: [
+        LabeledTextField(
+          controller: _childName,
+          label: l10n.addChildName,
+          textInputAction: TextInputAction.next,
+          onChanged: (_) => setState(() {}),
+          enabled: !_signing,
+        ),
         InkCard(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(

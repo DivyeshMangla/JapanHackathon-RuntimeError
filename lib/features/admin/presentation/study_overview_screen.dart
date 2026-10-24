@@ -5,7 +5,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/utils/formatting.dart';
 import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -13,9 +12,6 @@ import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../../shared/widgets/stat_tile.dart';
 import '../../auth/presentation/sign_out_button.dart';
-import '../../exercises/domain/patient_activity.dart';
-import '../../settings/presentation/controllers/study_settings_controller.dart';
-import '../../study/domain/participant_status.dart';
 import '../../therapist/domain/participant_summary.dart';
 import '../domain/study_overview.dart';
 import 'controllers/admin_controllers.dart';
@@ -28,11 +24,6 @@ class StudyOverviewScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final overview = ref.watch(studyOverviewProvider);
     final participants = ref.watch(studyParticipantsProvider).value ?? const [];
-    final threshold = ref
-        .watch(studySettingsProvider)
-        .value
-        ?.adherenceThreshold;
-    final thresholdLabel = formatPercent(threshold);
 
     return Scaffold(
       appBar: AppBar(actions: const [SignOutButton()]),
@@ -42,15 +33,7 @@ class StudyOverviewScreen extends ConsumerWidget {
           children: [
             const _OverviewHeader(),
             const SizedBox(height: AppSpacing.xl),
-            _HeadlineStats(overview: overview, thresholdLabel: thresholdLabel),
-            const SizedBox(height: AppSpacing.xl),
-            SectionLabel(l10n.statusMatrix),
-            _StatusMatrix(counts: overview.statusCounts),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              l10n.statusMatrixNote(thresholdLabel),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            _HeadlineStats(overview: overview),
             const SizedBox(height: AppSpacing.xl),
             SectionLabel(l10n.participantsSection),
             if (participants.isEmpty)
@@ -94,10 +77,9 @@ class _OverviewHeader extends StatelessWidget {
 }
 
 class _HeadlineStats extends StatelessWidget {
-  const _HeadlineStats({required this.overview, required this.thresholdLabel});
+  const _HeadlineStats({required this.overview});
 
   final StudyOverview overview;
-  final String thresholdLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +88,7 @@ class _HeadlineStats extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          flex: 4,
+          flex: 5,
           child: StatTile(
             icon: LucideIcons.userPlus,
             label: l10n.enrolled,
@@ -116,78 +98,14 @@ class _HeadlineStats extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
-          flex: 7,
+          flex: 6,
           child: StatTile(
-            icon: LucideIcons.chartColumn,
-            label: l10n.overallAdherence,
-            value: formatPercent(overview.overallAdherence),
-            caption: l10n.overallAdherenceCaption(
-              recentDays,
-              overview.lowAdherence,
-              thresholdLabel,
-            ),
+            icon: LucideIcons.audioLines,
+            label: l10n.navVoiceSamples,
+            value: '${overview.voiceSamples}',
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StatusMatrix extends StatelessWidget {
-  const _StatusMatrix({required this.counts});
-
-  final Map<ParticipantStatus, int> counts;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: Column(
-        children: [
-          for (final status in ParticipantStatus.values)
-            _StatusRow(status: status, count: counts[status] ?? 0),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusRow extends StatelessWidget {
-  const _StatusRow({required this.status, required this.count});
-
-  final ParticipantStatus status;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final text = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.statusLabel(status), style: text.titleSmall),
-                Text(l10n.statusAction(status), style: text.bodySmall),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Text(
-            '$count',
-            style: AppTypography.monoLarge.copyWith(
-              color: count == 0 ? AppColors.muted : AppColors.ink,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -199,7 +117,6 @@ class _ParticipantRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final text = Theme.of(context).textTheme;
     return InkCard(
       child: Row(
@@ -209,21 +126,7 @@ class _ParticipantRow extends StatelessWidget {
             child: Text(participant.code, style: AppTypography.participantCode),
           ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.statusLabel(participant.status),
-                  style: text.titleSmall,
-                ),
-                if (participant.lowAdherence)
-                  Text(l10n.lowAdherence, style: text.bodySmall),
-              ],
-            ),
-          ),
-          Text(
-            formatPercent(participant.activity.recentRate),
-            style: text.titleMedium,
+            child: Text(participant.patient.name, style: text.titleSmall),
           ),
         ],
       ),

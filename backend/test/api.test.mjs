@@ -23,8 +23,7 @@ async function fixture(t, options = {}) {
     const data=response.headers.get('content-type')?.startsWith('application/json')?await response.json():await response.arrayBuffer();return {status:response.status,data,headers:response.headers};
   };
   const login=async account=>{const r=await call('/auth/login','POST',{email:account.email,password,client:'mobile'});assert.equal(r.status,200);return r.data.token;};
-  const addExercise=(id,approved=true)=>app.db.prepare('INSERT INTO exercise_library VALUES (?,?,?)').run(id,JSON.stringify({id,title:`Exercise ${id}`,summary:'Synthetic exercise',approvedAt:approved?now():null,archived:false}),now());
-  return {...app,dir,base,add,addExercise,call,login};
+  return {...app,dir,base,add,call,login};
 }
 
 test('authentication, pending approval, role escalation, session revocation and CSRF',async t=>{
@@ -47,45 +46,59 @@ test('authentication, pending approval, role escalation, session revocation and 
   assert.equal((await f.call('/auth/me','GET',undefined,pt)).status,401);
 });
 
-test('patient assignment isolation, consent gating, plans, idempotent progress, recording access and review',async t=>{
-  const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),patient=f.add('patient'),otherPatient=f.add('patient');
-  const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),pt=await f.login(patient),op=await f.login(otherPatient);
+test('consent with the child account, child mode, assignment isolation, plans, idempotent progress, recording access and review',async t=>{
+  const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),otherPatient=f.add('patient');
+  const parent=f.add('parent'),otherParent=f.add('parent');
+  const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),op=await f.login(otherPatient),otherParentToken=await f.login(otherParent);
+  let parentToken=await f.login(parent);
+  const consent={version:consentVersion,signerName:parent.name,signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:false}};
+  assert.equal((await f.call('/children','POST',{childName:'Test Child',consent},tt)).status,403);
+  assert.equal((await f.call('/children','POST',{childName:'Test Child',consent:{...consent,checks:{...consent.checks,adult:false}}},parentToken)).status,400);
+  assert.equal((await f.call('/children','POST',{childName:'Test Child',consent:{...consent,signaturePng:'bm90IGEgcG5n'}},parentToken)).status,400);
+  const added=await f.call('/children','POST',{childName:'Test Child',consent},parentToken);assert.equal(added.status,201);
+  assert.equal((await f.call('/children','POST',{childName:'test child',consent},parentToken)).status,409);
+  const patient=added.data.user;assert.equal(patient.role,'patient');assert.equal(patient.parent_id,parent.id);
   const patientPath=`/patients/${patient.id}`;
-  for(const id of ['humming','breathing','reading']) f.addExercise(id);
   assert.equal((await f.call(patientPath,'GET',undefined,tt)).status,403);
   assert.equal((await f.call(`${patientPath}/assignment`,'PUT',{therapistId:patient.id},at)).status,400);
   assert.equal((await f.call(`${patientPath}/assignment`,'PUT',{therapistId:therapist.id},at)).status,200);
   assert.equal((await f.call('/patients','GET',undefined,tt)).data.patients.length,1);
   assert.equal((await f.call(patientPath,'GET',undefined,ot)).status,403);
   assert.equal((await f.call(patientPath,'GET',undefined,op)).status,403);
-  const parent=f.add('parent'),otherParent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,patient.id);
-  const parentToken=await f.login(parent),otherParentToken=await f.login(otherParent);
   assert.equal((await f.call(patientPath,'GET',undefined,parentToken)).status,200);
   assert.equal((await f.call(patientPath,'GET',undefined,otherParentToken)).status,403);
-  const plan={title:'Practice plan',exercises:['humming','breathing'],sessionsPerDay:2,notes:'Synthetic test plan'};
-  assert.equal((await f.call(`${patientPath}/plans`,'POST',plan,tt)).status,409);
+  assert.equal((await f.call(`${patientPath}/child-mode`,'POST',{},otherParentToken)).status,403);
+  assert.equal((await f.call(`${patientPath}/child-mode`,'POST',{},tt)).status,403);
+  // Child mode replaces the parent's session, so only the parent's password leaves it.
+  const childMode=await f.call(`${patientPath}/child-mode`,'POST',{},parentToken);assert.equal(childMode.status,200);
+  const firstChild=childMode.data.token;assert.equal((await f.call('/auth/me','GET',undefined,firstChild)).data.user.id,patient.id);
+  assert.equal((await f.call('/auth/me','GET',undefined,parentToken)).status,401);
+  assert.equal((await f.call('/auth/end-child-mode','POST',{password:'wrong password'},firstChild)).status,403);
+  assert.equal((await f.call('/auth/end-child-mode','POST',{password},tt)).status,403);
+  const ended=await f.call('/auth/end-child-mode','POST',{password},firstChild);assert.equal(ended.status,200);assert.equal(ended.data.user.id,parent.id);
+  assert.equal((await f.call('/auth/me','GET',undefined,firstChild)).status,401);
+  parentToken=ended.data.token;assert.equal((await f.call('/auth/me','GET',undefined,parentToken)).data.user.id,parent.id);
+  const childToken=(await f.call(`${patientPath}/child-mode`,'POST',{},parentToken)).data.token;
+  for(let i=0;i<5;i++)assert.equal((await f.call('/auth/end-child-mode','POST',{password:'wrong password'},childToken)).status,403);
+  assert.equal((await f.call('/auth/end-child-mode','POST',{password},childToken)).status,429);
+  parentToken=await f.login(parent);
+  const pt=childToken;
+  const plan={title:'Practice plan',exercises:['motor-lines','motor-shapes'],sessionsPerDay:1,notes:'Synthetic test plan'};
   const forms={age:30,demographic:'Synthetic demographic data',clinical:'Synthetic clinical data'};
-  assert.equal((await f.call(`${patientPath}/forms`,'PUT',forms,tt)).status,409);
-  const consent={version:consentVersion,signerName:parent.name,signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:false}};
-  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,pt)).status,403);
-  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,otherParentToken)).status,403);
-  assert.equal((await f.call(`${patientPath}/consent`,'POST',{...consent,checks:{...consent.checks,adult:false}},parentToken)).status,400);
-  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,parentToken)).status,201);
-  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,parentToken)).status,409);
   assert.equal((await f.call(patientPath,'GET',undefined,tt)).data.consent.status,'approved');
   assert.equal((await f.call(`${patientPath}/forms`,'PUT',forms,tt)).status,200);
   assert.equal((await f.call(patientPath,'GET',undefined,pt)).data.forms,null);
   assert.equal((await f.call(patientPath,'GET',undefined,parentToken)).data.forms,null);
   assert.equal((await f.call(`${patientPath}/plans`,'POST',{...plan,exercises:['invented']},tt)).status,400);
   const created=await f.call(`${patientPath}/plans`,'POST',plan,tt);assert.equal(created.status,201);
-  const progress={id:randomUUID(),planId:created.data.plan.id,exerciseId:'humming',minutes:5,completedAt:now()};
+  const progress={id:randomUUID(),planId:created.data.plan.id,exerciseId:'motor-lines',minutes:5,completedAt:now()};
   assert.equal((await f.call(`${patientPath}/progress`,'POST',progress,pt)).status,200);
   assert.equal((await f.call(`${patientPath}/progress`,'POST',progress,pt)).status,200);
   assert.equal((await f.call(`${patientPath}/progress`,'POST',{...progress,minutes:10},pt)).status,409);
   assert.equal((await f.call(patientPath,'GET',undefined,pt)).data.progress.length,1);
   assert.equal((await f.call(`${patientPath}/progress`,'POST',{...progress,id:randomUUID(),completedAt:'2099-01-01T00:00:00Z'},pt)).status,400);
   const wav=Buffer.alloc(100);wav.write('RIFF');wav.writeUInt32LE(92,4);wav.write('WAVE',8);wav.write('fmt ',12);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(44100,24);wav.writeUInt32LE(88200,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(56,40);
-  const recording={id:randomUUID(),planId:created.data.plan.id,exerciseId:'humming',durationSeconds:1,audio:wav.toString('base64')};
+  const recording={id:randomUUID(),planId:created.data.plan.id,exerciseId:'motor-lines',durationSeconds:1,audio:wav.toString('base64')};
   assert.equal((await f.call(`${patientPath}/recordings`,'POST',{...recording,audio:'bm90IGF1ZGlv'},pt)).status,400);
   assert.equal((await f.call(`${patientPath}/recordings`,'POST',recording,pt)).status,201);
   assert.equal((await f.call(`${patientPath}/recordings`,'POST',recording,pt)).status,200);
@@ -116,7 +129,7 @@ test('registration normalization, duplicate email, password changes and rate lim
   assert.equal((await f.call('/auth/login','POST',{email:'unknown@example.test',password:'incorrect'})).status,429);
 });
 
-test('therapist code links a parent, and the parent code sets up a child device',async t=>{
+test('therapist code links a parent, whose child joins their caseload',async t=>{
   const f=await fixture(t);const admin=f.add('admin');const at=await f.login(admin);
   const therapist=(await f.call('/users','POST',{role:'therapist',name:'Code Therapist',email:'code.therapist@test.example',clinic:'Clinic',registration:'REG-2',password},at)).data.user;
   assert.match(therapist.link_code,/^[A-HJ-NP-Z2-9]{6}$/);
@@ -124,19 +137,18 @@ test('therapist code links a parent, and the parent code sets up a child device'
   assert.equal((await f.call('/auth/register','POST',parentDetails)).status,400);
   assert.equal((await f.call('/auth/register','POST',{...parentDetails,therapistCode:'NOPE22'})).status,400);
   const parent=(await f.call('/auth/register','POST',{...parentDetails,therapistCode:therapist.link_code.toLowerCase()})).data.user;
-  assert.equal(parent.therapist_id,therapist.id);assert.equal(parent.status,'active');assert.notEqual(parent.link_code,therapist.link_code);
-  assert.equal((await f.call('/auth/child','POST',{parentCode:therapist.link_code,childName:'Kid'})).status,400);
-  assert.equal((await f.call('/auth/child','POST',{parentCode:parent.link_code,childName:''})).status,400);
-  const setup=await f.call('/auth/child','POST',{parentCode:` ${parent.link_code.slice(0,3)}-${parent.link_code.slice(3)} `,childName:'Kid'});
-  assert.equal(setup.status,201);
-  const child=setup.data.user;assert.equal(child.role,'patient');assert.equal(child.parent_id,parent.id);assert.equal(child.therapist_id,therapist.id);assert.equal(child.link_code,null);
-  assert.equal((await f.call('/auth/me','GET',undefined,setup.data.token)).data.user.id,child.id);
-  const again=await f.call('/auth/child','POST',{parentCode:parent.link_code,childName:'kid'});
-  assert.equal(again.status,200);assert.equal(again.data.user.id,child.id);
+  assert.equal(parent.therapist_id,therapist.id);assert.equal(parent.status,'active');
+  assert.equal((await f.call('/auth/child','POST',{parentCode:parent.link_code,childName:'Kid'})).status,401);
   const pt=await f.login({email:parentDetails.email}),tt=await f.login({email:therapist.email});
+  const consent={version:consentVersion,signerName:'Code Parent',signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:true}};
+  assert.equal((await f.call('/children','POST',{childName:'',consent},pt)).status,400);
+  const child=(await f.call('/children','POST',{childName:'Kid',consent},pt)).data.user;
+  assert.equal(child.therapist_id,therapist.id);assert.equal(child.link_code,null);assert.match(child.participant_code,/^P\d{3}$/);
   assert.deepEqual((await f.call('/patients','GET',undefined,pt)).data.patients.map(p=>p.id),[child.id]);
   assert.equal((await f.call('/patients','GET',undefined,tt)).data.patients[0].parent_name,'Code Parent');
-  const names=(await f.call('/directory','GET',undefined,setup.data.token)).data.users.map(u=>u.role).sort();
+  assert.equal((await f.call(`/patients/${child.id}`,'GET',undefined,tt)).data.consent.status,'approved');
+  const childToken=(await f.call(`/patients/${child.id}/child-mode`,'POST',{},pt)).data.token;
+  const names=(await f.call('/directory','GET',undefined,childToken)).data.users.map(u=>u.role).sort();
   assert.deepEqual(names,['parent','patient','therapist']);
 });
 
@@ -184,39 +196,11 @@ test('administrator-created therapists start approved, self-registered ones wait
   assert.equal(registered.data.user.status, 'pending');
 });
 
-test('exercise library, assignments, completions and voice samples follow role and assignment rules',async t=>{
+test('voice samples follow role and assignment rules',async t=>{
   const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),patient=f.add('patient'),stranger=f.add('patient');
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,patient.id);
   const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),pt=await f.login(patient),st=await f.login(stranger);
-  const exercise={id:'ex-one',title:'First exercise',summary:'Synthetic',approvedAt:now(),archived:false};
-  assert.equal((await f.call('/library/ex-one','PUT',exercise,tt)).status,403);
-  assert.equal((await f.call('/library/ex-one','PUT',exercise,at)).status,200);
-  assert.equal((await f.call('/library/ex-pending','PUT',{...exercise,id:'ex-pending',approvedAt:null},at)).status,200);
-  assert.equal((await f.call('/library','GET',undefined,pt)).data.exercises.length,2);
-  assert.equal((await f.call('/library/ex-one','PUT',{...exercise,id:'other'},at)).status,400);
-
   const base=`/patients/${patient.id}`;
-  const assignment={id:'sched-1',patientId:patient.id,exerciseId:'ex-one',weekdays:[1,2,3]};
-  assert.equal((await f.call(`${base}/assignments/sched-1`,'PUT',assignment,pt)).status,403);
-  assert.equal((await f.call(`${base}/assignments/sched-1`,'PUT',assignment,ot)).status,403);
-  assert.equal((await f.call(`${base}/assignments/sched-1`,'PUT',{...assignment,exerciseId:'ex-pending'},tt)).status,400);
-  assert.equal((await f.call(`${base}/assignments/sched-1`,'PUT',assignment,tt)).status,200);
-  assert.equal((await f.call(`${base}/assignments`,'GET',undefined,pt)).data.assignments.length,1);
-  assert.equal((await f.call(`${base}/assignments`,'GET',undefined,st)).status,403);
-  assert.equal((await f.call('/assignments','GET',undefined,tt)).status,403);
-  assert.equal((await f.call('/assignments','GET',undefined,at)).data.assignments.length,1);
-
-  const done={exerciseId:'ex-one',day:'2026-05-04',completedAt:'2026-05-04T09:00:00.000Z'};
-  assert.equal((await f.call(`${base}/completions/c1`,'PUT',done,tt)).status,403);
-  assert.equal((await f.call(`${base}/completions/c1`,'PUT',done,pt)).status,200);
-  assert.equal((await f.call(`${base}/completions/c1`,'PUT',done,pt)).status,200);
-  assert.equal((await f.call(`${base}/completions/c2`,'PUT',{...done,exerciseId:'missing'},pt)).status,400);
-  const listed=await f.call(`${base}/completions?from=2026-05-01&to=2026-05-31`,'GET',undefined,tt);
-  assert.deepEqual(listed.data.completions.map(c=>c.id),['c1']);
-  assert.equal((await f.call(`${base}/completions?from=2026-06-01&to=2026-06-30`,'GET',undefined,tt)).data.completions.length,0);
-  assert.equal((await f.call(`${base}/completions/c1`,'DELETE',undefined,pt)).status,200);
-  assert.equal((await f.call(`${base}/completions`,'GET',undefined,pt)).data.completions.length,0);
-
   const wav=Buffer.concat([Buffer.from('RIFF'),Buffer.alloc(4),Buffer.from('WAVE'),Buffer.alloc(40)]).toString('base64');
   const meta={id:'rec-1',patientId:patient.id,kind:'practice',filePath:'/device/path.wav.vpa'};
   assert.equal((await f.call(`${base}/samples/rec-1`,'PUT',{meta,audio:Buffer.from('not audio').toString('base64')},pt)).status,400);
@@ -242,21 +226,11 @@ test('patients get sequential participant codes and administrators can assign a 
   assert.equal((await f.call('/users','POST',{role:'patient',name:'Bad',email:'bad.assign@test.example',password,therapistId:made.data.user.id},at)).status,400);
 });
 
-test('diary entries, usage events and study settings follow role rules',async t=>{
-  const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),patient=f.add('patient'),stranger=f.add('patient');
+test('usage events and study settings follow role rules',async t=>{
+  const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist'),patient=f.add('patient'),stranger=f.add('patient');
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,patient.id);
-  const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),pt=await f.login(patient),st=await f.login(stranger);
+  const at=await f.login(admin),tt=await f.login(therapist),pt=await f.login(patient),st=await f.login(stranger);
   const base=`/patients/${patient.id}`;
-  const entry={id:'d1',patientId:patient.id,day:'2026-05-04T00:00:00.000',fatigue:3};
-  assert.equal((await f.call(`${base}/diary/d1`,'PUT',entry,tt)).status,403);
-  assert.equal((await f.call(`${base}/diary/d1`,'PUT',{...entry,patientId:stranger.id},pt)).status,400);
-  assert.equal((await f.call(`${base}/diary/d1`,'PUT',entry,pt)).status,200);
-  assert.equal((await f.call(`${base}/diary`,'GET',undefined,tt)).data.entries.length,1);
-  assert.equal((await f.call(`${base}/diary`,'GET',undefined,ot)).status,403);
-  assert.equal((await f.call('/diary','GET',undefined,at)).data.entries.length,1);
-  assert.equal((await f.call(`${base}/diary/d1`,'DELETE',undefined,pt)).status,200);
-  assert.equal((await f.call(`${base}/diary`,'GET',undefined,tt)).data.entries.length,0);
-
   const event={patientId:patient.id,at:'2026-05-04T09:00:00.000Z',action:'signIn',detail:''};
   assert.equal((await f.call(`${base}/usage`,'POST',event,tt)).status,403);
   assert.equal((await f.call(`${base}/usage`,'POST',{...event,at:'not a time'},pt)).status,400);
@@ -266,9 +240,9 @@ test('diary entries, usage events and study settings follow role rules',async t=
   assert.equal((await f.call('/usage','GET',undefined,at)).data.events.length,1);
 
   assert.equal((await f.call('/study-settings','GET',undefined,pt)).data.settings,null);
-  assert.equal((await f.call('/study-settings','PUT',{adherenceThreshold:0.7},tt)).status,403);
-  assert.equal((await f.call('/study-settings','PUT',{adherenceThreshold:0.7},at)).status,200);
-  assert.equal((await f.call('/study-settings','GET',undefined,tt)).data.settings.adherenceThreshold,0.7);
+  assert.equal((await f.call('/study-settings','PUT',{probeIntervalDays:5},tt)).status,403);
+  assert.equal((await f.call('/study-settings','PUT',{probeIntervalDays:5},at)).status,200);
+  assert.equal((await f.call('/study-settings','GET',undefined,tt)).data.settings.probeIntervalDays,5);
 });
 
 test('useful words preserve exact audio, encrypt payloads and isolate paired accounts with retry and ML failure', async t => {
@@ -290,7 +264,7 @@ test('useful words preserve exact audio, encrypt payloads and isolate paired acc
   assert.equal((await f.call(`${path}/attempts`,'POST',payload,ct)).status,409);
   const parent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,child.id);
   const parentToken=await f.login(parent);
-  assert.equal((await f.call(`/patients/${child.id}/consent`,'POST',{version:consentVersion,signerName:'Guardian Example',signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:false}},parentToken)).status,201);
+  f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian Example',png,JSON.stringify({adult:true,participation:true,dataSharing:true,analysis:false}),'approved',now());
   assert.equal((await f.call(path,'GET',undefined,parentToken)).data.consent,true);
   assert.equal((await f.call(`${path}/attempts`,'POST',payload,tt)).status,403);
   assert.equal((await f.call(`${path}/attempts`,'POST',payload,parentToken)).status,403);
@@ -357,7 +331,7 @@ test('child motor practice: consent, photo integrity, real analysis seam, review
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(priorConsent,patient.id,'CONNECTED-DEMO-1','Earlier signer',png,JSON.stringify({analysis:true}),'approved',now());
   assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,409);
   const parent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,patient.id);
-  await f.call(`${path}/consent`,'POST',{version:consentVersion,signerName:'Synthetic Parent',signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:true}},await f.login(parent));
+  f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),patient.id,consentVersion,'Synthetic Parent',png,JSON.stringify({adult:true,participation:true,dataSharing:true,analysis:true}),'approved',now());
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM consents WHERE patient_id=?').get(patient.id).n,2);
   const plan=await f.call(`${path}/plans`,'POST',{title:'Daily little practice',exercises:['motor-lines','motor-shapes','motor-letter'],sessionsPerDay:1,notes:'Rest when tired'},tt);
   assert.equal(plan.status,201);payload.planId=plan.data.plan.id;

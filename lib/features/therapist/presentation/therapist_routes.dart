@@ -9,8 +9,6 @@ import '../../auth/presentation/signed_in_gate.dart';
 import '../../motor/presentation/therapist_drawing_screen.dart';
 import '../../usage/presentation/usage_log_screen.dart';
 import '../../useful_words/presentation/word_screens.dart';
-import 'assignment_editor_screen.dart';
-import 'participant_adherence_screen.dart';
 import 'participant_detail_screen.dart';
 import 'participants_screen.dart';
 import 'therapist_dashboard_screen.dart';
@@ -58,19 +56,6 @@ final therapistRoutes = StatefulShellRoute.indexedStack(
                 patientId: state.pathParameters['patientId']!,
               ),
               routes: [
-                GoRoute(
-                  path: 'assign',
-                  builder: (context, state) => AssignmentEditorScreen(
-                    patientId: state.pathParameters['patientId']!,
-                    scheduleId: state.uri.queryParameters['schedule'],
-                  ),
-                ),
-                GoRoute(
-                  path: 'adherence',
-                  builder: (context, state) => ParticipantAdherenceScreen(
-                    patientId: state.pathParameters['patientId']!,
-                  ),
-                ),
                 GoRoute(
                   path: 'usage',
                   builder: (context, state) => UsageLogScreen(

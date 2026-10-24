@@ -1,17 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:intl/intl.dart';
 
 import '../../features/audit/domain/access_log.dart';
 import '../../features/capture_quality/domain/take_quality.dart';
-import '../../features/exercises/domain/exercise.dart';
-import '../../features/exercises/domain/exercise_demo.dart';
-import '../../features/exercises/domain/voice_use_entry.dart';
 import '../../features/recordings/domain/recording.dart';
-import '../../features/study/domain/participant_status.dart';
 import '../../features/usage/domain/usage_event.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../errors/app_failure.dart';
-import 'dates.dart';
 
 export '../../l10n/generated/app_localizations.dart';
 
@@ -78,70 +72,12 @@ extension RecordingText on AppLocalizations {
   };
 }
 
-/// Staff-facing text for study, library and audit enums.
+/// Staff-facing text for audit enums.
 extension StudyText on AppLocalizations {
-  String statusLabel(ParticipantStatus status) => switch (status) {
-    ParticipantStatus.onTrack => statusOnTrack,
-    ParticipantStatus.plateau => statusPlateau,
-    ParticipantStatus.adherenceProblem => statusAdherenceProblem,
-    ParticipantStatus.needsReview => statusNeedsReview,
-    ParticipantStatus.improvingDespiteLowPractice => statusImproving,
-    ParticipantStatus.awaitingProbe => statusAwaitingProbe,
-  };
-
-  String statusAction(ParticipantStatus status) => switch (status) {
-    ParticipantStatus.onTrack => statusOnTrackAction,
-    ParticipantStatus.plateau => statusPlateauAction,
-    ParticipantStatus.adherenceProblem => statusAdherenceProblemAction,
-    ParticipantStatus.needsReview => statusNeedsReviewAction,
-    ParticipantStatus.improvingDespiteLowPractice => statusImprovingAction,
-    ParticipantStatus.awaitingProbe => statusAwaitingProbeAction,
-  };
-
-  String exerciseStatusLabel(ExerciseStatus status) => switch (status) {
-    ExerciseStatus.pendingApproval => exerciseStatusPending,
-    ExerciseStatus.approved => exerciseStatusApproved,
-    ExerciseStatus.archived => exerciseStatusArchived,
-  };
-
-  String verificationLabel(VerificationType type) => switch (type) {
-    VerificationType.sustained => verifySustained,
-    VerificationType.glide => verifyGlide,
-    VerificationType.notes => verifyNotes,
-    VerificationType.loudness => verifyLoudness,
-    VerificationType.checklist => verifyChecklist,
-    VerificationType.voiceDiary => verifyVoiceDiary,
-  };
-
   String accessActionLabel(AccessAction action) => switch (action) {
     AccessAction.playback => accessPlayback,
     AccessAction.export => accessExport,
   };
-
-  /// "Every day", "Weekdays", or short day names such as "Mon, Wed, Fri".
-  String describeWeekdays(Set<int> weekdays) {
-    if (weekdays.length == 7) return everyDay;
-    if (weekdays.length == 5 && weekdays.every((d) => d <= 5)) {
-      return weekdaysOnly;
-    }
-    return (weekdays.toList()..sort()).map(shortWeekday).join(', ');
-  }
-
-  /// Short localized day name; 1 is Monday.
-  String shortWeekday(int weekday) =>
-      DateFormat.E(localeName).format(DateTime(2024, 1, weekday));
-
-  String lastActive(DateTime? lastCompletedAt) {
-    if (lastCompletedAt == null) return lastExerciseNone;
-    final days = dateOnly(
-      DateTime.now(),
-    ).difference(dateOnly(lastCompletedAt)).inDays;
-    return switch (days) {
-      0 => lastExerciseToday,
-      1 => lastExerciseYesterday,
-      _ => lastExerciseDaysAgo(days),
-    };
-  }
 }
 
 /// User-facing messages for typed failures.
@@ -167,30 +103,7 @@ extension FailureText on AppLocalizations {
     InvalidInputFailure(:final problem) => switch (problem) {
       InputProblem.emailTaken => emailTaken,
       InputProblem.therapistRequired => chooseTherapist,
-      InputProblem.exerciseNotApproved => exerciseNotApproved,
-      InputProblem.consentRequired => consentRequired,
-      InputProblem.instructionsRequired => instructionsRequired,
     },
-  };
-}
-
-/// Voice-use diary text.
-extension DiaryText on AppLocalizations {
-  String speakingTimeLabel(SpeakingTime time) => switch (time) {
-    SpeakingTime.underOneHour => speakingUnderOne,
-    SpeakingTime.oneToTwoHours => speakingOneToTwo,
-    SpeakingTime.twoToFourHours => speakingTwoToFour,
-    SpeakingTime.fourToSixHours => speakingFourToSix,
-    SpeakingTime.overSixHours => speakingOverSix,
-  };
-
-  String situationLabel(VoiceSituation situation) => switch (situation) {
-    VoiceSituation.phoneCalls => situationPhone,
-    VoiceSituation.noisyPlaces => situationNoise,
-    VoiceSituation.workSpeaking => situationWork,
-    VoiceSituation.longConversations => situationConversation,
-    VoiceSituation.singing => situationSinging,
-    VoiceSituation.other => situationOther,
   };
 }
 
@@ -205,18 +118,5 @@ extension UsageLogText on AppLocalizations {
     UsageAction.sessionUndone => usageSessionUndone,
     UsageAction.recordingSaved => usageRecordingSaved,
     UsageAction.remindersChanged => usageRemindersChanged,
-  };
-}
-
-/// Cues for guided exercise animations.
-extension ExerciseDemoText on AppLocalizations {
-  String demoCueLabel(DemoCue cue) => switch (cue) {
-    DemoCue.breatheIn => demoCueBreatheIn,
-    DemoCue.breatheOut => demoCueBreatheOut,
-  };
-
-  String demoCueHint(DemoCue cue) => switch (cue) {
-    DemoCue.breatheIn => demoCueBreatheInHint,
-    DemoCue.breatheOut => demoCueBreatheOutHint,
   };
 }

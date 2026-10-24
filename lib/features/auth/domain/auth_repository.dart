@@ -13,12 +13,13 @@ abstract interface class AuthRepository {
     required String therapistCode,
   });
 
-  /// Signs this device in as the child [childName] of the parent whose code
-  /// is [parentCode], creating the child the first time.
-  Future<User> setUpChild({
-    required String parentCode,
-    required String childName,
-  });
+  /// Hands the device to the signed-in parent's child [childId]. The
+  /// parent's own session ends, so only their password brings it back.
+  Future<User> startChildMode(String childId);
+
+  /// Returns the parent to their own account, or null when [password] is
+  /// not the parent's.
+  Future<User?> endChildMode(String password);
 
   Future<void> signOut();
 

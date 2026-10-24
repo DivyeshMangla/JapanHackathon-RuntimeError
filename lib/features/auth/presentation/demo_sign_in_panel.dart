@@ -10,8 +10,8 @@ import '../../../shared/widgets/page_list.dart';
 import '../domain/demo_accounts.dart';
 import 'controllers/auth_controller.dart';
 
-/// One tap into each seeded role, so testing the child, parent, therapist and
-/// admin areas does not need a phone per role. The welcome page shows it only
+/// One tap into each seeded role, so testing the parent (and through them
+/// child mode), therapist and admin areas does not need a phone per role. The welcome page shows it only
 /// in debug and profile builds.
 class DemoSignInPanel extends ConsumerStatefulWidget {
   const DemoSignInPanel({super.key});
@@ -31,11 +31,6 @@ class _DemoSignInPanelState extends ConsumerState<DemoSignInPanel> {
     var signedIn = true;
     final reached = await runWithFailureMessage(context, () async {
       switch (account) {
-        case DemoAccount.child:
-          await auth.setUpChild(
-            parentCode: DemoAccounts.parentCode,
-            childName: DemoAccounts.childName,
-          );
         case DemoAccount.parent:
           signedIn = await _signInWithEmail(auth, DemoAccounts.parentEmail);
         case DemoAccount.therapist:
@@ -58,7 +53,6 @@ class _DemoSignInPanelState extends ConsumerState<DemoSignInPanel> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final labels = {
-      DemoAccount.child: (LucideIcons.smile, l10n.demoSignInChild),
       DemoAccount.parent: (LucideIcons.heartHandshake, l10n.demoSignInParent),
       DemoAccount.therapist: (
         LucideIcons.stethoscope,

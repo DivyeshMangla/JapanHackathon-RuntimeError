@@ -43,111 +43,6 @@
       }
     }
   },
-  "homeToday": "Today",
-  "exercisesTitle": "Today's activities",
-  "exercisesNoneTitle": "No activities today",
-  "exercisesNoneBody": "Your therapist has not picked any activities for today. Come back tomorrow!",
-  "exerciseDosage": "{minutes} min  ·  {reps} reps  ·  {sessions, plural, =1{once a day} other{{sessions} times a day}}",
-  "@exerciseDosage": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      },
-      "reps": {
-        "type": "int"
-      },
-      "sessions": {
-        "type": "int"
-      }
-    }
-  },
-  "detailNotFoundTitle": "Exercise not found",
-  "detailNotFoundBody": "It may have been removed from the library.",
-  "detailVideoTitle": "Demonstration video",
-  "detailVideoBody": "Not included in this prototype",
-  "demoTitle": "Guided demo",
-  "demoRepetition": "Rep {current} of {total}",
-  "@demoRepetition": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "demoCountdown": "{seconds}s",
-  "@demoCountdown": {
-    "placeholders": {
-      "seconds": {
-        "type": "int"
-      }
-    }
-  },
-  "demoReady": "Ready when you are",
-  "demoReadyHint": "Lie or sit comfortably with one hand on your chest and one on your belly, then follow the figure at its pace.",
-  "demoFinished": "All repetitions done",
-  "demoFinishedHint": "Mark the session done below, or go again.",
-  "demoStart": "Start",
-  "demoPause": "Pause",
-  "demoResume": "Resume",
-  "demoAgain": "Start again",
-  "demoRestart": "Restart from the first repetition",
-  "demoCueBreatheIn": "Breathe in",
-  "demoCueBreatheInHint": "Through your nose. Let the hand on your belly rise while the hand on your chest stays still.",
-  "demoCueBreatheOut": "Breathe out",
-  "demoCueBreatheOutHint": "Slowly and gently. Let your belly fall without pushing the air out.",
-  "demoVoiceMute": "Mute voice cues",
-  "demoVoiceUnmute": "Turn on voice cues",
-  "demoBreathingFigure": "Animated figure lying on a mat with knees bent, one hand on the chest and one on the belly. The belly hand rises and falls while the chest hand stays still.",
-  "detailSteps": "Steps",
-  "detailTargets": "Your targets",
-  "targetDuration": "Hold for {seconds} seconds",
-  "@targetDuration": {
-    "placeholders": {
-      "seconds": {
-        "type": "String"
-      }
-    }
-  },
-  "targetPitch": "Stay near {hz} Hz",
-  "@targetPitch": {
-    "placeholders": {
-      "hz": {
-        "type": "String"
-      }
-    }
-  },
-  "targetTolerance": "Within {cents} cents of the note",
-  "@targetTolerance": {
-    "placeholders": {
-      "cents": {
-        "type": "String"
-      }
-    }
-  },
-  "targetRange": "Cover {semitones} semitones",
-  "@targetRange": {
-    "placeholders": {
-      "semitones": {
-        "type": "String"
-      }
-    }
-  },
-  "detailSessionsToday": "{done} of {due} sessions done today",
-  "@detailSessionsToday": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "due": {
-        "type": "int"
-      }
-    }
-  },
-  "detailMarkSession": "Mark session done",
-  "detailUndoSession": "Undo last session",
   "recordInputLevel": "Input level",
   "readingPassage": "Every morning the baker on our street opens the shop before the sun is up. She lights the oven, weighs the flour, and sets a row of bowls along the counter. By the time the first buses pass, the windows are fogged with warm air and the smell of bread has reached the corner. People who walk by often slow down, and a few of them cannot help stepping inside.",
   "kindPractice": "Practice",
@@ -188,14 +83,6 @@
   "taskVowelUHow": "Say \"oo\" steadily for about 3 seconds.",
   "taskPitchGlide": "Pitch glide",
   "taskPitchGlideHow": "On \"ee\", slide smoothly from your lowest note to your highest and back down.",
-  "progressLast14": "Last 14 days",
-  "progressRateCaption": "of prescribed sessions done",
-  "progressStreak": "Streak",
-  "progressDays": "days",
-  "rangeDaily": "Daily, 14 days",
-  "rangeWeekly": "Weekly, 8 weeks",
-  "showTable": "Show as table",
-  "hideTable": "Hide table",
   "weekOf": "Week of {date}",
   "@weekOf": {
     "placeholders": {
@@ -204,34 +91,6 @@
       }
     }
   },
-  "restDay": "Rest day",
-  "chartNothing": "Nothing scheduled",
-  "chartDone": "{done} of {due} sessions  ·  {percent}",
-  "@chartDone": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "due": {
-        "type": "int"
-      },
-      "percent": {
-        "type": "String"
-      }
-    }
-  },
-  "chartSemantics": "Completion chart. {period}: {detail}",
-  "@chartSemantics": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      },
-      "detail": {
-        "type": "String"
-      }
-    }
-  },
-  "profileHistory": "Practice history",
   "profileEditReminder": "Edit reminder",
   "profileNoReminders": "No reminders set. Add a time and Melo will nudge you each day.",
   "profileAddReminder": "Add reminder time",
@@ -242,45 +101,14 @@
   "save": "Save",
   "saving": "Saving",
   "filterAll": "All",
-  "exampleHint": "e.g. {value}",
-  "@exampleHint": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
   "invalidNumber": "Enter a number, or leave this empty.",
   "fieldRequired": "Fill in this field.",
   "wholeNumberRequired": "Enter a whole number from 1.",
-  "everyDay": "Every day",
-  "weekdaysOnly": "Weekdays",
   "navOverview": "Overview",
   "navParticipants": "Participants",
   "navVoiceSamples": "Voice samples",
   "navPeople": "People",
-  "navLibrary": "Library",
   "navSettings": "Settings",
-  "statusOnTrack": "On track",
-  "statusOnTrackAction": "Continue plan",
-  "statusPlateau": "Plateau",
-  "statusPlateauAction": "Review exercise selection or dosage",
-  "statusAdherenceProblem": "Adherence problem",
-  "statusAdherenceProblemAction": "Address practice barriers",
-  "statusNeedsReview": "Needs review",
-  "statusNeedsReviewAction": "Clinical check",
-  "statusImproving": "Improving despite low practice",
-  "statusImprovingAction": "Note for interpretation; may reflect in-clinic therapy",
-  "statusAwaitingProbe": "Awaiting probe analysis",
-  "statusAwaitingProbeAction": "No probe rating yet; voice analysis is not implemented",
-  "exerciseStatusPending": "Pending approval",
-  "exerciseStatusApproved": "Approved",
-  "exerciseStatusArchived": "Archived",
-  "verifySustained": "Sustained tone",
-  "verifyGlide": "Pitch glide",
-  "verifyNotes": "Sustained notes",
-  "verifyLoudness": "Loudness band",
-  "verifyChecklist": "Checklist only",
   "analysisPending": "Analysis pending",
   "accessPlayback": "Played recording",
   "accessExport": "Exported data",
@@ -293,51 +121,9 @@
       }
     }
   },
-  "caseloadAdherence": "Caseload adherence",
-  "prescribedSessionsWindow": "of prescribed sessions, last {days} days",
-  "@prescribedSessionsWindow": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "needsAttention": "Needs attention",
-  "allOnTrack": "Everyone on your caseload is on track.",
-  "flagRule": "Flagged when under {percent} of prescribed sessions are done over the last {days} days. A research admin sets this threshold.",
-  "@flagRule": {
-    "placeholders": {
-      "percent": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
   "latestRecordings": "Latest recordings",
   "noRecordingsYet": "No recordings yet.",
   "allVoiceSamples": "All voice samples",
-  "lowAdherence": "Low adherence",
-  "windowDays": "{days} days",
-  "@windowDays": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "lastExerciseNone": "No exercises done recently",
-  "lastExerciseToday": "Last exercise today",
-  "lastExerciseYesterday": "Last exercise yesterday",
-  "lastExerciseDaysAgo": "Last exercise {days} days ago",
-  "@lastExerciseDaysAgo": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  },
   "participantsTitle": "Participants",
   "searchLabel": "Search",
   "searchHint": "Name or participant code",
@@ -363,7 +149,6 @@
       }
     }
   },
-  "statusTitle": "Status",
   "samplesTitle": "Samples",
   "probesComplete": "Probes complete",
   "nextProbeOn": "Next probe {date}",
@@ -371,48 +156,6 @@
     "placeholders": {
       "date": {
         "type": "String"
-      }
-    }
-  },
-  "adherenceOverTime": "Adherence over time",
-  "assignedExercises": "Assigned exercises",
-  "noAssignments": "No exercises assigned yet.",
-  "assignExercise": "Assign exercise",
-  "assignmentSummary": "{weekdays}  ·  {sessions, plural, =1{once a day} other{{sessions} times a day}}  ·  {reps} reps",
-  "@assignmentSummary": {
-    "placeholders": {
-      "weekdays": {
-        "type": "String"
-      },
-      "sessions": {
-        "type": "int"
-      },
-      "reps": {
-        "type": "int"
-      }
-    }
-  },
-  "adherenceTitle": "Adherence",
-  "last7Days": "Last 7 days",
-  "byExerciseWindow": "By exercise, last {days} days",
-  "@byExerciseWindow": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "exerciseSessions": "{weekdays}  ·  {done} of {due} sessions",
-  "@exerciseSessions": {
-    "placeholders": {
-      "weekdays": {
-        "type": "String"
-      },
-      "done": {
-        "type": "int"
-      },
-      "due": {
-        "type": "int"
       }
     }
   },
@@ -433,41 +176,6 @@
   },
   "noMatchingRecordingsTitle": "No matching recordings",
   "noMatchingRecordingsBody": "Try a different participant, task or type.",
-  "editAssignmentTitle": "Edit assignment",
-  "allApprovedAssigned": "Every approved exercise is already assigned to this participant. New exercises need admin approval first.",
-  "daysSection": "Days",
-  "dosageSection": "Dosage",
-  "sessionsPerDayField": "Sessions per day",
-  "repsPerSessionField": "Repetitions per session",
-  "targetsSection": "Targets: {type}",
-  "@targetsSection": {
-    "placeholders": {
-      "type": {
-        "type": "String"
-      }
-    }
-  },
-  "assignAction": "Assign",
-  "saveChanges": "Save changes",
-  "endAssignment": "End assignment",
-  "endAssignmentTitle": "End this assignment?",
-  "endAssignmentBody": "{exercise} will no longer be due from today. Past adherence for it is kept.",
-  "@endAssignmentBody": {
-    "placeholders": {
-      "exercise": {
-        "type": "String"
-      }
-    }
-  },
-  "changesFromToday": "Changes apply from today. Earlier days keep the dosage that was in force at the time.",
-  "targetDurationField": "Target duration (seconds)",
-  "targetPitchField": "Target pitch (Hz)",
-  "targetToleranceField": "Tolerance (cents)",
-  "targetRangeField": "Range to cover (semitones)",
-  "loudnessUnavailable": "Loudness bands need a calibrated microphone, so no target is set in this prototype.",
-  "checklistNoTarget": "Checklist exercises have no measurable target.",
-  "decrease": "Fewer",
-  "increase": "More",
   "studyOverviewEyebrow": "Study overview",
   "studyName": "Melo pilot",
   "enrolled": "Enrolled",
@@ -476,30 +184,6 @@
     "placeholders": {
       "count": {
         "type": "int"
-      }
-    }
-  },
-  "overallAdherence": "Overall adherence",
-  "overallAdherenceCaption": "of prescribed sessions, last {days} days. {count} below {percent}.",
-  "@overallAdherenceCaption": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      },
-      "count": {
-        "type": "int"
-      },
-      "percent": {
-        "type": "String"
-      }
-    }
-  },
-  "statusMatrix": "Status matrix",
-  "statusMatrixNote": "Status combines adherence (high at or above {percent}) with the latest probe rating. Voice analysis is not implemented, so no probe has a rating and every participant is awaiting probe analysis.",
-  "@statusMatrixNote": {
-    "placeholders": {
-      "percent": {
-        "type": "String"
       }
     }
   },
@@ -558,95 +242,8 @@
   },
   "emailTaken": "An account with that email exists.",
   "chooseTherapist": "Choose a therapist for the parent.",
-  "libraryTitle": "Exercise library",
-  "filterAllCount": "All ({count})",
-  "@filterAllCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "statusCount": "{status} ({count})",
-  "@statusCount": {
-    "placeholders": {
-      "status": {
-        "type": "String"
-      },
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "newExercise": "New exercise",
-  "noExercisesTitle": "No exercises",
-  "noExercisesBody": "Nothing in the library matches this filter.",
-  "exerciseTitle": "Exercise",
-  "approvedOnBy": "Approved {date} by {name}",
-  "@approvedOnBy": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      },
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "fieldName": "Name",
-  "fieldProgram": "Program",
-  "programHint": "e.g. Vocal Function Exercises",
-  "fieldSummary": "Summary",
-  "fieldSteps": "Steps, one per line",
-  "fieldMinutes": "Minutes",
-  "fieldReps": "Reps",
-  "fieldPerDay": "Per day",
-  "verificationSection": "Verification type",
-  "defaultDurationField": "Default duration (seconds)",
-  "defaultPitchField": "Default pitch (Hz)",
-  "defaultToleranceField": "Default tolerance (cents)",
-  "defaultRangeField": "Default range (semitones)",
-  "evidenceField": "Evidence source",
-  "evidenceHint": "Reference key, e.g. research doc 18.2",
-  "approvalWithdrawnNote": "Saving changes withdraws approval. Current assignments keep working, but the exercise cannot be assigned again until it is re-approved.",
-  "approveForAssignment": "Approve for assignment",
-  "archive": "Archive",
   "restore": "Restore",
-  "savedPendingApproval": "Saved. {title} is pending approval.",
-  "@savedPendingApproval": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "exerciseApprovedToast": "{title} approved",
-  "@exerciseApprovedToast": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "exerciseArchivedToast": "{title} archived",
-  "@exerciseArchivedToast": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "exerciseRestoredToast": "{title} restored",
-  "@exerciseRestoredToast": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
   "settingsTitle": "Settings",
-  "adherenceThresholdSection": "Adherence threshold",
-  "adherenceThresholdHelp": "Patients below this share of prescribed sessions over 14 days are flagged, and count as low adherence in the status matrix. The research protocol suggests 80% until the expert panel confirms it.",
   "probeScheduleSection": "Probe schedule",
   "probeEvery": "After the baseline, one probe every",
   "probeWeekly": "Week",
@@ -665,8 +262,6 @@
   "settingsSaved": "Settings saved",
   "exportSection": "Export data",
   "exportHelp": "CSV files that identify participants by code only, with no names, emails or audio. Free-text answers are included as written. Each export is recorded in the access log.",
-  "exportCompletions": "Completions",
-  "exportAssignments": "Assignments",
   "exportRecordings": "Recording metadata",
   "exportSaveTitle": "Save {file}",
   "@exportSaveTitle": {
@@ -705,7 +300,6 @@
   "failureRecording": "The recording could not be saved. Please try again.",
   "failurePlayback": "This recording could not be played.",
   "failureReminder": "Reminders could not be scheduled. Check notification settings and try again.",
-  "exerciseNotApproved": "This exercise needs approval before it can be assigned.",
   "failureSensor": "A sensor could not be started on this device.",
   "startupFailed": "Melo could not start. Check the server address and this phone's secure storage, then restart the app.",
   "failureOffline": "Cannot reach the care service. Check your connection and try again.",
@@ -715,7 +309,6 @@
   "failureRejected": "The care service did not accept this request.",
   "sensorCheckOpen": "Sensor check (debug)",
   "demoSignInTitle": "Demo sign-in (debug)",
-  "demoSignInChild": "Child: Ananya",
   "demoSignInParent": "Parent",
   "demoSignInTherapist": "Therapist: Meera",
   "demoSignInAdmin": "Administrator",
@@ -962,7 +555,6 @@
     }
   },
   "clearLabel": "Clear",
-  "consentRequired": "Confirm that the information sheet was given and enter the date the consent form was signed.",
   "usageSignIn": "Signed in",
   "usageSignOut": "Signed out",
   "usageExerciseOpened": "Opened exercise instructions",
@@ -972,7 +564,6 @@
   "usageRecordingSaved": "Saved a recording",
   "usageRemindersChanged": "Changed reminders",
   "chooseDate": "Choose a date",
-  "answerRequired": "Answer this question.",
   "usageLogTitle": "Usage log",
   "usageEmptyTitle": "No app use recorded",
   "usageEmptyBody": "Sign-ins, exercise views, completed sessions, recordings and questionnaires appear here as the participant uses the app.",
@@ -987,203 +578,6 @@
     }
   },
   "exportUsageLog": "Application usage log",
-  "verifyVoiceDiary": "Voice-use diary",
-  "voiceDiaryNoTarget": "No targets. The patient completes each session by filling in the voice-use diary: speaking time, vocal fatigue and situations that increased effort.",
-  "cautionTitle": "Caution",
-  "cautionShort": "Caution applies",
-  "therapistInstructions": "Your therapist's instructions",
-  "aboutProgram": "About {program}",
-  "@aboutProgram": {
-    "placeholders": {
-      "program": {
-        "type": "String"
-      }
-    }
-  },
-  "instructionsField": "Instructions for this patient (optional)",
-  "instructionsFieldRequired": "Instructions for this patient",
-  "instructionsHint": "For example the syllables, words, water depth or care plan to use",
-  "instructionsHelp": "Shown to the patient with the exercise.",
-  "instructionsRequired": "This exercise depends on material you choose. Write the patient's instructions.",
-  "fieldProgramNote": "Program note (optional)",
-  "fieldProgramNoteHint": "The program's purpose or how it is used",
-  "fieldCaution": "Caution (optional)",
-  "fieldCautionHint": "A safety note shown to therapists and patients",
-  "fieldNeedsInstructions": "Needs instructions from the therapist",
-  "fieldNeedsInstructionsHelp": "Therapists must write per-patient instructions, such as chosen syllables or water depth, before assigning.",
-  "exportVoiceDiary": "Voice-use diary",
-  "voiceDiaryTitle": "Voice-use diary",
-  "voiceDiaryIntro": "Think about how you used your voice today. Your answers help you and your therapist spot what strains your voice.",
-  "voiceDiarySpeakingQuestion": "About how long did you speak today?",
-  "speakingUnderOne": "Under 1 hour",
-  "speakingOneToTwo": "1 to 2 hours",
-  "speakingTwoToFour": "2 to 4 hours",
-  "speakingFourToSix": "4 to 6 hours",
-  "speakingOverSix": "Over 6 hours",
-  "voiceDiaryFatigueQuestion": "How tired does your voice feel?",
-  "voiceDiaryFatigueAnchors": "0 = not tired at all, 10 = as tired as it could be",
-  "fatigueSemantic": "Vocal fatigue {value} out of 10",
-  "@fatigueSemantic": {
-    "placeholders": {
-      "value": {
-        "type": "int"
-      }
-    }
-  },
-  "voiceDiarySituationsQuestion": "What made your voice work harder today?",
-  "chooseAllThatApply": "Choose all that apply, or none.",
-  "situationPhone": "Phone calls",
-  "situationNoise": "Noisy places",
-  "situationWork": "Speaking at work",
-  "situationConversation": "Long conversations",
-  "situationSinging": "Singing",
-  "situationOther": "Something else",
-  "voiceDiaryNoteLabel": "Anything else about your voice today (optional)",
-  "voiceDiarySave": "Save diary entry",
-  "voiceDiarySaved": "Diary entry saved. Session marked as done.",
-  "voiceDiaryOpen": "Fill in today's diary",
-  "voiceDiaryNothingDueTitle": "No diary entry due",
-  "voiceDiaryNothingDueBody": "This exercise is not due today, or today's sessions are already done.",
-  "voiceDiarySummary": "Spoke {speakingTime}. Fatigue {fatigue} of 10.",
-  "@voiceDiarySummary": {
-    "placeholders": {
-      "speakingTime": {
-        "type": "String"
-      },
-      "fatigue": {
-        "type": "int"
-      }
-    }
-  },
-  "chooseExercisesHint": "Tick every exercise you want to assign. You set the days and dosage on the next step.",
-  "exercisesSelected": "{count, plural, =1{1 exercise selected} other{{count} exercises selected}}",
-  "@exercisesSelected": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "continueAction": "Continue",
-  "assigning": "Assigning",
-  "configureExercises": "{count, plural, =1{Set the dosage for 1 exercise} other{Set the dosage for {count} exercises}}",
-  "@configureExercises": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "changeSelection": "Change selection",
-  "daysApplyToAll": "These days apply to every exercise below. You can change them per exercise later.",
-  "exercisesAssigned": "{count, plural, =1{1 exercise assigned.} other{{count} exercises assigned.}}",
-  "@exercisesAssigned": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "fixFieldsFor": "Check {exercises}",
-  "@fixFieldsFor": {
-    "placeholders": {
-      "exercises": {
-        "type": "String"
-      }
-    }
-  },
-  "practiceUpNext": "Up next",
-  "practiceReady": "Ready when you are",
-  "practiceComplete": "Practice complete",
-  "practiceStart": "Start activity",
-  "practiceMarkDone": "Mark done",
-  "practiceMarkSession": "Mark session {number}",
-  "@practiceMarkSession": {
-    "placeholders": {
-      "number": {
-        "type": "int"
-      }
-    }
-  },
-  "practiceLogDiary": "Log voice use",
-  "practiceCompleted": "Completed",
-  "practiceMinutes": "{minutes} min",
-  "@practiceMinutes": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "practiceRepetitions": "{reps} reps",
-  "@practiceRepetitions": {
-    "placeholders": {
-      "reps": {
-        "type": "int"
-      }
-    }
-  },
-  "practiceSessionProgress": "{done} of {total} sessions",
-  "@practiceSessionProgress": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "practiceRemainingTime": "About {minutes} min of practice left",
-  "@practiceRemainingTime": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "practiceAllDone": "Your practice is done for today. Well done!",
-  "practiceOpenNamed": "Open {exercise}",
-  "@practiceOpenNamed": {
-    "placeholders": {
-      "exercise": {
-        "type": "String"
-      }
-    }
-  },
-  "practiceUndoNamed": "Undo session {number} for {exercise}",
-  "@practiceUndoNamed": {
-    "placeholders": {
-      "number": {
-        "type": "int"
-      },
-      "exercise": {
-        "type": "String"
-      }
-    }
-  },
-  "practiceDayStatus": "{date}: {done} of {due} sessions",
-  "@practiceDayStatus": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      },
-      "done": {
-        "type": "int"
-      },
-      "due": {
-        "type": "int"
-      }
-    }
-  },
-  "practiceDayRest": "{date}: rest day",
-  "@practiceDayRest": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "motorWatch": "Watch, then try on paper",
   "motorDemoDescription": "Writing guide with start dots. Follow the numbered instructions; replay to see each stroke in order.",
   "motorReplay": "Show me the strokes",
@@ -1246,9 +640,7 @@
   "welcomeTagline": "Little steps, every day. Guided activities for children, with their parents and therapists.",
   "welcomeQuestion": "Who is using this phone?",
   "welcomeParent": "I'm a parent",
-  "welcomeParentHint": "Join your therapist with their code and follow your child's practice.",
-  "welcomeChild": "Set up for my child",
-  "welcomeChildHint": "Use your parent code to open your child's practice activities on this device.",
+  "welcomeParentHint": "Join your therapist with their code, add your child and hand them the phone in child mode.",
   "welcomeTherapist": "I'm a therapist",
   "welcomeTherapistHint": "Sign in to see the children you look after.",
   "loginCreateParent": "Create a parent account",
@@ -1258,17 +650,8 @@
   "signUpTherapistCodeHint": "For example MEERA7",
   "signUpPasswordHint": "At least 10 characters",
   "signUpHaveAccount": "I already have an account",
-  "childSetupTitle": "Set up for my child",
-  "childSetupIntro": "Enter the parent code from your Melo Settings. This device then opens straight to your child's activities.",
-  "childSetupParentCode": "Parent code",
-  "childSetupParentCodeHint": "For example PARENT",
-  "childSetupName": "Child's first name",
-  "childSetupNameHint": "For example Ananya",
-  "childSetupNote": "Already set up on another device? Use the same name to open the same child.",
-  "childSetupSubmit": "Start",
-  "childSetupSubmitting": "Opening",
   "failureMediaUnavailable": "That file could not be opened. Try choosing it again.",
-  "failureMediaTooLarge": "That file is too large. Choose a photo up to 6 MB, a picture up to 1.5 MB or a recording up to 12 MB.",
+  "failureMediaTooLarge": "That file is too large. Choose a photo up to 20 MB, a picture up to 1.5 MB or a recording up to 12 MB.",
   "codeCopy": "Copy code",
   "codeCopied": "Code copied",
   "celebrationTitle": "Great job!",
@@ -1283,11 +666,8 @@
       }
     }
   },
-  "childActivitiesIntro": "Choose an activity. Take it at your own pace.",
   "childDrawingIntro": "Watch, then draw. Take a break whenever you need.",
   "childPrompt": "What shall we try today?",
-  "childGames": "Activities",
-  "childGamesNone": "No activities today",
   "childGamesProgress": "{done} of {due} done",
   "@childGamesProgress": {
     "placeholders": {
@@ -1303,28 +683,7 @@
   "childWordsHint": "Listen, then try it yourself",
   "childDrawing": "Drawing",
   "childDrawingHint": "Watch the dot, then draw",
-  "childStars": "{done} of {due} stars today",
-  "@childStars": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "due": {
-        "type": "int"
-      }
-    }
-  },
-  "childGameDone": "You finished {name}.",
-  "@childGameDone": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "childGrownUps": "Grown-ups: sign out",
-  "childSignOutTitle": "Sign out this device?",
-  "childSignOutBody": "Your child's activities close on this device. Use your parent code to open them again.",
+  "childGrownUps": "Grown-ups: leave child mode",
   "drawingTitle": "Drawing",
   "drawingFor": "Drawing · {name}",
   "@drawingFor": {
@@ -1338,7 +697,7 @@
   "drawingSending": "Sending",
   "drawingSent": "Your drawing is on its way to your therapist.",
   "drawingWaitingTitle": "Not yet",
-  "drawingNeedsConsent": "Ask your grown-up to sign the consent in their Melo app first.",
+  "drawingNeedsConsent": "Ask your grown-up to contact your therapist about consent.",
   "drawingNothingYet": "Your therapist has not picked any drawing activities yet.",
   "drawingDoneToday": "Photo sent today",
   "drawingChoose": "Drawing activities for this child",
@@ -1353,24 +712,10 @@
       }
     }
   },
-  "drawingTherapistNeedsConsent": "Drawing activities can be chosen once the parent has signed consent in their Melo app.",
+  "drawingTherapistNeedsConsent": "Drawing activities can be chosen once the child's consent is on file.",
   "parentHomeHeading": "Your family",
-  "parentNoChildrenTitle": "Set up your child's device",
-  "parentNoChildrenBody": "On your child's phone or tablet, open Melo, choose Set up for my child and enter your parent code.",
-  "parentShowCode": "Show my parent code",
-  "parentNothingToday": "Nothing to practise today.",
-  "parentTodayDone": "{done} of {due} activities done today",
-  "@parentTodayDone": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "due": {
-        "type": "int"
-      }
-    }
-  },
-  "parentConsentNeeded": "Sign the consent so your child's practice can reach their therapist.",
+  "parentNoChildrenTitle": "Add your child",
+  "parentNoChildrenBody": "Add your child and sign the care consent once. Then start child mode and hand them the phone.",
   "parentConsentSigned": "Consent signed on {date}",
   "@parentConsentSigned": {
     "placeholders": {
@@ -1379,30 +724,13 @@
       }
     }
   },
-  "parentConsentUnknown": "Consent could not be checked. Pull down to try again.",
-  "parentSignConsent": "Sign consent",
   "parentChildNotFoundTitle": "Child not found",
   "parentChildNotFoundBody": "This child is not linked to your account.",
-  "parentToday": "Today",
-  "parentProgress": "Progress",
-  "parentGameDone": "Done",
-  "parentGameToDo": "Still to do",
   "parentDrawingFeedback": "Drawing feedback",
   "parentNoDrawingFeedback": "No feedback from the therapist yet.",
-  "parentCodeTitle": "Your parent code",
-  "parentCodeHowTo": "On your child's device, open Melo, choose Set up for my child and enter this code with your child's first name.",
   "parentYourTherapist": "Your therapist",
   "parentReminders": "Practice reminders",
   "parentRemindersHint": "Reminders show on this phone at the times you choose.",
-  "consentTitle": "Consent",
-  "consentIntro": "You are signing for {name}.",
-  "@consentIntro": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "consentInformation": "About this practice",
   "consentUnavailable": "The consent text could not be loaded. Go back and try again.",
   "consentAdult": "I am this child's parent or legal guardian and I am 18 or older.",
@@ -1431,5 +759,45 @@
   },
   "parentsFilter": "Parents",
   "addParent": "Add parent",
-  "childrenJoinNote": "Children join from their parent's code on their own device, so there is nothing to add here."
+  "childrenJoinNote": "Children join from their parent's code on their own device, so there is nothing to add here.",
+  "addChildTitle": "Add a child",
+  "addChildIntro": "Add your child and sign the care consent. Consent is asked for only here, once for each child.",
+  "addChildName": "Child's first name",
+  "childModeStart": "Start child mode for {name}",
+  "@childModeStart": {
+    "description": "Button that hands the phone to the child.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childModeStarting": "Starting child mode",
+  "childModeStartTitle": "Hand the phone to {name}?",
+  "@childModeStartTitle": {
+    "description": "Title of the dialog confirming child mode.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childModeStartBody": "{name} will see only their words and drawing practice. To go back to your account you will need your Melo password.",
+  "@childModeStartBody": {
+    "description": "Explains that leaving child mode needs the parent's password.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childModeStartAction": "Start child mode",
+  "childModeLeaveTitle": "Leave child mode",
+  "childModeLeaveBody": "Enter your Melo password to go back to your account.",
+  "childModeParentPassword": "Your password",
+  "childModeLeaveAction": "Leave child mode",
+  "childModeChecking": "Checking",
+  "childModeWrongPassword": "That password is not right.",
+  "childModePasswordRequired": "Enter your password.",
+  "parentConsentMissing": "No consent is on file for this child. Contact your therapist."
 }

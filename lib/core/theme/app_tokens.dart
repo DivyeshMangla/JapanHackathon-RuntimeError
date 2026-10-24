@@ -23,8 +23,6 @@ abstract final class AppRadius {
 abstract final class AppSizes {
   /// Minimum touch target from the accessibility guidelines.
   static const double minTouchTarget = 48;
-  static const double progressThin = 4;
-  static const double progressThick = 6;
 
   /// Fixed column for short values (percentages, codes) so rows align.
   static const double valueColumn = 56;

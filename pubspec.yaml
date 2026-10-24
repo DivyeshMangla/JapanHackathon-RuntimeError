@@ -39,7 +39,6 @@ flutter:
   generate: true
 
   assets:
-    - assets/audio/cues/
     - assets/branding/melo-logo.png
 
   fonts:

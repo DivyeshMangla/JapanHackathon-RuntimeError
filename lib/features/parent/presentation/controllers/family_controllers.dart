@@ -43,15 +43,15 @@ final childConsentProvider = FutureProvider.family<ChildConsent?, String>(
   (ref, childId) => ref.watch(familyRepositoryProvider).consentFor(childId),
 );
 
-final consentActionsProvider = Provider<ConsentActions>(ConsentActions.new);
+final familyActionsProvider = Provider<FamilyActions>(FamilyActions.new);
 
-class ConsentActions {
-  ConsentActions(this._ref);
+class FamilyActions {
+  FamilyActions(this._ref);
 
   final Ref _ref;
 
-  Future<void> sign({
-    required String childId,
+  Future<void> addChild({
+    required String childName,
     required String signerName,
     required Set<ConsentStatement> agreed,
     required List<int> signaturePng,
@@ -59,13 +59,13 @@ class ConsentActions {
     final form = await _ref.read(consentFormProvider.future);
     await _ref
         .read(familyRepositoryProvider)
-        .signConsent(
-          childId: childId,
+        .addChild(
+          childName: childName,
           version: form.version,
           signerName: signerName,
           agreed: agreed,
           signaturePng: signaturePng,
         );
-    _ref.invalidate(childConsentProvider(childId));
+    _ref.invalidate(familyChildrenProvider);
   }
 }

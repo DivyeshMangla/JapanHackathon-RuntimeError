@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/admin/presentation/admin_routes.dart';
 import '../../features/auth/domain/user.dart';
-import '../../features/auth/presentation/child_setup_screen.dart';
 import '../../features/auth/presentation/controllers/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/parent_sign_up_screen.dart';
@@ -45,10 +44,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.parentSignUp,
         builder: (context, state) => const ParentSignUpScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.childSetup,
-        builder: (context, state) => const ChildSetupScreen(),
       ),
       GoRoute(
         path: AppRoutes.sensorCheck,

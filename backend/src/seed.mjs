@@ -2,20 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { openDatabase, now, audit, consentVersion, nextParticipantCode, newLinkCode } from './db.mjs';
 import { hashPassword } from './auth.mjs';
 
-// Fixed codes for the demo family, so the walkthrough can be typed from the README.
+// A fixed therapist code, so the parent sign-up walkthrough can be typed from the README.
 const demoTherapistCode = 'MEERA7';
-const demoParentCode = 'PARENT';
-
-const exercises = [
-  ['ex-name-it', 'Name it', 'Talking', 'Point to five things at home and say their names together.', ['Pick a room and look around together.', 'Your child points to something.', 'Say its name, then let your child try.']],
-  ['ex-copy-me', 'Copy me', 'Talking', 'Take turns copying silly sounds and faces in a mirror.', ['Sit side by side in front of a mirror.', 'Make one sound or face.', 'Your child copies it, then it is their turn to lead.']],
-  ['ex-ready-go', 'Ready, set, go', 'Playing together', 'Wait for your child to say "go" before rolling a ball.', ['Hold the ball and say "Ready, set..."', 'Pause and wait.', 'Roll it as soon as your child says or signs "go".']],
-  ['ex-feelings', 'Feelings faces', 'Playing together', 'Look at picture cards and name the feeling on each face.', ['Show one card at a time.', 'Ask "How does this face feel?"', 'Make the face together.']],
-].map(([id, title, program, summary, steps], index) => ({
-  id, title, program, summary, steps, durationMinutes: 5, repetitions: 1, sessionsPerDay: 1,
-  verificationType: 'checklist', defaultTargets: {}, evidenceSource: '', programNote: '', caution: '',
-  needsInstructions: false, catalogueOrder: index + 1, approvedAt: null, approvedBy: null, archived: false,
-}));
 
 const db = openDatabase();
 if (db.prepare('SELECT COUNT(*) AS n FROM users').get().n) {
@@ -46,33 +34,15 @@ if (db.prepare('SELECT COUNT(*) AS n FROM users').get().n) {
     const therapists = [meera, add({ name: 'Dr. Arjun Singh', email: 'arjun@melo.test', role: 'therapist' })];
     add({ name: 'Dr. Riya Sharma', email: 'riya@melo.test', role: 'therapist', status: 'pending', days: 1 });
 
-    for (const exercise of exercises) {
-      db.prepare('INSERT INTO exercise_library VALUES (?,?,?)').run(exercise.id, JSON.stringify({ ...exercise, approvedAt: timestamp(29), approvedBy: admin }), now());
-    }
-
     const families = [
       ['Priya Rao', 'parent@melo.test', 'Ananya'], ['Rohan Malhotra', 'rohan@melo.test', 'Kabir'], ['Simran Kaur', 'simran@melo.test', 'Zoya'],
       ['Dev Patel', 'dev@melo.test', 'Aarav'], ['Aisha Khan', 'aisha@melo.test', 'Sana'], ['Neha Verma', 'neha@melo.test', 'Ishaan'],
     ];
     families.forEach(([parentName, email, childName], i) => {
       const therapist = therapists[i % therapists.length];
-      const parent = add({ name: parentName, email, role: 'parent', therapist, code: i === 0 ? demoParentCode : null, days: 28 - i });
+      const parent = add({ name: parentName, email, role: 'parent', therapist, days: 28 - i });
       const child = add({ name: childName, role: 'patient', therapist, parent, days: 27 - i });
       const consent = sign(child, parent, parentName, 26 - i);
-      const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - 14);
-      for (const exercise of exercises.slice(0, 3)) {
-        const assignment = { id: randomUUID(), patientId: child, exerciseId: exercise.id, weekdays: [1, 2, 3, 4, 5, 6, 7], effectiveFrom: start.toISOString(),
-          effectiveTo: null, sessionsPerDay: 1, repetitions: 1, targets: {}, instructions: '', assignedBy: therapist };
-        db.prepare('INSERT INTO assignments VALUES (?,?,?,?)').run(assignment.id, child, JSON.stringify(assignment), now());
-      }
-      // Most days done, a few missed, so the progress charts have something to show.
-      for (let day = 13; day >= 1; day--) {
-        if ((day + i) % 4 === 0) continue;
-        const date = new Date(); date.setDate(date.getDate() - day);
-        for (const exercise of exercises.slice(0, 1 + ((day + i) % 3))) {
-          db.prepare('INSERT INTO completions VALUES (?,?,?,?,?)').run(randomUUID(), child, exercise.id, date.toISOString().slice(0, 10), date.toISOString());
-        }
-      }
       if (i === 0) {
         db.prepare('INSERT INTO plans VALUES (?,?,?,?,?,?,?,?,?)').run(randomUUID(), child, therapist, consent, 'My drawing practice',
           JSON.stringify(['motor-lines', 'motor-shapes', 'motor-letter']), 1, 'Take your time and rest when your hand feels tired.', timestamp(20));
@@ -83,6 +53,6 @@ if (db.prepare('SELECT COUNT(*) AS n FROM users').get().n) {
     db.prepare('INSERT INTO settings VALUES (?,?)').run('demo', 'true');
     db.exec('COMMIT');
     console.log(`Demo workspace created. Password for every account: VoiceDemo!2026
-  Admin admin@melo.test | Therapist meera@melo.test (code ${demoTherapistCode}) | Parent parent@melo.test (code ${demoParentCode}, child Ananya)`);
+  Admin admin@melo.test | Therapist meera@melo.test (code ${demoTherapistCode}) | Parent parent@melo.test (child Ananya)`);
   } catch (e) { db.exec('ROLLBACK'); throw e; } finally { db.close(); }
 }

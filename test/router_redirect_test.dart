@@ -33,7 +33,6 @@ void main() {
       AppRoutes.welcome,
       AppRoutes.login,
       AppRoutes.parentSignUp,
-      AppRoutes.childSetup,
       AppRoutes.sensorCheck,
     ]) {
       expect(redirectFor(const AsyncData(null), open), isNull);
@@ -44,10 +43,11 @@ void main() {
     final patient = AsyncData<User?>(_user(UserRole.patient));
     expect(redirectFor(patient, AppRoutes.login), AppRoutes.patient);
     expect(redirectFor(patient, AppRoutes.therapist), AppRoutes.patient);
-    expect(redirectFor(patient, '${AppRoutes.patient}/exercises'), isNull);
+    expect(redirectFor(patient, AppRoutes.patientDrawing), isNull);
+    expect(redirectFor(patient, AppRoutes.parent), AppRoutes.patient);
 
     final parent = AsyncData<User?>(_user(UserRole.parent));
-    expect(redirectFor(parent, AppRoutes.childSetup), AppRoutes.parent);
+    expect(redirectFor(parent, AppRoutes.parentAddChild), isNull);
     expect(redirectFor(parent, AppRoutes.patient), AppRoutes.parent);
     expect(redirectFor(parent, AppRoutes.parentSettings), isNull);
 

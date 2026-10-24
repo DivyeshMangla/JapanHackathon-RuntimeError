@@ -5,14 +5,11 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:melo/core/errors/app_failure.dart';
 import 'package:melo/core/network/backend_client.dart';
-import 'package:melo/core/utils/dates.dart';
 import 'package:melo/features/auth/data/backend_auth_repository.dart';
 import 'package:melo/features/auth/data/backend_user_repository.dart';
 import 'package:melo/features/auth/domain/user.dart';
-import 'package:melo/features/exercises/data/backend_exercise_repositories.dart';
-import 'package:melo/features/exercises/domain/completion.dart';
-import 'package:melo/features/exercises/domain/schedule.dart';
-import 'package:melo/features/exercises/domain/voice_use_entry.dart';
+import 'package:melo/features/parent/data/backend_family_repository.dart';
+import 'package:melo/features/parent/domain/consent.dart';
 import 'package:melo/features/recordings/data/backend_recording_repository.dart';
 import 'package:melo/features/recordings/domain/recording.dart';
 import 'package:melo/features/settings/data/backend_settings_repository.dart';
@@ -20,8 +17,12 @@ import 'package:melo/features/settings/domain/study_settings.dart';
 import 'package:melo/features/usage/data/backend_usage_log_repository.dart';
 import 'package:melo/features/usage/domain/usage_event.dart';
 
-import 'support/exercise_fixtures.dart';
 import 'support/synthetic_voice.dart';
+
+/// A 1 by 1 PNG, enough for the service's signature check.
+final _signature = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6o1sAAAAASUVORK5CYII=',
+);
 
 class _MemoryTokens implements SessionTokenStore {
   String? token;
@@ -124,33 +125,23 @@ void main() {
       isNull,
     );
 
-    // The administrator publishes an approved exercise.
+    // The administrator sets the probe schedule.
     final admin = _Session(baseUrl);
     final adminUser = await admin.auth.signIn(
       email: 'admin@melo.test',
       password: demoPassword,
     );
     expect(adminUser?.role, UserRole.admin);
-    final library = BackendExerciseRepository(admin.client);
-    expect(
-      (await library.all()).map((e) => e.id),
-      isNot(contains(plainExercise.id)),
-    );
-    final exercise = plainExercise.approve(
-      by: adminUser!.id,
-      at: DateTime(2026, 5, 1),
-    );
-    await library.save(exercise);
-    expect((await library.byId(exercise.id))?.title, plainExercise.title);
     await BackendSettingsRepository(
       admin.client,
-    ).save(const StudySettings(adherenceThreshold: 0.7));
+    ).save(const StudySettings(probeIntervalDays: 14));
 
     // Patients carry sequential participant codes.
     final patients = await admin.users.listByRole(UserRole.patient);
     expect(patients.first.participantCode, 'P001');
 
-    // The assigned therapist can read their patient and assign the exercise.
+    // The therapist reads their caseload, and another therapist's patient is
+    // off limits.
     final therapist = _Session(baseUrl);
     final therapistUser = (await therapist.auth.signIn(
       email: 'meera@melo.test',
@@ -158,90 +149,40 @@ void main() {
     ))!;
     final caseload = await therapist.users.patientsOf(therapistUser.id);
     expect(caseload, isNotEmpty);
-    final patient = caseload.first;
     expect(
       (await BackendSettingsRepository(
         therapist.client,
-      ).load()).adherenceThreshold,
-      0.7,
+      ).load()).probeIntervalDays,
+      14,
     );
-    final schedule = Schedule(
-      id: 'sched-integration',
-      patientId: patient.id,
-      exerciseId: exercise.id,
-      weekdays: const {1, 2, 3, 4, 5, 6, 7},
-      effectiveFrom: dateOnly(DateTime.now()),
-      assignedBy: therapistUser.id,
-    );
-    await BackendScheduleRepository(therapist.client).save(schedule);
-
-    // Another therapist's patient is off limits.
-    final other = caseload.length < patients.length
-        ? patients.firstWhere((p) => p.therapistId != therapistUser.id)
-        : null;
-    if (other != null) {
-      await expectLater(
-        BackendScheduleRepository(therapist.client).forPatient(other.id),
-        throwsA(isA<NetworkFailure>()),
-      );
-    }
-
-    // The child's device opens with the demo parent's code and the child's
-    // name, then sees the assignment, marks it done, logs and records.
-    final patientSession = _Session(baseUrl);
-    final signedIn = await patientSession.auth.setUpChild(
-      parentCode: 'parent',
-      childName: patient.name,
-    );
-    expect(signedIn.id, patient.id);
-    expect(signedIn.email, isEmpty);
-    final assignments = await BackendScheduleRepository(
-      patientSession.client,
-    ).forPatient(patient.id);
-    expect(assignments.map((a) => a.exerciseId), contains(exercise.id));
-
-    final today = dateOnly(DateTime.now());
-    final completions = BackendCompletionRepository(patientSession.client);
-    final done = Completion(
-      id: 'done-integration',
-      patientId: patient.id,
-      exerciseId: exercise.id,
-      day: today,
-      completedAt: DateTime.now(),
-    );
-    await completions.add(done);
-    final listed = await completions.forPatient(
-      patient.id,
-      from: today,
-      to: today,
-    );
-    expect(listed.single.id, done.id);
-    expect(listed.single.day, today);
-    await completions.delete(patientId: patient.id, id: done.id);
-    expect(
-      await completions.forPatient(patient.id, from: today, to: today),
-      isEmpty,
+    final other = patients.firstWhere((p) => p.therapistId != therapistUser.id);
+    await expectLater(
+      BackendUsageLogRepository(therapist.client).forPatient(other.id),
+      throwsA(isA<NetworkFailure>()),
     );
 
-    await BackendVoiceDiaryRepository(patientSession.client).save(
-      VoiceUseEntry(
-        id: 'diary-integration',
-        patientId: patient.id,
-        day: today,
-        loggedAt: DateTime.now(),
-        speakingTime: SpeakingTime.oneToTwoHours,
-        fatigue: 2,
-        situations: const {VoiceSituation.phoneCalls},
-      ),
-    );
-    await BackendUsageLogRepository(patientSession.client).append(
+    // The demo parent hands the phone to their child in child mode. The
+    // child logs and records, and only the parent's password leaves.
+    final phone = _Session(baseUrl);
+    final parentUser = (await phone.auth.signIn(
+      email: 'parent@melo.test',
+      password: demoPassword,
+    ))!;
+    final patient = (await phone.users.listByRole(
+      UserRole.patient,
+    )).singleWhere((child) => child.parentId == parentUser.id);
+    final child = await phone.auth.startChildMode(patient.id);
+    expect(child.id, patient.id);
+    expect(child.email, isEmpty);
+    expect((await phone.auth.restoreSession())?.id, patient.id);
+
+    await BackendUsageLogRepository(phone.client).append(
       UsageEvent(
         at: DateTime.now(),
         patientId: patient.id,
         action: UsageAction.signIn,
       ),
     );
-
     final wav = File('${Directory.systemTemp.path}/melo-integration.wav');
     await wav.writeAsBytes(syntheticVoiceWav(seconds: 0.3, pitchHz: 200));
     final recording = Recording(
@@ -254,17 +195,16 @@ void main() {
       createdAt: DateTime.now(),
     );
     await BackendRecordingRepository(
-      patientSession.client,
+      phone.client,
     ).save(recording, wavPath: wav.path);
     await wav.delete();
 
-    // The therapist now sees the patient's records and can play the audio.
-    expect(
-      (await BackendVoiceDiaryRepository(
-        therapist.client,
-      ).forPatient(patient.id)).single.fatigue,
-      2,
-    );
+    expect(await phone.auth.endChildMode('not the password'), isNull);
+    expect((await phone.auth.restoreSession())?.id, patient.id);
+    expect((await phone.auth.endChildMode(demoPassword))?.id, parentUser.id);
+    expect((await phone.auth.restoreSession())?.id, parentUser.id);
+
+    // The therapist now sees the child's records and can play the audio.
     expect(
       (await BackendUsageLogRepository(
         therapist.client,
@@ -276,8 +216,8 @@ void main() {
     final audio = await recordings.audio(recording.id);
     expect(ascii.decode(audio.sublist(0, 4)), 'RIFF');
 
-    // A parent joins with the therapist's code, and their code sets up a
-    // new child on the same caseload.
+    // A parent joins with the therapist's code and adds a child, signing
+    // consent with the child's account.
     final family = _Session(baseUrl);
     final parent = await family.auth.registerParent(
       name: 'New Parent',
@@ -287,15 +227,20 @@ void main() {
     );
     expect(parent.role, UserRole.parent);
     expect(parent.therapistId, therapistUser.id);
-    final childDevice = _Session(baseUrl);
-    final child = await childDevice.auth.setUpChild(
-      parentCode: parent.linkCode!,
+    final familyRepository = BackendFamilyRepository(family.client);
+    final form = await familyRepository.consentForm();
+    final added = await familyRepository.addChild(
       childName: 'Kavya',
+      version: form.version,
+      signerName: 'New Parent',
+      agreed: ConsentStatement.values.toSet(),
+      signaturePng: _signature,
     );
-    expect(child.parentId, parent.id);
-    expect(child.participantCode, isNot(patients.last.participantCode));
+    expect(added.parentId, parent.id);
+    expect(added.participantCode, isNot(patients.last.participantCode));
+    expect((await familyRepository.consentFor(added.id))?.analysisAgreed, true);
     expect((await family.users.listByRole(UserRole.patient)).map((c) => c.id), [
-      child.id,
+      added.id,
     ]);
 
     // The administrator adds a parent, and an email can be used only once.
@@ -324,7 +269,7 @@ void main() {
     );
 
     // Signing out ends the session.
-    await patientSession.auth.signOut();
-    expect(await patientSession.auth.restoreSession(), isNull);
+    await family.auth.signOut();
+    expect(await family.auth.restoreSession(), isNull);
   });
 }

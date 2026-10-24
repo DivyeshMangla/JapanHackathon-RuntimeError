@@ -8,13 +8,10 @@ const MAX_BODY_BYTES = 26 * 1024 * 1024;
 const idPattern = /^[A-Za-z0-9._:-]{1,120}$/;
 
 const parse = row => JSON.parse(row.body);
-const completionOut = row => ({
-  id: row.id, patientId: row.patient_id, exerciseId: row.exercise_id, day: row.day, completedAt: row.completed_at,
-});
 
 /**
- * Routes for the exercise library, assignments, practice completions and
- * voice samples used by the role-based mobile app. Returns true when the
+ * Routes for the directory, study settings, voice samples and the usage log
+ * used by the role-based mobile app. Returns true when the
  * request was handled. Bodies are stored as the app sends them so the app's
  * models stay the single description of each record; the server checks who
  * may write them and the references between them.
@@ -27,26 +24,6 @@ export async function careRoutes(ctx) {
     if (typeof value !== 'string' || !idPattern.test(value)) fail(400, `${name} is not valid.`);
     return value;
   };
-  const canWriteFor = patient => {
-    if (u.role === 'admin') return;
-    if (u.role === 'therapist' && patient.therapist_id === u.id) return;
-    fail(403, 'This patient is not assigned to you.');
-  };
-
-  if (path === '/api/library' && method === 'GET') {
-    return send(200, { exercises: db.prepare('SELECT body FROM exercise_library').all().map(parse) });
-  }
-  const libraryMatch = path.match(/^\/api\/library\/([^/]+)$/);
-  if (libraryMatch && method === 'PUT') {
-    requireRole(u, 'admin');
-    const b = await body(req);
-    if (b.id !== libraryMatch[1] || typeof b.title !== 'string' || !b.title.trim()) fail(400, 'Send an exercise with an id and title.');
-    checkId(b.id, 'Exercise id');
-    db.prepare('INSERT INTO exercise_library VALUES (?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body, updated_at=excluded.updated_at')
-      .run(b.id, JSON.stringify(b), now());
-    audit(db, u.id, 'Saved exercise', b.id, b.title);
-    return send(200, { ok: true });
-  }
 
   if (path === '/api/directory' && method === 'GET') {
     // Names only, so a screen can show who a family's therapist is.
@@ -57,14 +34,6 @@ export async function careRoutes(ctx) {
     return send(200, { users });
   }
 
-  if (path === '/api/assignments' && method === 'GET') {
-    requireRole(u, 'admin');
-    return send(200, { assignments: db.prepare('SELECT body FROM assignments').all().map(parse) });
-  }
-  if (path === '/api/completions' && method === 'GET') {
-    requireRole(u, 'admin');
-    return send(200, { completions: db.prepare('SELECT * FROM completions ORDER BY completed_at').all().map(completionOut) });
-  }
   if (path === '/api/samples' && method === 'GET') {
     requireRole(u, 'admin');
     return send(200, { samples: db.prepare('SELECT body FROM voice_samples ORDER BY created_at DESC').all().map(parse) });
@@ -83,73 +52,15 @@ export async function careRoutes(ctx) {
       return send(200, { ok: true });
     }
   }
-  if (path === '/api/diary' && method === 'GET') {
-    requireRole(u, 'admin');
-    return send(200, { entries: db.prepare('SELECT body FROM diary_entries ORDER BY day').all().map(parse) });
-  }
   if (path === '/api/usage' && method === 'GET') {
     requireRole(u, 'admin');
     return send(200, { events: db.prepare('SELECT body FROM usage_events ORDER BY at, seq').all().map(parse) });
   }
 
-  const match = path.match(/^\/api\/patients\/([^/]+)\/(assignments|completions|samples|diary|usage)(?:\/([^/]+))?$/);
+  const match = path.match(/^\/api\/patients\/([^/]+)\/(samples|usage)(?:\/([^/]+))?$/);
   if (match) {
     const [, patientId, kind, itemId] = match;
     const patient = accessPatient(u, patientId);
-
-    if (kind === 'assignments') {
-      if (!itemId && method === 'GET') {
-        return send(200, { assignments: db.prepare('SELECT body FROM assignments WHERE patient_id=?').all(patientId).map(parse) });
-      }
-      if (itemId && method === 'PUT') {
-        canWriteFor(patient);
-        const b = await body(req);
-        if (b.id !== itemId || b.patientId !== patientId) fail(400, 'The assignment does not match this patient.');
-        checkId(itemId, 'Assignment id');
-        const row = db.prepare('SELECT body FROM exercise_library WHERE id=?').get(b.exerciseId);
-        const exercise = row && parse(row);
-        if (!exercise || exercise.archived || !exercise.approvedAt) fail(400, 'Only approved exercises can be assigned.');
-        db.prepare('INSERT INTO assignments VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body, updated_at=excluded.updated_at')
-          .run(itemId, patientId, JSON.stringify(b), now());
-        audit(db, u.id, 'Saved assignment', patientId, exercise.title);
-        return send(200, { ok: true });
-      }
-      if (itemId && method === 'DELETE') {
-        canWriteFor(patient);
-        db.prepare('DELETE FROM assignments WHERE id=? AND patient_id=?').run(itemId, patientId);
-        audit(db, u.id, 'Removed assignment', patientId, itemId);
-        return send(200, { ok: true });
-      }
-    }
-
-    if (kind === 'completions') {
-      if (!itemId && method === 'GET') {
-        const url = new URL(req.url, 'http://localhost');
-        const from = url.searchParams.get('from') || '0000-00-00';
-        const to = url.searchParams.get('to') || '9999-99-99';
-        const rows = db.prepare('SELECT * FROM completions WHERE patient_id=? AND day>=? AND day<=? ORDER BY completed_at').all(patientId, from, to);
-        return send(200, { completions: rows.map(completionOut) });
-      }
-      if (itemId && method === 'PUT') {
-        requireRole(u, 'patient');
-        checkId(itemId, 'Completion id');
-        const b = await body(req);
-        const day = typeof b.day === 'string' ? b.day.slice(0, 10) : '';
-        const completedAt = new Date(b.completedAt);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Number.isFinite(completedAt.getTime())) fail(400, 'Send a valid day and time.');
-        if (!db.prepare('SELECT id FROM exercise_library WHERE id=?').get(b.exerciseId)) fail(400, 'Unknown exercise.');
-        const existing = db.prepare('SELECT patient_id FROM completions WHERE id=?').get(itemId);
-        if (existing && existing.patient_id !== patientId) fail(409, 'Completion id conflict.');
-        db.prepare('INSERT INTO completions VALUES (?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET exercise_id=excluded.exercise_id, day=excluded.day, completed_at=excluded.completed_at')
-          .run(itemId, patientId, b.exerciseId, day, completedAt.toISOString());
-        return send(200, { ok: true });
-      }
-      if (itemId && method === 'DELETE') {
-        requireRole(u, 'patient');
-        db.prepare('DELETE FROM completions WHERE id=? AND patient_id=?').run(itemId, patientId);
-        return send(200, { ok: true });
-      }
-    }
 
     if (kind === 'samples') {
       if (!itemId && method === 'GET') {
@@ -176,26 +87,6 @@ export async function careRoutes(ctx) {
         }
         audit(db, u.id, 'Uploaded recording', patientId, itemId);
         return send(201, { id: itemId });
-      }
-    }
-
-    if (kind === 'diary') {
-      if (!itemId && method === 'GET') {
-        return send(200, { entries: db.prepare('SELECT body FROM diary_entries WHERE patient_id=? ORDER BY day, rowid').all(patientId).map(parse) });
-      }
-      if (itemId && method === 'PUT') {
-        requireRole(u, 'patient');
-        checkId(itemId, 'Entry id');
-        const b = await body(req);
-        const day = typeof b.day === 'string' ? b.day.slice(0, 10) : '';
-        if (b.id !== itemId || b.patientId !== patientId || !/^\d{4}-\d{2}-\d{2}$/.test(day)) fail(400, 'The diary entry does not match this patient.');
-        db.prepare('INSERT INTO diary_entries VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body, day=excluded.day').run(itemId, patientId, day, JSON.stringify(b));
-        return send(200, { ok: true });
-      }
-      if (itemId && method === 'DELETE') {
-        requireRole(u, 'patient');
-        db.prepare('DELETE FROM diary_entries WHERE id=? AND patient_id=?').run(itemId, patientId);
-        return send(200, { ok: true });
       }
     }
 

@@ -2,36 +2,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/data/auth_repository_providers.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
-import '../../../exercises/presentation/controllers/exercise_controllers.dart';
 import '../../../recordings/domain/recording.dart';
 import '../../../recordings/presentation/controllers/recording_controllers.dart';
-import '../../../settings/presentation/controllers/study_settings_controller.dart';
-import '../../../study/domain/participant_status.dart';
 import '../../domain/participant_summary.dart';
 
-/// Builds the summary for one patient under the current study settings.
+/// Builds the summary for one patient.
 final participantSummaryProvider =
     FutureProvider.family<ParticipantSummary, String>((ref, patientId) async {
       final patient = await ref.watch(userByIdProvider(patientId).future);
       if (patient == null) throw StateError('Unknown patient $patientId');
-      final settings = await ref.watch(studySettingsProvider.future);
-      final activity = await ref.watch(
-        patientActivityProvider(patientId).future,
-      );
       final recordings = await ref.watch(
         patientRecordingsProvider(patientId).future,
       );
-      final probe = await ref.watch(probeOutcomeProvider(patientId).future);
-      final low = activity.isBelow(settings.adherenceThreshold);
       return ParticipantSummary(
         patient: patient,
-        activity: activity,
         recordings: recordings,
-        lowAdherence: low,
-        status: ParticipantStatus.from(
-          highAdherence: activity.recentRate != null && !low,
-          probe: probe,
-        ),
         probeDue: await ref.watch(probeDueProvider(patientId).future),
       );
     });
