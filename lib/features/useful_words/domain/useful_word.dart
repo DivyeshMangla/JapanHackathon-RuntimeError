@@ -16,6 +16,23 @@ class UsefulWord {
   );
 }
 
+enum WordTherapistOutcome {
+  correct,
+  needsPractice,
+  notAssessed;
+
+  String get wireValue => switch (this) {
+    correct => 'correct',
+    needsPractice => 'needs_practice',
+    notAssessed => 'not_assessed',
+  };
+  static WordTherapistOutcome fromWire(String? value) => switch (value) {
+    'correct' => correct,
+    'needs_practice' => needsPractice,
+    _ => notAssessed,
+  };
+}
+
 class WordAttempt {
   const WordAttempt({
     required this.id,
@@ -28,13 +45,20 @@ class WordAttempt {
     this.transcript,
     this.analysisReport,
     this.analysisCorrection,
+    this.therapistOutcome = WordTherapistOutcome.notAssessed,
+    this.reviewedAt,
+    this.reviewedBy,
+    this.hasReferenceAudio = false,
   });
   final String id, word, transcriptionStatus, feedback;
   final DateTime date;
   final PronunciationReport? analysisReport;
   final String? analysisCorrection;
   final String? transcript;
-  final bool hasFeedbackAudio, reviewed;
+  final bool hasFeedbackAudio, reviewed, hasReferenceAudio;
+  final WordTherapistOutcome therapistOutcome;
+  final DateTime? reviewedAt;
+  final String? reviewedBy;
   factory WordAttempt.fromJson(Map<String, dynamic> json) => WordAttempt(
     id: json['id'] as String,
     word: json['word'] as String,
@@ -43,7 +67,15 @@ class WordAttempt {
     transcript: json['transcript'] as String?,
     feedback: json['feedback'] as String,
     hasFeedbackAudio: json['hasFeedbackAudio'] as bool,
+    hasReferenceAudio: json['hasReferenceAudio'] as bool? ?? false,
     reviewed: json['reviewed'] as bool,
+    therapistOutcome: WordTherapistOutcome.fromWire(
+      json['therapistOutcome'] as String?,
+    ),
+    reviewedAt: json['reviewedAt'] == null
+        ? null
+        : DateTime.parse(json['reviewedAt'] as String).toLocal(),
+    reviewedBy: json['reviewedBy'] as String?,
     analysisReport: json['analysisReport'] == null
         ? null
         : PronunciationReport.fromJson(

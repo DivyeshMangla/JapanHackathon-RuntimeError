@@ -118,6 +118,7 @@ class _WordAssignmentFormState extends State<WordAssignmentForm>
         ),
       const SizedBox(height: AppSpacing.md),
       Text(WordStrings.example, style: Theme.of(context).textTheme.titleMedium),
+      const InfoNotice(WordStrings.exampleAnalysisNotice),
       WordCapturePanel(audio: _audio, enabled: !busy),
       SecondaryButton(
         label: WordStrings.chooseExample,

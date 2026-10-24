@@ -1,6 +1,6 @@
 # Project Engineering Standards
 
-This is a production-grade Flutter app handling confidential patient data (stored locally only, no cloud). Write code a senior Flutter engineer would approve in review. Follow these rules for every change.
+This Flutter app handles confidential patient data on a connected care service. It supports optional local analysis and explicitly configured hosted analysis, as requested by the project owner. Hosted analysis requires a separate current parent permission for that provider. Write code a senior Flutter engineer would approve in review. Follow these rules for every change.
 
 ## Architecture
 - Feature-first structure: lib/features/<feature>/{data,domain,presentation}/, plus lib/core/ (theme, routing, utils, constants, errors) and lib/shared/ (reusable widgets).
@@ -11,7 +11,7 @@ This is a production-grade Flutter app handling confidential patient data (store
 
 ## Data & Security
 - Patient data must be encrypted at rest. Keep encryption keys in flutter_secure_storage.
-- No network calls that send patient data anywhere.
+- Hosted analysis runs only through the backend and only with current provider-specific parent permission. Send the minimum practice media and reference needed, never account names, emails or patient profile metadata. Keep provider credentials on the server; preserve originals and manual therapist review when analysis is unavailable.
 - Models are immutable, with typed serialization (freezed/json_serializable or equivalent). No raw Map<String, dynamic> passed around the app.
 
 ## UI

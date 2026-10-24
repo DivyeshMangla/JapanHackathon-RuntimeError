@@ -38,6 +38,7 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
   );
   late final _feedback = TextEditingController(text: widget.attempt.feedback);
   late bool _reviewed = widget.attempt.reviewed;
+  late WordTherapistOutcome _outcome = widget.attempt.therapistOutcome;
   bool _saved = false;
   @override
   void dispose() {
@@ -54,6 +55,9 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
         _feedback.text,
         _reviewed,
         analysisCorrection: _correction.text,
+        therapistOutcome: _reviewed
+            ? _outcome
+            : WordTherapistOutcome.notAssessed,
         audio: _audio.audio,
         preserveAudio: widget.attempt.hasFeedbackAudio && _audio.audio == null,
       ),
@@ -73,6 +77,19 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
         children: [
           _WordReviewPlayback(
             attempt: attempt,
+            onPlayReference: busy || _audio.recording
+                ? null
+                : () => unawaited(
+                    run(
+                      () async => _audio.play(
+                        await widget.repository.audio(
+                          'attempts',
+                          attempt.id,
+                          reference: true,
+                        ),
+                      ),
+                    ),
+                  ),
             onPlay: busy || _audio.recording
                 ? null
                 : () => unawaited(
@@ -121,6 +138,17 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
                       ),
                     ),
             ),
+          _TherapistOutcomePicker(
+            outcome: _outcome,
+            onChanged: busy
+                ? null
+                : (value) => setState(() {
+                    _outcome = value;
+                    if (value != WordTherapistOutcome.notAssessed) {
+                      _reviewed = true;
+                    }
+                  }),
+          ),
           CheckboxListTile(
             value: _reviewed,
             onChanged: busy
@@ -148,10 +176,12 @@ class _WordReviewPlayback extends StatelessWidget {
     required this.attempt,
     required this.onPlay,
     required this.onStop,
+    required this.onPlayReference,
   });
   final WordAttempt attempt;
   final VoidCallback? onPlay;
   final VoidCallback onStop;
+  final VoidCallback? onPlayReference;
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -166,6 +196,12 @@ class _WordReviewPlayback extends StatelessWidget {
         icon: LucideIcons.play,
         onPressed: onPlay,
       ),
+      if (attempt.hasReferenceAudio)
+        SecondaryButton(
+          label: WordStrings.referenceOriginal,
+          icon: LucideIcons.play,
+          onPressed: onPlayReference,
+        ),
       SecondaryButton(
         label: WordStrings.stopPlayback,
         icon: LucideIcons.square,
@@ -173,4 +209,40 @@ class _WordReviewPlayback extends StatelessWidget {
       ),
     ],
   );
+}
+
+class _TherapistOutcomePicker extends StatelessWidget {
+  const _TherapistOutcomePicker({
+    required this.outcome,
+    required this.onChanged,
+  });
+  final WordTherapistOutcome outcome;
+  final ValueChanged<WordTherapistOutcome>? onChanged;
+  @override
+  Widget build(BuildContext context) =>
+      DropdownButtonFormField<WordTherapistOutcome>(
+        initialValue: outcome,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: WordStrings.assessment,
+          helperText: WordStrings.assessmentHint,
+          helperMaxLines: 4,
+        ),
+        items: [
+          for (final value in WordTherapistOutcome.values)
+            DropdownMenuItem(
+              value: value,
+              child: Text(switch (value) {
+                WordTherapistOutcome.correct => WordStrings.correct,
+                WordTherapistOutcome.needsPractice => WordStrings.needsPractice,
+                WordTherapistOutcome.notAssessed => WordStrings.notAssessed,
+              }),
+            ),
+        ],
+        onChanged: onChanged == null
+            ? null
+            : (value) {
+                if (value != null) onChanged!(value);
+              },
+      );
 }

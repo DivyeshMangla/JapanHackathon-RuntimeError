@@ -27,8 +27,12 @@ abstract interface class MotorRepository {
 
   Future<Uint8List> photo(String submissionId);
 
-  Future<void> review(String submissionId, String note);
+  Future<void> review(
+    String submissionId,
+    String note, {
+    MotorTherapistOutcome outcome = MotorTherapistOutcome.notAssessed,
+  });
 
-  /// Asks the local vision model to try a photo again.
+  /// Asks the configured vision model to try a photo again.
   Future<void> retryAnalysis(String submissionId);
 }

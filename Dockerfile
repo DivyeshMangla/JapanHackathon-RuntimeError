@@ -1,5 +1,8 @@
 FROM node:24-alpine
 
+# Recognition uses a 16 kHz copy while preserving the child's original WAV.
+RUN apk add --no-cache ffmpeg
+
 WORKDIR /app
 COPY backend ./backend
 COPY admin ./admin

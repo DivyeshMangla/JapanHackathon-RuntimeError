@@ -330,9 +330,14 @@ void main() {
       final device = FakeWordDevice();
       final audio = WordAudioController(device: device);
       Map<String, dynamic>? saved;
+      String? playedReference;
       final repo = WordRepository(
         'child',
         (path, {method = 'GET', data}) async {
+          if (path.endsWith('/reference')) {
+            playedReference = path;
+            return {'audio': base64Encode(device.bytes)};
+          }
           saved = data;
           return {};
         },
@@ -347,12 +352,36 @@ void main() {
         'transcript': 'help',
         'feedback': '',
         'hasFeedbackAudio': false,
+        'hasReferenceAudio': true,
         'reviewed': false,
         'analysisReport': {
           'targetWord': 'help',
           'recognizedWord': 'help',
           'textComparison': 'same_text',
           'processingStatus': 'complete',
+          'textSimilarity': {
+            'status': 'same_text',
+            'textSimilarityPercent': 100,
+            'characterEditDistance': 0,
+            'wordEditDistance': 0,
+          },
+          'reference': {
+            'recognizedText': 'water',
+            'recognitionStatus': 'complete',
+            'needsReview': true,
+          },
+          'referenceTranscriptComparison': {
+            'status': 'different_text',
+            'textSimilarityPercent': 20,
+            'characterEditDistance': 4,
+            'wordEditDistance': 1,
+          },
+          'audioComparison': {
+            'status': 'timing_only',
+            'referenceDurationSeconds': 0.5,
+            'attemptDurationSeconds': 0.8,
+            'durationRatio': 1.6,
+          },
           'validation': 'No validated pronunciation model configured.',
           'limitations': [
             'Recognition confidence is not pronunciation accuracy.',
@@ -379,6 +408,16 @@ void main() {
       expect(find.text(WordStrings.unable), findsOneWidget);
       expect(find.text(WordStrings.sameText), findsOneWidget);
       expect(find.text(WordStrings.accuracyUnavailable), findsOneWidget);
+      expect(find.text('${WordStrings.textSimilarity}: 100.0'), findsOneWidget);
+      expect(find.text(WordStrings.referenceReview), findsOneWidget);
+      expect(find.text('${WordStrings.durationRatio}: 1.60'), findsOneWidget);
+      await tester.tap(find.text(WordStrings.referenceOriginal));
+      await tester.pumpAndSettle();
+      expect(
+        playedReference,
+        '/useful-words/patients/child/attempts/attempt/reference',
+      );
+      expect(device.played.single, device.bytes);
       final correction = find.byType(TextField).first;
       await tester.ensureVisible(correction);
       await tester.pumpAndSettle();
@@ -386,7 +425,26 @@ void main() {
         correction,
         'Therapist observed a different sound.',
       );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      final assessment = find.byType(
+        DropdownButtonFormField<WordTherapistOutcome>,
+      );
+      await tester.scrollUntilVisible(
+        assessment,
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(assessment);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(WordStrings.correct).last);
+      await tester.pumpAndSettle();
       final save = find.text(WordStrings.review);
+      await tester.scrollUntilVisible(
+        save,
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.ensureVisible(save);
       await tester.pumpAndSettle();
       await tester.tap(save);
@@ -395,6 +453,8 @@ void main() {
         saved!['analysisCorrection'],
         'Therapist observed a different sound.',
       );
+      expect(saved!['therapistOutcome'], 'correct');
+      expect(saved!['reviewed'], true);
       expect(saved!.containsKey('analysisReport'), false);
       expect(attempt.analysisReport!.recognizedWord, 'help');
       expect(tester.takeException(), isNull);

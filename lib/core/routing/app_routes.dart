@@ -17,6 +17,8 @@ abstract final class AppRoutes {
   static const patient = '/patient';
   static const patientWords = '/patient/words';
   static const patientDrawing = '/patient/drawing';
+  static const patientExpressions = '/patient/expressions';
+  static const patientProgress = '/patient/progress';
   static String patientDrawingExercise(String exerciseId) =>
       '$patientDrawing/$exerciseId';
 
@@ -32,6 +34,8 @@ abstract final class AppRoutes {
       '${therapistParticipant(id)}/words';
   static String therapistDrawing(String id) =>
       '${therapistParticipant(id)}/drawing';
+  static String therapistExpressions(String id) =>
+      '${therapistParticipant(id)}/expressions';
   static const therapistRecordings = '/therapist/recordings';
   static String therapistRecordingsFor(String patientId) =>
       '$therapistRecordings?patient=$patientId';

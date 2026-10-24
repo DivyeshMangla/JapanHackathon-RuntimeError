@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 
-enum ChildActivity { words, drawing }
+enum ChildActivity { words, drawing, expressions }
 
 /// Small vector illustrations retain their detail at larger display sizes.
 class ChildActivityPicture extends StatelessWidget {
@@ -22,6 +22,21 @@ class _ActivityPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.scale(size.width / 100, size.height / 100);
     switch (activity) {
+      case ChildActivity.expressions:
+        canvas.drawCircle(
+          const Offset(50, 50),
+          32,
+          Paint()..color = AppColors.childButter,
+        );
+        canvas.save();
+        canvas.scale(1.5);
+        _face(canvas, 33, 29);
+        canvas.restore();
+        canvas.drawCircle(
+          const Offset(71, 65),
+          9,
+          Paint()..color = AppColors.childRose,
+        );
       case ChildActivity.words:
         _block(
           canvas,

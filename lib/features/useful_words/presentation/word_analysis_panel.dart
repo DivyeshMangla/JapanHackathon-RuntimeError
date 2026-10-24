@@ -37,11 +37,23 @@ class WordAnalysisPanel extends StatelessWidget {
         const Text(WordStrings.sameText),
       if (report?.textComparison == 'different_text')
         const Text(WordStrings.differentText),
+      if (report?.textSimilarity != null)
+        _TextSimilarity(
+          comparison: report!.textSimilarity!,
+          label: WordStrings.textSimilarity,
+        ),
       const Text(WordStrings.accuracyUnavailable),
       const Text(WordStrings.soundsUnavailable),
       const Text(WordStrings.confidenceUnavailable),
       if (report != null) ...[
         const SizedBox(height: AppSpacing.sm),
+        _CaptureQuality(report: report!),
+        _ReferenceComparison(report: report!),
+        for (final warning in report!.recognitionWarnings) InfoNotice(warning),
+        if (report!.modelId != null)
+          Text(
+            '${WordStrings.model}: ${report!.modelId} (${report!.language ?? WordStrings.unavailable})',
+          ),
         Text(report!.validation),
         for (final limitation in report!.limitations)
           Padding(
@@ -63,4 +75,102 @@ class WordAnalysisPanel extends StatelessWidget {
       ),
     ],
   );
+}
+
+class _TextSimilarity extends StatelessWidget {
+  const _TextSimilarity({required this.comparison, required this.label});
+  final WordTextComparison comparison;
+  final String label;
+  @override
+  Widget build(BuildContext context) {
+    if (comparison.textSimilarityPercent == null) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('$label: ${comparison.textSimilarityPercent!.toStringAsFixed(1)}'),
+        Text(
+          '${WordStrings.characterEdits}: ${comparison.characterEditDistance} · ${WordStrings.wordEdits}: ${comparison.wordEditDistance}',
+        ),
+        const Text(WordStrings.textSimilarityHint),
+      ],
+    );
+  }
+}
+
+class _ReferenceComparison extends StatelessWidget {
+  const _ReferenceComparison({required this.report});
+  final PronunciationReport report;
+  @override
+  Widget build(BuildContext context) {
+    final reference = report.reference, timing = report.audioComparison;
+    if (reference == null) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          '${WordStrings.referenceRecognized}: ${reference.recognizedText ?? WordStrings.unavailable}',
+        ),
+        if (reference.needsReview)
+          const InfoNotice(WordStrings.referenceReview),
+        if (reference.recognizedText == null)
+          const Text(WordStrings.referenceUnavailable),
+        if (report.referenceTranscriptComparison != null)
+          _TextSimilarity(
+            comparison: report.referenceTranscriptComparison!,
+            label: WordStrings.referenceSimilarity,
+          ),
+        if (timing?.referenceDurationSeconds != null)
+          Text(
+            '${WordStrings.referenceDuration}: ${timing!.referenceDurationSeconds!.toStringAsFixed(2)}',
+          ),
+        if (timing?.durationRatio != null) ...[
+          Text(
+            '${WordStrings.durationRatio}: ${timing!.durationRatio!.toStringAsFixed(2)}',
+          ),
+          const Text(WordStrings.timingHint),
+        ],
+        const SizedBox(height: AppSpacing.sm),
+      ],
+    );
+  }
+}
+
+class _CaptureQuality extends StatelessWidget {
+  const _CaptureQuality({required this.report});
+  final PronunciationReport report;
+  @override
+  Widget build(BuildContext context) {
+    final quality = report.captureQuality;
+    if (quality == null) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          WordStrings.captureTitle,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        Text(switch (quality.status) {
+          'checked' => WordStrings.captureChecked,
+          'retake' => WordStrings.captureBlocked,
+          _ => WordStrings.captureUnavailable,
+        }),
+        for (final reason in quality.reasons) Text(reason),
+        if (quality.durationSeconds != null)
+          Text(
+            '${WordStrings.duration}: ${quality.durationSeconds!.toStringAsFixed(2)}',
+          ),
+        if (quality.sampleRate != null)
+          Text('${WordStrings.sampleRate}: ${quality.sampleRate}'),
+        if (quality.rmsDbfs != null)
+          Text('${WordStrings.level}: ${quality.rmsDbfs!.toStringAsFixed(1)}'),
+        if (quality.clippingFraction != null)
+          Text(
+            '${WordStrings.clipping}: ${(quality.clippingFraction! * 100).toStringAsFixed(2)}',
+          ),
+        const SizedBox(height: AppSpacing.sm),
+      ],
+    );
+  }
 }

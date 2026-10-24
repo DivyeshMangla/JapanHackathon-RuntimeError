@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { createApp } from '../src/server.mjs';
 import { hashPassword } from '../src/auth.mjs';
 import { now, consentVersion } from '../src/db.mjs';
+import { toneWav } from './fixtures/audio.mjs';
 
 const password='TestPassword!2026';
 const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6o1sAAAAASUVORK5CYII=';
@@ -257,7 +258,7 @@ test('useful words preserve exact audio, encrypt payloads and isolate paired acc
   assert.equal((await f.call(`${path}/enrollment`,'PUT',{...enrollment,birthDate:'2000-01-01'},tt)).status,400);
   assert.equal((await f.call(`${path}/enrollment`,'PUT',{...enrollment,usesSpeech:false},tt)).status,400);
   assert.equal((await f.call(`${path}/enrollment`,'PUT',enrollment,tt)).status,200);
-  const wav=Buffer.alloc(100);wav.write('RIFF');wav.writeUInt32LE(92,4);wav.write('WAVE',8);
+  const wav=toneWav();
   const word=await f.call(`${path}/words`,'POST',{word:'water',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
   assert.equal(word.status,201);
   const payload={id:randomUUID(),wordId:word.data.id,audio:wav.toString('base64')};
@@ -274,18 +275,26 @@ test('useful words preserve exact audio, encrypt payloads and isolate paired acc
   const different=Buffer.from(wav);different[99]=42;
   assert.equal((await f.call(`${path}/attempts`,'POST',{...payload,audio:different.toString('base64')},ct)).status,409);
   const attempts=(await f.call(path,'GET',undefined,tt)).data.attempts;
-  assert.equal(attempts.length,1);assert.equal(attempts[0].transcriptionStatus,'failed');assert.equal(attempts[0].transcript,null);assert.equal(attempts[0].analysisReport.assessment,'Unable to assess reliably');assert.equal(attempts[0].analysisReport.processingStatus,'failed');assert.equal(attempts[0].analysisReport.pronunciationAccuracy,null);
+  assert.equal(attempts.length,1);assert.equal(attempts[0].transcriptionStatus,'unconfigured');assert.equal(attempts[0].transcript,null);assert.equal(attempts[0].analysisReport.assessment,'Unable to assess reliably');assert.equal(attempts[0].analysisReport.processingStatus,'unconfigured');assert.equal(attempts[0].analysisReport.pronunciationAccuracy,null);
   const audioPath=`${path}/attempts/${payload.id}/audio`;
   assert.deepEqual(Buffer.from((await f.call(audioPath,'GET',undefined,tt)).data.audio,'base64'),wav);
   assert.deepEqual(Buffer.from((await f.call(`${path}/words/${word.data.id}/audio`,'GET',undefined,ct)).data.audio,'base64'),wav);
   for(const token of [ct,ot,st,at]) assert.equal((await f.call(audioPath,'GET',undefined,token)).status,403);
   const stored=f.db.prepare("SELECT payload FROM useful_word_records WHERE kind='attempt'").get();
   assert.ok(!Buffer.from(stored.payload).includes(Buffer.from(payload.audio)));
-  const review={feedback:'You can use this word when you need water.',reviewed:true,feedbackAudio:wav.toString('base64')};
+  const unpublished={feedback:'Draft feedback',reviewed:false,feedbackAudio:wav.toString('base64')};
+  assert.equal((await f.call(`${path}/attempts/${payload.id}/review`,'PUT',unpublished,tt)).status,200);
+  for (const token of [ct,parentToken]) {
+    const hidden=(await f.call(path,'GET',undefined,token)).data.attempts[0];
+    assert.equal(hidden.feedback,'');assert.equal(hidden.hasFeedbackAudio,false);assert.equal(hidden.transcript,undefined);
+    assert.equal((await f.call(`${path}/attempts/${payload.id}/feedback`,'GET',undefined,token)).data.audio,null);
+  }
+  assert.equal((await f.call(`${path}/attempts/${payload.id}/review`,'PUT',{...unpublished,therapistOutcome:'correct'},tt)).status,400);
+  const review={therapistOutcome:'correct',feedback:'You can use this word when you need water.',reviewed:true,feedbackAudio:wav.toString('base64')};
   assert.equal((await f.call(`${path}/attempts/${payload.id}/review`,'PUT',review,ct)).status,403);
   assert.equal((await f.call(`${path}/attempts/${payload.id}/review`,'PUT',review,tt)).status,200);
   const childView=(await f.call(path,'GET',undefined,ct)).data.attempts[0];
-  assert.equal(childView.feedback,review.feedback);assert.equal(childView.reviewed,true);assert.equal(childView.hasFeedbackAudio,true);
+  assert.equal(childView.feedback,review.feedback);assert.equal(childView.reviewed,true);assert.equal(childView.hasFeedbackAudio,true);assert.equal(childView.therapistOutcome,'correct');assert.ok(childView.reviewedAt);assert.equal(childView.reviewedBy,therapist.id);
   assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${payload.id}/feedback`,'GET',undefined,ct)).data.audio,'base64'),wav);
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(other.id,child.id);
   assert.equal((await f.call(audioPath,'GET',undefined,tt)).status,403);
@@ -302,7 +311,7 @@ test('useful word delivery completes while recognition is stalled; suggestions n
   const ct=await f.login(child), tt=await f.login(therapist), path=`/useful-words/patients/${child.id}`;
   await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:true}),'approved',now());
-  const wav=Buffer.alloc(100);wav.write('RIFF');wav.write('WAVE',8);
+  const wav=toneWav();
   const word=await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
   const id=randomUUID();
   const delivered=await f.call(`${path}/attempts`,'POST',{id,wordId:word.data.id,audio:wav.toString('base64')},ct);
@@ -364,8 +373,9 @@ test('child motor practice: consent, photo integrity, real analysis seam, review
   assert.deepEqual(Buffer.from(cameraOriginal.data),cameraPhoto);
 
   assert.equal((await f.call(`/motor-submissions/${payload.id}/review`,'POST',{note:'Nice practice. Let us work on one line next time.'},pt)).status,403);
-  assert.equal((await f.call(`/motor-submissions/${payload.id}/review`,'POST',{note:'Nice practice. Let us work on one line next time.'},tt)).status,200);
-  assert.ok((await f.call(path,'GET',undefined,pt)).data.motorSubmissions.find(s=>s.id===payload.id).review_note);
+  assert.equal((await f.call(`/motor-submissions/${payload.id}/review`,'POST',{note:'Nice practice. Let us work on one line next time.',therapistOutcome:'needs_practice'},tt)).status,200);
+  const sharedReview=(await f.call(path,'GET',undefined,pt)).data.motorSubmissions.find(s=>s.id===payload.id);
+  assert.ok(sharedReview.review_note);assert.equal(sharedReview.therapist_outcome,'needs_practice');assert.ok(sharedReview.reviewed_at);
   const restarted=createApp({dataDir:f.dir});assert.equal(restarted.motor.summaries(patient.id,'therapist')[0].report.model,'test-vision');restarted.db.close();
   await f.call(`${path}/assignment`,'PUT',{therapistId:other.id},at);
   assert.equal((await f.call(media,'GET',undefined,tt)).status,403);
@@ -405,7 +415,7 @@ test('analysis reports are therapist-only, never score ASR text and preserve cli
   const parent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,child.id);
   const parentToken=await f.login(parent);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({adult:true,participation:true,dataSharing:true,analysis:true}),'approved',now());
-  const wav=Buffer.alloc(100);wav.write('RIFF');wav.write('WAVE',8);
+  const wav=toneWav();
   const word=await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
   const id=randomUUID(),reviewPath=`${path}/attempts/${id}/review`;
   assert.equal((await f.call(`${path}/attempts`,'POST',{id,wordId:word.data.id,audio:wav.toString('base64')},ct)).status,201);
@@ -436,7 +446,7 @@ test('word delivery remains available when parent declines automated analysis',a
   const ct=await f.login(child),tt=await f.login(therapist),path=`/useful-words/patients/${child.id}`;
   await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:false}),'approved',now());
-  const wav=Buffer.alloc(100);wav.write('RIFF');wav.write('WAVE',8);
+  const wav=toneWav();
   const word=await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
   const id=randomUUID();
   assert.equal((await f.call(`${path}/attempts`,'POST',{id,wordId:word.data.id,audio:wav.toString('base64')},ct)).status,201);
@@ -444,4 +454,46 @@ test('word delivery remains available when parent declines automated analysis',a
   const report=(await f.call(path,'GET',undefined,tt)).data.attempts[0].analysisReport;
   assert.equal(report.processingStatus,'declined');assert.equal(report.assessment,'Unable to assess reliably');
   assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${id}/audio`,'GET',undefined,tt)).data.audio,'base64'),wav);
+});
+
+test('capture failure skips recognition without losing delivery and latest unapproved consent prevents analysis',async t=>{
+  let calls=0;
+  const f=await fixture(t,{transcriber:{suggest:async()=>{calls++;return 'help';}}});
+  const child=f.add('patient'),therapist=f.add('therapist');
+  f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
+  const ct=await f.login(child),tt=await f.login(therapist),path=`/useful-words/patients/${child.id}`;
+  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
+  f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:true}),'approved',now());
+  const word=(await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:toneWav().toString('base64')},tt)).data;
+  const original=toneWav({amplitude:0}),id=randomUUID();
+  assert.equal((await f.call(`${path}/attempts`,'POST',{id,wordId:word.id,audio:original.toString('base64')},ct)).status,201);
+  assert.equal(calls,0);
+  const report=(await f.call(path,'GET',undefined,tt)).data.attempts[0].analysisReport;
+  assert.equal(report.processingStatus,'quality_blocked');assert.equal(report.captureQuality.status,'retake');
+  assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${id}/audio`,'GET',undefined,tt)).data.audio,'base64'),original);
+  f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:true}),'pending',new Date(Date.now()+1000).toISOString());
+  assert.equal((await f.call(`${path}/attempts`,'POST',{id:randomUUID(),wordId:word.id,audio:toneWav().toString('base64')},ct)).status,409);
+  assert.equal(calls,0);
+});
+
+test('published family voice feedback remains available after enrollment or therapist pairing ends',async t=>{
+  const f=await fixture(t);
+  const child=f.add('patient'),therapist=f.add('therapist'),parent=f.add('parent'),stranger=f.add('parent');
+  f.db.prepare('UPDATE users SET therapist_id=?,parent_id=? WHERE id=?').run(therapist.id,parent.id,child.id);
+  const ct=await f.login(child),tt=await f.login(therapist),pt=await f.login(parent),st=await f.login(stranger),path=`/useful-words/patients/${child.id}`;
+  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
+  f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:false}),'approved',now());
+  const audio=toneWav().toString('base64');
+  const word=(await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:audio},tt)).data;
+  const id=randomUUID();
+  await f.call(`${path}/attempts`,'POST',{id,wordId:word.id,audio},ct);
+  await f.call(`${path}/attempts/${id}/review`,'PUT',{feedback:'Try slowly.',reviewed:true,feedbackAudio:audio},tt);
+  f.db.prepare("DELETE FROM useful_word_records WHERE kind='enrollment' AND patient_id=?").run(child.id);
+  for(const token of [ct,pt]) assert.equal((await f.call(`${path}/attempts/${id}/feedback`,'GET',undefined,token)).data.audio,audio);
+  f.db.prepare('UPDATE users SET therapist_id=NULL WHERE id=?').run(child.id);
+  for(const token of [ct,pt]) {
+    assert.equal((await f.call(`${path}/attempts/${id}/feedback`,'GET',undefined,token)).data.audio,audio);
+    assert.equal((await f.call(`${path}/attempts/${id}/audio`,'GET',undefined,token)).status,403);
+  }
+  for(const token of [tt,st]) assert.equal((await f.call(`${path}/attempts/${id}/feedback`,'GET',undefined,token)).status,403);
 });

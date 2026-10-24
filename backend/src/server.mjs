@@ -2,6 +2,9 @@ import { createMotorAnalyzer, motorGuidance, motorExercises } from './motor.mjs'
 import { motorApi } from './motor-api.mjs';
 import { createServer } from 'node:http';
 import { usefulWords } from './useful-words.mjs';
+import { expressionsApi } from './expressions.mjs';
+import { familyProgress } from './family-progress.mjs';
+import { hostedAnalysis } from './hosted-analysis.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
@@ -52,8 +55,16 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
     const days = db.prepare("SELECT COUNT(DISTINCT substr(completed_at,1,10)) AS n FROM progress WHERE patient_id=? AND completed_at>=?").get(p.id, firstDay.toISOString()).n;
     return { ...publicUser(p), therapist_name: findUser(p.therapist_id)?.name || null, parent_name: findUser(p.parent_id)?.name || null, consent_status: consent?.status || 'missing', has_plan: !!plan, active_days: days, ...activity };
   };
-  const wordRoutes = usefulWords({ db, dataDir, fail, text, body, json, findUser, transcriber });
-  const motor = motorApi({db,dataDir,analyze:motorAnalyzer,accessPatient,requireRole,body,text,fail,json});
+  const hosted = hostedAnalysis({db,body,fail,json,accessPatient,requireRole});
+  const wordRoutes = usefulWords({ db, dataDir, fail, text, body, json, findUser, transcriber, canUseHosted: hosted.allowed });
+  const motor = motorApi({db,dataDir,analyze:motorAnalyzer,accessPatient,requireRole,body,text,fail,json,canUseHosted:hosted.allowed});
+  const expressions = expressionsApi({db,dataDir,accessPatient,requireRole,body,text,fail,json});
+  const familyRoutes = familyProgress({
+    fail, json, findUser,
+    wordSnapshot: wordRoutes.familyProgressSnapshot,
+    motorSnapshot: motor.familyProgressSnapshot,
+    expressionSnapshot: expressions.snapshot,
+  });
   const server = createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'same-origin');
@@ -98,7 +109,10 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
       }
       if (path.startsWith('/api/')) {
         const u = authenticate(db, req); if (!u) fail(401, 'Please sign in.');
+        if (await hosted.handle(req, res, path, u)) return;
         if (await wordRoutes(req, res, url, u)) return;
+        if (await expressions.handle(req, res, path, u)) return;
+        if (await familyRoutes(req, res, path, u)) return;
         if (path === '/api/auth/me' && method === 'GET') return json(res, 200, { user: publicUser(u) });
         if (path === '/api/auth/logout' && method === 'POST') {
           db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(requestToken(req)));
@@ -313,7 +327,7 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
     }
     audit(db,actor,'Created account',id,`${name} · ${b.role}`); return publicUser(findUser(id));
   }
-  return {server,db,motor};
+  return {server,db,motor,wordRoutes};
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
   const {server}=createApp(); const port=Number(process.env.PORT || 8787); const host=process.env.HOST || '127.0.0.1';

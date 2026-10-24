@@ -17,7 +17,7 @@ import 'child_activity_picture.dart';
 import 'child_tile.dart';
 import 'leave_child_mode_dialog.dart';
 
-/// The child's home in child mode: a friendly hello and two big picture
+/// The child's home in child mode: a friendly hello and big picture
 /// buttons. Words are kept short so a grown-up can read along.
 class ChildHomeScreen extends ConsumerWidget {
   const ChildHomeScreen({super.key});
@@ -97,6 +97,23 @@ class ChildHomeScreen extends ConsumerWidget {
                     onTap: () => context.push(AppRoutes.patientDrawing),
                   ),
                   const SizedBox(height: AppSpacing.xl),
+                  ChildTile(
+                    picture: ChildActivity.expressions,
+                    icon: LucideIcons.smile,
+                    color: AppColors.childButter,
+                    title: l10n.childExpressions,
+                    subtitle: l10n.childExpressionsHint,
+                    onTap: () => context.push(AppRoutes.patientExpressions),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ChildTile(
+                    icon: LucideIcons.messageSquare,
+                    color: AppColors.surface,
+                    title: l10n.childProgress,
+                    subtitle: l10n.childProgressHint,
+                    onTap: () => context.push(AppRoutes.patientProgress),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
                   const _GrownUpsButton(),
                 ],
               ),
@@ -109,7 +126,7 @@ class ChildHomeScreen extends ConsumerWidget {
 }
 
 /// Leaving child mode is for a grown-up, so it sits at the bottom and asks
-/// for the parent's password.
+/// for the parent's PIN.
 class _GrownUpsButton extends StatelessWidget {
   const _GrownUpsButton();
 

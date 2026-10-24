@@ -112,7 +112,7 @@ void main() {
     expect(find.text('Use at least 10 characters.'), findsOneWidget);
   });
 
-  testWidgets('child home greets the child with two picture buttons', (
+  testWidgets('child home offers three activities and therapist feedback', (
     tester,
   ) async {
     await _pump(
@@ -133,7 +133,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Hi, Ananya!'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('^Activities')), findsNothing);
-    for (final tile in ['Say a word', 'Drawing']) {
+    for (final tile in ['Say a word', 'Drawing', 'Feelings', 'My feedback']) {
       expect(find.bySemanticsLabel(RegExp('^$tile')), findsOneWidget);
     }
     expect(find.bySemanticsLabel('Drawing, 0 of 1 done'), findsOneWidget);

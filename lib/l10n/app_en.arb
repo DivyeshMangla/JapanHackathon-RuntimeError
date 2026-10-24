@@ -782,7 +782,7 @@
       }
     }
   },
-  "childModeStartBody": "{name} will see only their words and drawing practice. Choose a four-digit PIN to use when returning to your account.",
+  "childModeStartBody": "{name} will see their words, drawing and feelings practice, plus therapist feedback. Choose a four-digit PIN to use when returning to your account.",
   "@childModeStartBody": {
     "description": "Explains that leaving child mode needs the parent's PIN.",
     "placeholders": {
@@ -804,7 +804,24 @@
   "motorRetakePhoto": "Take another photo",
   "motorCameraUnavailable": "Could not open the camera. Check camera access and try again.",
   "motorReportTarget": "Expected result: {target}",
-  "@motorReportTarget": {"placeholders": {"target": {"type": "String"}}},
+  "@motorReportTarget": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
   "motorReportComparison": "Compared with the example: {comparison}",
-  "@motorReportComparison": {"placeholders": {"comparison": {"type": "String"}}}
+  "@motorReportComparison": {
+    "placeholders": {
+      "comparison": {
+        "type": "String"
+      }
+    }
+  },
+  "childExpressions": "Feelings",
+  "childExpressionsHint": "Look at a face and choose a feeling",
+  "childProgress": "My feedback",
+  "childProgressHint": "See what your therapist says",
+  "therapistExpressionsLink": "Feelings practice"
 }

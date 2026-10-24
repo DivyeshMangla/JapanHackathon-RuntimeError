@@ -115,7 +115,7 @@ use shared database/object storage before adding multiple backend instances.
 
 Email verification/reset delivery, MFA, cloud hosting, hospital identity
 integration, push notifications, and institutional retention/withdrawal policies
-are not implemented. No external services or hosting accounts are configured.
+are not implemented. No external provider credentials or hosting accounts are configured in the repository.
 
 ## Tests
 
@@ -168,17 +168,31 @@ held in memory after capture; temporary native capture/playback files are remove
 on completion/disposal. Device termination during recording can leave a temporary
 file in the OS-managed app cache, so device/cache protection remains necessary.
 
-`UnavailableTranscriber` is a clearly labeled mock integration: it produces
-“Could not transcribe.” A real server-only recognizer may replace its `suggest`
-method. Recognition never modifies the original or generates scores, judgments,
-diagnoses, severity, or emotion predictions. There are no client API keys.
+Without `SPEECH_ML_URL`, transcription is explicitly unconfigured. To enable it,
+run a local [whisper.cpp HTTP server](https://github.com/ggml-org/whisper.cpp/tree/master/examples/server)
+with a downloaded model, then set `SPEECH_ML_URL=http://127.0.0.1:8080/inference`
+before starting the care service. `SPEECH_ML_MODEL` records the model identity and
+`SPEECH_ML_LANGUAGE` sets the recognition language (default `en`, or `auto`).
+Select a model/language using representative therapist-labelled recordings; the
+repository contains no child-speech validation dataset.
+
+For the local recognizer, only loopback endpoints are accepted, redirects are rejected and
+inference has a deadline. WAV structure, duration, level and clipping checks can
+skip unsuitable recognition while keeping delivery and manual review available.
+The checks are technical heuristics, not validated speech-quality judgments.
+The adapter sends no target-word prompt, and makes a temporary 16 kHz recognition
+copy using local `ffmpeg`; the original is retained unchanged. Install ffmpeg on
+the care-service computer (`SPEECH_ML_FFMPEG_PATH` overrides its executable path).
+The Docker image includes it. A local recognizer running in another container
+must share the backend's loopback network, like the Ollama service. Hosted Whisper
+is an explicit alternative described below; no provider API key is sent to a client.
 
 ## Children's daily motor and handwriting practice
 
 The exercise library includes Little paths (1 minute), Round and round
 (1 minute) and My letter L (2 minutes). A parent signs the unified care consent
 once, when adding the child; the therapist records the child's assessment and prescribes
-suitable activities. The current prototype consent version is CONNECTED-DEMO-3.
+suitable activities. The current prototype consent version is CONNECTED-DEMO-4.
 Consent is taken only when a child is added and never expires: a child signed
 under an earlier version keeps that consent, and each record keeps the version
 that was signed.
@@ -189,18 +203,19 @@ three activities assigned; `meera@melo.test` is the assigned therapist. Both use
 `VoiceDemo!2026`. Existing seeded workspaces are not overwritten.
 
 The drawing screen can open the device camera or choose a JPEG/PNG from the photo
-library. Captures are previewed and uploaded without cropping, resizing or
-recompression. Only the screen preview is decoded at a smaller size.
+library. The app normalises picked photos to a bounded PNG before upload. The
+service preserves that received original; any brightness/contrast analysis copy
+is separate and recorded in the report.
 
-The original bytes are retained privately, alongside an analysis report and
+The bytes received by the service are retained privately, alongside an analysis report and
 separate therapist feedback. Photo access and feedback follow current assignment,
 including immediate loss of access on reassignment; photo views are audited.
 One completed activity per plan/exercise/local practice date contributes to the
 practice log, even if the child submits another attempt. Daily photo status is
 shown separately from a therapist's evaluation. Uploads are online and retryable
 with the same ID; the preview remains on screen if upload fails. They are not
-added to the offline audio outbox. Original photos are bounded to 20 MB and 24 megapixels. JPEG motion-photo
-trailers are preserved with the rest of the original file.
+added to the offline audio outbox. Original photos are bounded to 20 MB and 24 megapixels. The API preserves accepted camera JPEG trailers if a client submits them; the
+mobile picker normalises its photos before upload.
 
 Start a local [Ollama](https://docs.ollama.com/quickstart) server and download a
 vision-capable model before using automated analysis:
@@ -218,7 +233,7 @@ For Docker Compose deployments, after setting `PUBLIC_ORIGIN` and
 `USEFUL_WORDS_KEY`, run these commands from the repository root:
 
 ```bash
-docker compose up -d
+docker compose --profile local-vision up -d
 docker compose logs -f ollama-model-init
 ```
 
@@ -228,8 +243,9 @@ model URL works without exposing port 11434. Model downloads persist in the
 `gemma3:4b` and exits successfully when ready. Once the download finishes, retry unavailable analyses
 from the therapist view.
 
-The backend uses Ollama's image chat and structured JSON output APIs; no API key
-or hosted AI service is used. Model download/runtime memory requirements depend
+The local provider uses Ollama's image chat and structured JSON output APIs.
+The optional hosted provider uses Groq with a server-only key and a separate
+parent permission; see the hosted setup below. Model download/runtime memory requirements depend
 on the chosen model. This repository does not bundle model weights. No clinically
 validated motor assessment model is included. Outputs describe visible formation,
 alignment and spacing only, using qualitative categories. They cannot determine
@@ -246,7 +262,8 @@ of the phone screen, with a five-minute per-image timeout for CPU inference.
 Override this with `MOTOR_ML_TIMEOUT_MS` if needed.
 Pending work survives restart. If inference fails or the model is unavailable,
 the photo remains available for human review and the assigned therapist can retry.
-If optional automated analysis was declined, the model is never called.
+A provider is never called without the corresponding permission: original
+optional-analysis permission for local models or a separate online grant for Groq.
 
 Approved therapists may now sign in at the browser dashboard as well as the
 connected mobile app. Their browser view shows only their caseload, consent and
@@ -292,9 +309,175 @@ the current API intentionally has no path for accepting an accuracy score.
 Corrections never overwrite the automated snapshot, and later recognition cannot
 overwrite a correction. Reports/corrections are excluded from child and parent API
 views; only explicit clinician feedback is shown. The parent's unified care
-consent is now `CONNECTED-DEMO-3`, including voice-analysis disclosures. Consent
+consent is now `CONNECTED-DEMO-4`, including expression practice and family feedback. Consent
 signed under an earlier version still counts, and optional analysis is
 only invoked when the parent agrees to it. Approved wording and guardian identity
 verification remain deployment requirements.
 
 Child mode uses a four-digit PIN chosen by the parent each time they start it. Already-open demo sessions without a PIN use `1234`. Account sign-in still uses the account password.
+
+
+## Expression-picture practice and family progress
+
+The assigned therapist chooses two to six labels: happy, sad, angry, surprised,
+scared and calm. The app shows two drawn variants of each, with shuffled pictures
+and answer choices. A round requires one answer per assigned picture and records
+whether an adult helped. Scores are computed on the server against the picture
+key, never supplied by the phone. Reports contain correct/total, per-label counts,
+confused pairs and individual answers. These describe this task only; they do not
+infer the child's feelings, diagnose autism or establish everyday emotion
+understanding. Different assignments and helped rounds are not interchangeable
+measures of improvement.
+
+Expression assignments, answers, reports and feedback use AES-256-GCM encryption
+with record/patient/purpose binding. Development creates a private `expressions.key`
+in the data directory; production uses `EXPRESSIONS_KEY` (or the existing
+`USEFUL_WORDS_KEY` if omitted). Protect these keys with database backups.
+
+| Method / path | Access / purpose |
+| --- | --- |
+| GET `/patients/:id/expressions` | Own child/parent, assigned therapist or admin: assignment and round history |
+| PUT `/patients/:id/expressions` | Assigned therapist: `{expressionIds, enabled}`; creates a plan version |
+| POST `/patients/:id/expression-sessions` | Child: `{id, assignmentId, assistance, answers:[{pictureId,selected}]}`; immutable retry ID |
+| POST `/expression-sessions/:id/review` | Assigned therapist: `{note}`; publishes family guidance |
+| GET `/patients/:id/family-progress` | Own child/parent or assigned therapist: activity counts, clinician outcomes and published feedback |
+
+Family progress joins all three activities. Word feedback is published when the
+therapist marks the attempt reviewed, including optional voice messages and their
+manual assessment. Drawing reviews include an optional `therapistOutcome`
+(`on_track`, `needs_practice`, `not_assessed`); word reviews use `correct`,
+`needs_practice`, `not_assessed`. Internal AI reports and clinician corrections
+stay separate from family feedback. The child opens **My feedback**; the parent
+opens their child's detail page. Both can refresh to retrieve new remarks.
+
+The vision adapter uses a task-specific count/formation/alignment/spacing rubric,
+requires visible evidence per rating, rejects invalid model output and abstains
+on reported poor quality, missing evidence or unsupported criteria. It records
+model/rubric versions and limitations separately from therapist assessment. Its
+structured output uses the [Ollama schema API](https://docs.ollama.com/capabilities/structured-outputs).
+A valid JSON report is not proof of correct visual interpretation. No clinically
+validated drawing or pronunciation accuracy model or labelled validation cohort
+is included; unit tests verify handling and safeguards, not clinical accuracy.
+
+
+### Evaluate a model on labelled local samples
+
+Run `npm --prefix backend run evaluate:models -- /absolute/path/manifest.json /absolute/path/metrics.json`
+after configuring the local recognition/vision services. The output file must not
+already exist. Media paths are relative to the manifest. Use this format:
+
+```json
+{
+  "schemaVersion": 1,
+  "speech": [
+    {"id": "speech-001", "audio": "samples/word.wav", "reference": "help"}
+  ],
+  "drawing": [
+    {
+      "id": "drawing-001",
+      "photo": "samples/lines.png",
+      "exerciseId": "motor-lines",
+      "assessable": true,
+      "ratings": {
+        "alignment": "consistent",
+        "formation": "developing",
+        "spacing": "consistent"
+      }
+    }
+  ]
+}
+```
+
+Either sample list may be empty. Drawing labels are `not_assessable`, `emerging`,
+`developing` or `consistent`; include poor/blank/unrelated images with clinician
+`not_assessable` labels to measure inappropriate model judgments. Metrics include
+transcription word error rate (whitespace tokenization, not suitable as a
+language-aware word metric for unsegmented scripts), coverage, failed/blocked cases, per-criterion
+agreement, abstentions and ratings on clinician-unassessable photos. The aggregate
+output excludes source filenames, recognized text and child identifiers beyond
+what the evaluator needs to read from the local manifest. This command does not
+use the application's patient database or change clinical records. Test model
+selection on a separate, representative clinician-labelled holdout set; do not
+interpret synthetic unit tests as measured clinical performance.
+
+
+## Hosted provider and comparison workflow
+
+The optional Groq integration uses `qwen/qwen3.8-27b` for image observations and
+`whisper-large-v3` for speech recognition. The current [vision documentation](https://console.groq.com/docs/vision),
+[speech API](https://console.groq.com/docs/speech-to-text) and
+[free-plan limits](https://console.groq.com/docs/rate-limits) list these models.
+Free usage has account-specific request/token/audio quotas, not an unlimited
+service guarantee. Nothing in the app creates a provider account or upgrades a plan.
+
+Set these in the care-service environment (the repository does not load `.env`):
+
+```bash
+export MOTOR_ML_PROVIDER=groq
+export SPEECH_ML_PROVIDER=groq
+# Supply GROQ_API_KEY through your shell or deployment secret store.
+# Leave MOTOR_ML_MODEL and SPEECH_ML_MODEL unset to use the hosted defaults.
+npm run demo
+```
+
+Docker Compose passes the same variables to the backend. With hosted processing,
+`docker compose up -d` starts only the backend. Add `--profile local-vision` when
+using local Ollama. Hosted endpoints are fixed HTTPS Groq URLs; credentials are
+server-only, redirects are rejected and model failures retain originals for manual
+review. No fallback silently changes local processing into an external upload.
+
+`GET /patients/:id/hosted-analysis` returns the current provider disclosure and
+permission status. Only the child's parent can `PUT` a new grant using
+`{allowed:true, disclosureVersion, adultConfirmed:true}`, or revoke using
+`{allowed:false}`. A new grant may be made even if optional local analysis was
+previously declined. It is stored separately from signed care consent; it does
+not rewrite that record. Only an active matching parent with approved care consent
+can grant online processing. Current permission is rechecked before queued work
+and before each outgoing child/reference/photo request. The parent's dashboard
+exposes these choices.
+
+The disclosure covers Groq processing in the United States and possible retention
+for reliability/abuse investigations. Operators can enable zero data retention in
+their account's Data Controls. Configure the account and review suitability for
+your institution before sending real child records. See [Groq's data controls](https://console.groq.com/docs/your-data).
+Backend-only execution does not remove the fact that a provider receives the media.
+Gemini API has different [age and clinical-use restrictions](https://ai.google.dev/gemini-api/terms);
+it is not an interchangeable free fallback for this child-facing app.
+
+### Speech evidence
+
+Each attempt freezes the expected word and the therapist example audio/digest.
+Whisper transcribes the child and example independently, without a target-word
+prompt. Reports show target/transcript and reference/transcript edit distances,
+clearly labelled text similarity, recognition diagnostics and recording durations.
+If the example's recognized text differs from the expected word, the report flags
+it for review. Duration ratios are timing context, not acoustic similarity.
+These fields support later comparison and listening; none is a validated child
+pronunciation percentage. Original/reference playback is restricted to the
+assigned therapist; family views show only published therapist feedback.
+
+### Photo evidence and replacement requests
+
+The image pipeline first checks readability and whether an image contains drawing
+work, before supplying the target reference for comparison. Dim but readable images
+can use a separate global luminance/contrast copy; no generative editing or new
+geometry is added. The original remains primary evidence. Tonal enhancement can
+amplify noise, so it cannot guarantee recovery of an unreadable image.
+
+A scene/object/selfie with no drawing work requests another photo. A wrong letter,
+unfinished drawing, scribble or poor attempt remains relevant work; it is not
+rejected for differing from the target. Unreadable darkness, blur/glare or ambiguous
+cropping also requests a replacement. Safe family-facing capture instructions are
+returned separately from internal model observations. The child sees the request
+at the top of the practice page and can retake or choose a new photo.
+
+`GET /motor-submissions/:id/status` returns delivery/analysis status and safe
+`captureFeedback`. Pending checks and rejected photos do not complete practice;
+a valid replacement counts once per plan/exercise/day. An extra rejected photo
+cannot erase an earlier valid completion. If inference is unavailable, original
+photos remain delivered for manual review rather than being called incorrect.
+
+The standalone evaluation CLI can also exercise the hosted providers on an
+explicitly authorised labelled dataset. Add `--allow-hosted-evaluation` to opt in;
+without it, hosted evaluation stops before sending media. This command is separate
+from patient submissions and their per-child permission records.

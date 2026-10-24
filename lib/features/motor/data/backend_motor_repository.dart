@@ -87,10 +87,14 @@ class BackendMotorRepository implements MotorRepository {
       _client.getBytes('/motor-submissions/$submissionId/photo');
 
   @override
-  Future<void> review(String submissionId, String note) async {
+  Future<void> review(
+    String submissionId,
+    String note, {
+    MotorTherapistOutcome outcome = MotorTherapistOutcome.notAssessed,
+  }) async {
     await _client.post(
       '/motor-submissions/$submissionId/review',
-      body: {'note': note},
+      body: {'note': note, 'therapistOutcome': outcome.wireValue},
     );
   }
 
@@ -120,8 +124,15 @@ class BackendMotorRepository implements MotorRepository {
     ],
   );
 
+  MotorEvidence _evidence(JsonObject json) => MotorEvidence(
+    alignment: json['alignment']! as String,
+    formation: json['formation']! as String,
+    spacing: json['spacing']! as String,
+  );
+
   MotorSubmission _submission(JsonObject json) {
     final report = json['report'];
+    final capture = json['captureFeedback'];
     return MotorSubmission(
       id: json['id']! as String,
       exerciseId: json['exercise_id']! as String,
@@ -130,7 +141,21 @@ class BackendMotorRepository implements MotorRepository {
         json['analysis_status']! as String,
       ),
       createdAt: DateTime.parse(json['created_at']! as String).toLocal(),
+      captureFeedback: capture is JsonObject
+          ? MotorCaptureFeedback(
+              replacementRequired: capture['replacementRequired'] == true,
+              reason: capture['reason'] == 'unrelated_photo'
+                  ? MotorRetakeReason.unrelatedPhoto
+                  : MotorRetakeReason.unreadablePhoto,
+            )
+          : null,
       reviewNote: json['review_note'] as String?,
+      therapistOutcome: MotorTherapistOutcome.fromWire(
+        json['therapist_outcome'] as String?,
+      ),
+      reviewedAt: json['reviewed_at'] == null
+          ? null
+          : DateTime.parse(json['reviewed_at'] as String).toLocal(),
       report: report is JsonObject
           ? MotorReport(
               observations: report['observations']! as String,
@@ -142,6 +167,17 @@ class BackendMotorRepository implements MotorRepository {
               imageQuality: report['imageQuality']! as String,
               comparison: report['comparison'] as String?,
               expectedResult: report['expectedResult'] as String?,
+              expectedCount: report['expectedCount'] as int?,
+              observedCount: report['observedCount'] as int?,
+              validation: report['validation'] as String?,
+              rubricVersion: report['rubricVersion'] as String?,
+              limitations: List.unmodifiable(
+                (report['limitations'] as List<Object?>? ?? const [])
+                    .cast<String>(),
+              ),
+              evidence: report['evidence'] is JsonObject
+                  ? _evidence(report['evidence']! as JsonObject)
+                  : null,
             )
           : null,
     );

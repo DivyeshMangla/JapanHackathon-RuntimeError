@@ -58,9 +58,14 @@ class WordRepository {
     String kind,
     String id, {
     bool feedback = false,
+    bool reference = false,
   }) async {
     final response = await _request(
-      '$_path/$kind/$id/${feedback ? 'feedback' : 'audio'}',
+      '$_path/$kind/$id/${feedback
+          ? 'feedback'
+          : reference
+          ? 'reference'
+          : 'audio'}',
     );
     return base64Decode(response['audio'] as String);
   }
@@ -102,6 +107,7 @@ class WordRepository {
     Uint8List? audio,
     bool preserveAudio = false,
     String? analysisCorrection,
+    WordTherapistOutcome? therapistOutcome,
   }) async {
     await _request(
       '$_path/attempts/$id/review',
@@ -112,6 +118,8 @@ class WordRepository {
         'feedbackAudio': audio == null ? null : base64Encode(audio),
         'preserveAudio': preserveAudio,
         'analysisCorrection': ?analysisCorrection,
+        if (therapistOutcome != null)
+          'therapistOutcome': therapistOutcome.wireValue,
       },
     );
   }

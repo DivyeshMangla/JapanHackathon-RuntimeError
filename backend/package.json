@@ -8,6 +8,7 @@
     "demo": "node src/seed.mjs && node src/server.mjs",
     "seed": "node src/seed.mjs",
     "admin": "node src/create-admin.mjs",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "evaluate:models": "node src/evaluate-models.mjs"
   }
 }

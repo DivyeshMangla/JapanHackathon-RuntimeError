@@ -22,7 +22,33 @@ class MotorExercise {
 
 enum MotorAnalysisStatus { pending, processing, ready, unavailable, declined }
 
-/// The local vision model's description of a photo. It is a suggestion for
+enum MotorTherapistOutcome {
+  onTrack,
+  needsPractice,
+  notAssessed;
+
+  String get wireValue => switch (this) {
+    onTrack => 'on_track',
+    needsPractice => 'needs_practice',
+    notAssessed => 'not_assessed',
+  };
+  static MotorTherapistOutcome fromWire(String? value) => switch (value) {
+    'on_track' => onTrack,
+    'needs_practice' => needsPractice,
+    _ => notAssessed,
+  };
+}
+
+class MotorEvidence {
+  const MotorEvidence({
+    required this.alignment,
+    required this.formation,
+    required this.spacing,
+  });
+  final String alignment, formation, spacing;
+}
+
+/// The configured vision model's description of a photo. It is a suggestion for
 /// the therapist, never shown to the child or parent.
 class MotorReport {
   const MotorReport({
@@ -35,6 +61,12 @@ class MotorReport {
     required this.imageQuality,
     this.comparison,
     this.expectedResult,
+    this.expectedCount,
+    this.observedCount,
+    this.evidence,
+    this.validation,
+    this.rubricVersion,
+    this.limitations = const [],
   });
 
   final String observations;
@@ -46,6 +78,10 @@ class MotorReport {
   final String imageQuality;
   final String? comparison;
   final String? expectedResult;
+  final int? expectedCount, observedCount;
+  final MotorEvidence? evidence;
+  final String? validation, rubricVersion;
+  final List<String> limitations;
 }
 
 /// One photo of a child's drawing.
@@ -58,6 +94,9 @@ class MotorSubmission {
     required this.createdAt,
     this.report,
     this.reviewNote,
+    this.therapistOutcome = MotorTherapistOutcome.notAssessed,
+    this.reviewedAt,
+    this.captureFeedback,
   });
 
   final String id;
@@ -69,6 +108,29 @@ class MotorSubmission {
   final DateTime createdAt;
   final MotorReport? report;
   final String? reviewNote;
+  final MotorTherapistOutcome therapistOutcome;
+  final DateTime? reviewedAt;
+  final MotorCaptureFeedback? captureFeedback;
+
+  bool get checkingPhoto =>
+      status == MotorAnalysisStatus.pending ||
+      status == MotorAnalysisStatus.processing;
+
+  bool get countsAsPractice =>
+      !checkingPhoto && captureFeedback?.replacementRequired != true;
+}
+
+enum MotorRetakeReason { unrelatedPhoto, unreadablePhoto }
+
+/// Capture instructions contain no automated assessment of the child's work.
+class MotorCaptureFeedback {
+  const MotorCaptureFeedback({
+    required this.replacementRequired,
+    required this.reason,
+  });
+
+  final bool replacementRequired;
+  final MotorRetakeReason reason;
 }
 
 /// A child's drawing practice: the plan their therapist set and the photos
@@ -97,6 +159,7 @@ class MotorRecord {
 
   Set<String> doneOn(String day) => {
     for (final submission in submissions)
-      if (submission.practiceDay == day) submission.exerciseId,
+      if (submission.practiceDay == day && submission.countsAsPractice)
+        submission.exerciseId,
   };
 }

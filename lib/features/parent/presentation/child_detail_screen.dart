@@ -8,17 +8,20 @@ import '../../../core/utils/formatting.dart';
 import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/failure_feedback.dart';
 import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../../shared/widgets/skeleton.dart';
-import '../../motor/domain/motor.dart';
-import '../../motor/presentation/controllers/motor_controllers.dart';
+import '../../progress/presentation/controllers/progress_controllers.dart';
+import '../../progress/presentation/progress_panel.dart';
+import '../../progress/presentation/progress_strings.dart';
 import 'controllers/family_controllers.dart';
+import 'controllers/hosted_analysis_controllers.dart';
+import 'parent_hosted_analysis_panel.dart';
 import 'start_child_mode_button.dart';
 
 /// One child as their parent sees them: the way into child mode, the
-/// consent signed when they were added and the therapist's drawing
-/// feedback.
+/// consent signed when they were added, practice and therapist guidance.
 class ChildDetailScreen extends ConsumerWidget {
   const ChildDetailScreen({super.key, required this.childId});
 
@@ -46,16 +49,24 @@ class ChildDetailScreen extends ConsumerWidget {
                 onRefresh: () async {
                   ref
                     ..invalidate(childConsentProvider(childId))
-                    ..invalidate(motorRecordProvider(childId));
+                    ..invalidate(hostedAnalysisPermissionProvider(childId))
+                    ..invalidate(familyProgressProvider(childId));
+                  await runWithFailureMessage(context, () async {
+                    await ref
+                        .read(familyProgressProvider(childId).future)
+                        .then<void>((_) {});
+                  });
                 },
                 child: PageList(
                   children: [
                     StartChildModeButton(child: child, primary: true),
                     const SizedBox(height: AppSpacing.lg),
                     _ConsentOnFile(childId: childId),
+                    const SizedBox(height: AppSpacing.lg),
+                    ParentHostedAnalysisPanel(childId: childId),
                     const SizedBox(height: AppSpacing.xl),
-                    SectionLabel(l10n.parentDrawingFeedback),
-                    _DrawingFeedback(childId: childId),
+                    const SectionLabel(ProgressStrings.title),
+                    ParentProgressPanel(childId: childId),
                   ],
                 ),
               ),
@@ -100,55 +111,6 @@ class _ConsentOnFile extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _DrawingFeedback extends ConsumerWidget {
-  const _DrawingFeedback({required this.childId});
-
-  final String childId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final text = Theme.of(context).textTheme;
-    final names = {
-      for (final exercise
-          in ref.watch(motorExercisesProvider).value ?? const <MotorExercise>[])
-        exercise.id: exercise.name,
-    };
-    return AsyncView(
-      value: ref.watch(motorRecordProvider(childId)),
-      loading: const Skeleton(height: AppSizes.childTile),
-      data: (record) {
-        final reviewed = [
-          for (final submission in record.submissions)
-            if (submission.reviewNote != null) submission,
-        ];
-        if (reviewed.isEmpty) return Text(l10n.parentNoDrawingFeedback);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final submission in reviewed.take(5)) ...[
-              InkCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${names[submission.exerciseId] ?? submission.exerciseId} · ${submission.practiceDay}',
-                      style: text.titleMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(submission.reviewNote!),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-          ],
-        );
-      },
     );
   }
 }

@@ -44,15 +44,22 @@ void main() {
     expect(redirectFor(patient, AppRoutes.login), AppRoutes.patient);
     expect(redirectFor(patient, AppRoutes.therapist), AppRoutes.patient);
     expect(redirectFor(patient, AppRoutes.patientDrawing), isNull);
+    expect(redirectFor(patient, AppRoutes.patientExpressions), isNull);
+    expect(redirectFor(patient, AppRoutes.patientProgress), isNull);
     expect(redirectFor(patient, AppRoutes.parent), AppRoutes.patient);
 
     final parent = AsyncData<User?>(_user(UserRole.parent));
     expect(redirectFor(parent, AppRoutes.parentAddChild), isNull);
     expect(redirectFor(parent, AppRoutes.patient), AppRoutes.parent);
+    expect(redirectFor(parent, AppRoutes.patientProgress), AppRoutes.parent);
     expect(redirectFor(parent, AppRoutes.parentSettings), isNull);
 
     final therapist = AsyncData<User?>(_user(UserRole.therapist));
     expect(redirectFor(therapist, AppRoutes.admin), AppRoutes.therapist);
     expect(redirectFor(therapist, '/patientx'), AppRoutes.therapist);
+    expect(
+      redirectFor(therapist, AppRoutes.therapistExpressions('child')),
+      isNull,
+    );
   });
 }

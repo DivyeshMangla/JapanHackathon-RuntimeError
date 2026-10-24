@@ -36,6 +36,7 @@ export function openDatabase(dataDir = process.env.DATA_DIR || resolve(root, 'da
     db.prepare('UPDATE users SET link_code=? WHERE id=?').run(newLinkCode(db), id);
   }
   db.exec(readFileSync(resolve(root, 'migrations/002_motor.sql'), 'utf8'));
+  db.exec(readFileSync(resolve(root, 'migrations/004_expressions.sql'), 'utf8'));
   if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'child_pin_hash')) db.exec('ALTER TABLE users ADD COLUMN child_pin_hash TEXT');
   return db;
 }
@@ -81,5 +82,5 @@ export function audit(db, actor, action, target = null, detail = '') {
   db.prepare('INSERT INTO audit VALUES (?, ?, ?, ?, ?, ?)').run(randomUUID(), actor, action, target, detail, now());
 }
 export const exercises = [...motorExercises];
-export const consentVersion = 'CONNECTED-DEMO-3';
-export const consentText = 'Prototype consent: I understand that this demonstration stores my profile, practice progress, handwriting photos and voice recordings on the connected service and shares them with my assigned therapist. An adult signs for a child. Optional automated analysis describes visible practice marks and may suggest recognized speech and pronunciation reports for therapist review. Estimates may be inaccurate or unable to assess reliably; pronunciation accuracy requires a model validated for the child’s age, language and speech characteristics. This placeholder must be replaced with approved study information before participant recruitment.';
+export const consentVersion = 'CONNECTED-DEMO-4';
+export const consentText = 'Prototype consent: I understand that this demonstration stores my profile, practice progress, expression-picture quiz answers, handwriting photos and voice recordings on the connected service and shares them with my assigned therapist. Therapist feedback and practice results are also available to the child and their parent. Expression scores measure answers to illustrated practice pictures, not a diagnosis or anyone’s actual feelings. An adult signs for a child. Optional automated analysis describes visible practice marks and may suggest recognized speech and pronunciation reports for therapist review. Estimates may be inaccurate or unable to assess reliably; pronunciation accuracy requires a model validated for the child’s age, language and speech characteristics. This placeholder must be replaced with approved study information before participant recruitment.';

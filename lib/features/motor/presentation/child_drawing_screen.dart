@@ -16,6 +16,7 @@ import '../../patient/presentation/child_activity_picture.dart';
 import '../../patient/presentation/child_practice_intro.dart';
 import '../../patient/presentation/child_tile.dart';
 import 'controllers/motor_controllers.dart';
+import 'motor_capture_strings.dart';
 
 /// The drawing tasks the child's therapist picked, each ticked once a photo
 /// of today's attempt has been sent.
@@ -69,6 +70,11 @@ class ChildDrawingScreen extends ConsumerWidget {
               );
             }
             final done = record.doneOn(today);
+            final latest = {
+              for (final submission in record.submissions.reversed)
+                if (submission.practiceDay == today)
+                  submission.exerciseId: submission,
+            };
             return PageList(
               children: [
                 ChildPracticeIntro(
@@ -85,6 +91,15 @@ class ChildDrawingScreen extends ConsumerWidget {
                     title: exercise.name,
                     subtitle: done.contains(exercise.id)
                         ? l10n.drawingDoneToday
+                        : latest[exercise.id]
+                                  ?.captureFeedback
+                                  ?.replacementRequired ==
+                              true
+                        ? MotorCaptureStrings.retake(
+                            latest[exercise.id]!.captureFeedback!.reason,
+                          )
+                        : latest[exercise.id]?.checkingPhoto == true
+                        ? MotorCaptureStrings.checking
                         : exercise.description,
                     done: done.contains(exercise.id),
                     onTap: () => context.push(

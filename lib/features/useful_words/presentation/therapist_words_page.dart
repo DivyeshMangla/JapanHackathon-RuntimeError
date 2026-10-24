@@ -86,7 +86,7 @@ class _TherapistWordsPageState extends State<TherapistWordsPage>
             for (final attempt in group.value)
               WordReviewCard(
                 key: ValueKey(
-                  '${attempt.id}-${attempt.reviewed}-${attempt.feedback}-${attempt.hasFeedbackAudio}-${attempt.analysisCorrection}',
+                  '${attempt.id}-${attempt.reviewed}-${attempt.feedback}-${attempt.hasFeedbackAudio}-${attempt.analysisCorrection}-${attempt.therapistOutcome}-${attempt.reviewedAt}',
                 ),
                 attempt: attempt,
                 repository: widget.repository,

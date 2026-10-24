@@ -8,7 +8,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/ink_card.dart';
 
-/// Links from the participant screen to the child's word and drawing
+/// Links from the participant screen to the child's practice activities
 /// practice and to the record of their app use.
 class ParticipantLinksCard extends StatelessWidget {
   const ParticipantLinksCard({super.key, required this.patientId});
@@ -31,6 +31,12 @@ class ParticipantLinksCard extends StatelessWidget {
             icon: LucideIcons.pencil,
             label: l10n.therapistDrawingLink,
             onTap: () => context.push(AppRoutes.therapistDrawing(patientId)),
+          ),
+          _Link(
+            icon: LucideIcons.smile,
+            label: l10n.therapistExpressionsLink,
+            onTap: () =>
+                context.push(AppRoutes.therapistExpressions(patientId)),
           ),
           _Link(
             icon: LucideIcons.activity,

@@ -1,16 +1,17 @@
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID, createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { pronunciationReport, recognizeWithDeadline } from './pronunciation-report.mjs';
+import { pronunciationReport, recognizeWithDeadline, assessWordAudio, createSpeechTranscriber } from './pronunciation-report.mjs';
 import { consentVersion } from './db.mjs';
 
 // Recognition is deliberately independent of accepting audio. Replace this seam
 // with a server-side recognizer; it must never change the stored original.
 export class UnavailableTranscriber {
-  async suggest() { throw new Error('Mock integration: no speech recognition service configured'); }
+  constructor() { if (process.env.SPEECH_ML_PROVIDER === 'groq') this.externalProvider='groq'; }
+  async suggest() { throw new Error('No speech recognition service configured'); }
 }
 
-export function usefulWords({ db, dataDir, fail, text, body, json, findUser, transcriber = new UnavailableTranscriber() }) {
+export function usefulWords({ db, dataDir, fail, text, body, json, findUser, transcriber = createSpeechTranscriber() || new UnavailableTranscriber(), canUseHosted = () => false }) {
   let key;
   if (process.env.USEFUL_WORDS_KEY) {
     key = Buffer.from(process.env.USEFUL_WORDS_KEY, 'base64');
@@ -51,33 +52,89 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
   };
   const therapist = u => { if (u.role !== 'therapist') fail(403,'Only the assigned therapist can do this.'); };
   // The parent's signed care consent covers word practice, so there is no separate form.
-  const parentConsent = patientId => db.prepare("SELECT checks FROM consents WHERE patient_id=? AND status='approved' ORDER BY signed_at DESC, rowid DESC LIMIT 1").get(patientId);
-  const summary = (a, includeAnalysis) => ({ id:a.id, wordId:a.wordId, word:a.word, date:a.date, transcript:a.transcript,
-    transcriptionStatus:a.transcriptionStatus, feedback:a.feedback, hasFeedbackAudio:!!a.feedbackAudio, reviewed:a.reviewed,
+  const parentConsent = patientId => {
+    const latest = db.prepare('SELECT checks,status FROM consents WHERE patient_id=? ORDER BY signed_at DESC, rowid DESC LIMIT 1').get(patientId);
+    return latest?.status === 'approved' ? latest : null;
+  };
+  const summary = (a, includeAnalysis) => ({ id:a.id, wordId:a.wordId, word:a.word, date:a.date, ...(includeAnalysis ? {transcript:a.transcript,hasReferenceAudio:!!a.reference?.audio} : {}),
+    transcriptionStatus:a.transcriptionStatus, feedback:includeAnalysis || a.reviewed ? a.feedback : '', hasFeedbackAudio:!!a.feedbackAudio && (includeAnalysis || a.reviewed), reviewed:a.reviewed,
+    therapistOutcome:a.reviewed ? a.therapistOutcome || 'not_assessed' : 'not_assessed', reviewedAt:a.reviewedAt || null, reviewedBy:a.reviewedBy || null,
     ...(includeAnalysis ? {analysisReport:a.analysisReport || pronunciationReport(a.word,a.transcript,a.transcriptionStatus==='pending'?'pending':a.transcriptionStatus==='failed'?'failed':'complete'),analysisCorrection:a.analysisCorrection || null} : {}) });
   const pending = new Set();
+  let recognitionWork = Promise.resolve();
+  const reportFor = (attempt, status) => pronunciationReport(attempt.word, attempt.transcript, status, { quality: attempt.captureQuality, modelId: transcriber.modelId || null, language: transcriber.language || null, provider:transcriber.externalProvider || 'local', reference:attempt.reference || null, recognitionEvidence:attempt.recognitionEvidence || null });
+  const analysisPermission = patientId => {
+    const consent=parentConsent(patientId);
+    if (!consent) return false;
+    return transcriber.externalProvider ? canUseHosted(patientId,transcriber.externalProvider) === true : JSON.parse(consent.checks).analysis === true;
+  };
+  const enqueue = (patientId, attempt) => {
+    const job = recognitionWork.then(() => transcribe(patientId, attempt));
+    recognitionWork = job.catch(() => {});
+    pending.add(job);
+    job.finally(() => pending.delete(job));
+  };
   async function transcribe(patientId, attempt) {
     try {
-      const transcript = await recognizeWithDeadline(transcriber, Buffer.from(attempt.audio,'base64'));
+      if (!analysisPermission(patientId)) {
+        const current = get('attempt', attempt.id);
+        if (current) { current.transcriptionStatus=transcriber.externalProvider?'hosted_consent_required':'declined'; current.transcript=null; current.analysisReport=reportFor(current,current.transcriptionStatus); put('attempt',current.id,patientId,current); }
+        return;
+      }
+      const recognition = await recognizeWithDeadline(transcriber, Buffer.from(attempt.audio,'base64'), undefined, {canUseHosted:()=>analysisPermission(patientId)});
+      const transcript = typeof recognition === 'string' ? recognition : recognition?.text;
+      let referenceRecognition=null, referenceStatus='quality_blocked';
+      if (attempt.reference?.captureQuality?.eligibleForRecognition && analysisPermission(patientId)) {
+        try { referenceRecognition=await recognizeWithDeadline(transcriber,Buffer.from(attempt.reference.audio,'base64'), undefined, {canUseHosted:()=>analysisPermission(patientId)}); referenceStatus='complete'; }
+        catch { referenceStatus='failed'; }
+      }
       const current = get('attempt',attempt.id);
       if (!current) return;
+      if (!analysisPermission(patientId)) { current.transcript=null; current.recognitionEvidence=null; current.transcriptionStatus=transcriber.externalProvider?'hosted_consent_required':'declined'; current.analysisReport=reportFor(current,current.transcriptionStatus); put('attempt',current.id,patientId,current); return; }
       current.transcript = typeof transcript === 'string' && transcript.trim() ? transcript.slice(0,4000) : null;
+      current.recognitionEvidence = recognition?.evidence || null;
+      if (current.reference) {
+        const referenceText=typeof referenceRecognition==='string'?referenceRecognition:referenceRecognition?.text;
+        current.reference.recognizedText=typeof referenceText==='string' && referenceText.trim()?referenceText.trim().slice(0,4000):null;
+        current.reference.recognitionStatus=referenceStatus==='complete' && !current.reference.recognizedText?'failed':referenceStatus;
+      }
       current.transcriptionStatus = current.transcript ? 'suggested' : 'failed';
-      current.analysisReport = pronunciationReport(current.word,current.transcript,current.transcript?'complete':'failed');
+      current.analysisReport = reportFor(current,current.transcript?'complete':'failed');
       put('attempt',current.id,patientId,current);
     } catch {
       const current = get('attempt',attempt.id);
-      if (current) { current.transcriptionStatus='failed'; current.transcript=null; current.analysisReport=pronunciationReport(current.word,null,'failed'); put('attempt',current.id,patientId,current); }
+      if (current) { current.transcriptionStatus='failed'; current.transcript=null; current.analysisReport=reportFor(current,'failed'); put('attempt',current.id,patientId,current); }
     }
   }
-  return async function route(req,res,url,u) {
-    const match = url.pathname.match(/^\/api\/useful-words\/patients\/([^/]+)(?:\/(enrollment|words|attempts)(?:\/([^/]+)(?:\/(audio|review|feedback))?)?)?$/);
+  // Resume only original pending work; malformed recordings and unavailable
+  // integrations remain delivered for human review rather than pending forever.
+  for (const row of db.prepare("SELECT payload FROM useful_word_records WHERE kind='attempt'").all()) {
+    const attempt = open(row);
+    if (attempt.transcriptionStatus !== 'pending') continue;
+    const record = db.prepare("SELECT patient_id FROM useful_word_records WHERE kind='attempt' AND id=?").get(attempt.id);
+    attempt.captureQuality = assessWordAudio(Buffer.from(attempt.audio,'base64'));
+    if (transcriber instanceof UnavailableTranscriber || !attempt.captureQuality.eligibleForRecognition || !analysisPermission(record.patient_id)) {
+      attempt.transcriptionStatus = !analysisPermission(record.patient_id) ? transcriber.externalProvider?'hosted_consent_required':'declined' : transcriber instanceof UnavailableTranscriber ? 'unconfigured' : 'quality_blocked';
+      attempt.analysisReport = reportFor(attempt, attempt.transcriptionStatus);
+      put('attempt',attempt.id,record.patient_id,attempt);
+    } else enqueue(record.patient_id,attempt);
+  }
+  const route = async function(req,res,url,u) {
+    const match = url.pathname.match(/^\/api\/useful-words\/patients\/([^/]+)(?:\/(enrollment|words|attempts)(?:\/([^/]+)(?:\/(audio|reference|review|feedback))?)?)?$/);
     if (!match) return false;
     const [, patientId, action, itemId, subaction] = match;
     const patient = findUser(patientId);
     const assigned = patient && patient.role === 'patient' && patient.therapist_id && findUser(patient.therapist_id)?.status === 'active';
     const linked = u.id === patientId && u.role === 'patient' || u.role === 'therapist' && u.id === patient?.therapist_id || u.role === 'parent' && u.id === patient?.parent_id;
-    if (!assigned || !linked) fail(403,'This child is not paired with your account.');
+    const familyFeedbackRead = patient?.role === 'patient' && linked && ['parent','patient'].includes(u.role) && req.method === 'GET' && action === 'attempts' && itemId && subaction === 'feedback';
+    if (!linked || !assigned && !familyFeedbackRead) fail(403,'This child is not paired with your account.');
+    // Published family guidance remains usable after practice ends or the
+    // therapist changes. This exception never exposes the child's recording.
+    if (familyFeedbackRead) {
+      const attempt=list('attempt',patientId).find(a=>a.id===itemId);
+      if (!attempt) fail(404,'Attempt not found.');
+      json(res,200,{audio:attempt.reviewed ? attempt.feedbackAudio : null}); return true;
+    }
     const enrollment = get('enrollment',patientId);
     const requireEnrollment = () => { if (!enrollment || new Date(enrollment.birthDate).getTime() > Date.now()) fail(409,'Therapist enrollment is required.');
       const birth=new Date(enrollment.birthDate), today=new Date();
@@ -85,7 +142,7 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
       if (age >= 17) fail(409,'This feature is for children under 17.'); };
     const careConsent = parentConsent(patientId);
     const consent = !!careConsent;
-    const analysisAllowed = consent && JSON.parse(careConsent.checks).analysis === true;
+    const analysisAllowed = analysisPermission(patientId);
     if (!action && req.method === 'GET') {
       const words = list('word',patientId).filter(w => w.therapistId === patient.therapist_id);
       json(res,200,{ enrollment:!!enrollment, consent,
@@ -126,28 +183,38 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
       }
       const word=list('word',patientId).find(w=>w.id===b.wordId && w.therapistId===patient.therapist_id);
       if (!word) fail(400,'Choose a word assigned by your current therapist.');
-      const analysisStatus=analysisAllowed?'pending':'declined';
-      const attempt={id,wordId:word.id,word:word.word,audio:b.audio,digest,date:new Date().toISOString(),transcript:null,transcriptionStatus:analysisStatus,analysisReport:pronunciationReport(word.word,null,analysisStatus),analysisCorrection:null,feedback:'',feedbackAudio:null,reviewed:false};
+      const captureQuality=assessWordAudio(audio);
+      const analysisStatus=!analysisAllowed?transcriber.externalProvider?'hosted_consent_required':'declined':transcriber instanceof UnavailableTranscriber?'unconfigured':!captureQuality.eligibleForRecognition?'quality_blocked':pending.size>=20?'failed':'pending';
+      const referenceAudio=Buffer.from(word.exampleAudio,'base64');
+      const reference={wordId:word.id,targetWord:word.word,audio:word.exampleAudio,audioDigest:createHash('sha256').update(referenceAudio).digest('hex'),captureQuality:assessWordAudio(referenceAudio),capturedAt:new Date().toISOString()};
+      const attempt={id,wordId:word.id,word:word.word,audio:b.audio,digest,date:new Date().toISOString(),reference,transcript:null,recognitionEvidence:null,transcriptionStatus:analysisStatus,captureQuality,analysisCorrection:null,feedback:'',feedbackAudio:null,reviewed:false,therapistOutcome:'not_assessed',reviewedAt:null,reviewedBy:null};
+      attempt.analysisReport=reportFor(attempt,analysisStatus);
       // Persist and acknowledge before recognition; a stalled recognizer cannot
       // hold the delivery response or replace the submitted bytes.
       put('attempt',id,patientId,attempt); json(res,201,{id,status:'delivered'});
-      if (analysisAllowed) { const job=transcribe(patientId,attempt); pending.add(job); job.finally(()=>pending.delete(job)); }
+      if (analysisStatus === 'pending') enqueue(patientId,attempt);
       return true;
     }
     if (action === 'attempts' && itemId) {
       const attempt=list('attempt',patientId).find(a=>a.id===itemId);
       if (!attempt) fail(404,'Attempt not found.');
       if (subaction === 'audio' && req.method === 'GET') { therapist(u); json(res,200,{audio:attempt.audio}); return true; }
-      if (subaction === 'feedback' && req.method === 'GET') { json(res,200,{audio:attempt.feedbackAudio}); return true; }
+      if (subaction === 'reference' && req.method === 'GET') { therapist(u); if (!attempt.reference?.audio) fail(404,'The original example was not saved with this older attempt.'); json(res,200,{audio:attempt.reference.audio}); return true; }
+      if (subaction === 'feedback' && req.method === 'GET') { json(res,200,{audio:u.role==='therapist' || attempt.reviewed ? attempt.feedbackAudio : null}); return true; }
       if (subaction === 'review' && req.method === 'PUT') {
         therapist(u); const b=await body(req,17*1024*1024);
         if (typeof b.feedback!=='string' || b.feedback.length>2000 || typeof b.reviewed!=='boolean') fail(400,'Enter feedback up to 2000 characters and a review status.');
         if (b.analysisCorrection!==undefined && (typeof b.analysisCorrection!=='string' || b.analysisCorrection.length>4000)) fail(400,'Analysis correction must be text up to 4000 characters.');
+        if (b.therapistOutcome!==undefined && !['correct','needs_practice','not_assessed'].includes(b.therapistOutcome)) fail(400,'Choose a valid therapist assessment.');
+        if (b.therapistOutcome && b.therapistOutcome!=='not_assessed' && !b.reviewed) fail(400,'Mark the attempt reviewed before sharing an assessment.');
         if (b.feedbackAudio) wav(b.feedbackAudio);
         const latest=get('attempt',attempt.id);
-        put('attempt',attempt.id,patientId,{...latest,analysisCorrection:b.analysisCorrection===undefined?latest.analysisCorrection:{text:b.analysisCorrection.trim(),therapistId:u.id,date:new Date().toISOString()},feedback:b.feedback.trim(),feedbackAudio:b.preserveAudio===true && !b.feedbackAudio?latest.feedbackAudio:b.feedbackAudio || null,reviewed:b.reviewed}); json(res,200,{ok:true}); return true;
+        put('attempt',attempt.id,patientId,{...latest,analysisCorrection:b.analysisCorrection===undefined?latest.analysisCorrection:{text:b.analysisCorrection.trim(),therapistId:u.id,date:new Date().toISOString()},feedback:b.feedback.trim(),feedbackAudio:b.preserveAudio===true && !b.feedbackAudio?latest.feedbackAudio:b.feedbackAudio || null,reviewed:b.reviewed,therapistOutcome:b.reviewed ? b.therapistOutcome || latest.therapistOutcome || 'not_assessed' : 'not_assessed',reviewedAt:b.reviewed ? new Date().toISOString() : null,reviewedBy:b.reviewed ? u.id : null}); json(res,200,{ok:true}); return true;
       }
     }
     fail(405,'Method not allowed.');
   };
+  route.familyProgressSnapshot = patientId => list('attempt',patientId).map(a => ({ id:a.id,word:a.word,wordId:a.wordId,date:a.date,feedback:a.reviewed?a.feedback:'',hasFeedbackAudio:!!a.feedbackAudio && a.reviewed,reviewed:a.reviewed,therapistOutcome:a.reviewed?a.therapistOutcome || 'not_assessed':'not_assessed',reviewedAt:a.reviewedAt || null,reviewedBy:a.reviewedBy || null }));
+  route.waitForIdle = () => recognitionWork;
+  return route;
 }

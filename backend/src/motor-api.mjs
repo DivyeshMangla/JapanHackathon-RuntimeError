@@ -1,13 +1,14 @@
-import { randomUUID, createHash } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { audit, now } from './db.mjs';
-import { motorExercises, photoType, maxMotorPhotoBytes } from './motor.mjs';
+import { motorExercises, photoType, maxMotorPhotoBytes, motorCaptureFeedback } from './motor.mjs';
 
 export function motorApi({
   db,
   dataDir,
   analyze,
+  canUseHosted = () => false,
   accessPatient,
   requireRole,
   body,
@@ -15,6 +16,8 @@ export function motorApi({
   fail,
   json,
 }) {
+  if (!db.prepare('PRAGMA table_info(motor_submissions)').all().some(column => column.name === 'therapist_outcome'))
+    db.exec("ALTER TABLE motor_submissions ADD COLUMN therapist_outcome TEXT NOT NULL DEFAULT 'not_assessed' CHECK(therapist_outcome IN ('on_track','needs_practice','not_assessed'))");
   let work = Promise.resolve();
   const rows = patientId =>
     db
@@ -28,19 +31,37 @@ export function motorApi({
         'SELECT * FROM consents WHERE patient_id=? ORDER BY signed_at DESC,rowid DESC LIMIT 1',
       )
       .get(id);
-  const canAnalyze = id => {
+  const canAnalyze = async id => {
     const c = consent(id);
-    return (
-      c?.status === 'approved' &&
-      JSON.parse(c.checks).analysis === true
-    );
+    if (c?.status !== 'approved') return false;
+    return analyze.externalProvider
+      ? await canUseHosted(id, analyze.externalProvider)
+      : JSON.parse(c.checks).analysis === true;
   };
+  const feedback = row => motorCaptureFeedback(row.report ? JSON.parse(row.report) : null);
+  const counted = row => !['pending', 'processing'].includes(row.analysis_status) && !feedback(row)?.replacementRequired;
+  const receipt = row => ({ id: row.id, analysisStatus: row.analysis_status, captureFeedback: feedback(row), countsAsPractice: counted(row) });
+  function reconcileProgress(row) {
+    const sameDay = db.prepare('SELECT * FROM motor_submissions WHERE patient_id=? AND plan_id=? AND exercise_id=? AND practice_day=? ORDER BY created_at,rowid').all(row.patient_id, row.plan_id, row.exercise_id, row.practice_day);
+    const accepted = sameDay.find(counted);
+    // IDs tie only generated completions to their uploads. A rejected extra
+    // upload must never erase a valid photo or a separately recorded session.
+    for (const candidate of sameDay) db.prepare('DELETE FROM progress WHERE id=?').run(`motor-${candidate.id}`);
+    if (!accepted) return;
+    const alreadyCounted = db.prepare('SELECT 1 FROM progress WHERE patient_id=? AND plan_id=? AND exercise_id=? AND substr(completed_at,1,10)=?').get(row.patient_id, row.plan_id, row.exercise_id, row.practice_day);
+    if (!alreadyCounted) db.prepare('INSERT INTO progress VALUES(?,?,?,?,?,?,?)').run(
+      `motor-${accepted.id}`, row.patient_id, row.plan_id, row.exercise_id,
+      motorExercises.find(exercise => exercise.id === row.exercise_id).minutes,
+      `${row.practice_day}${accepted.created_at.slice(10)}`, now(),
+    );
+  }
   function enqueue(id) {
     work = work.then(async () => {
       const row = db.prepare('SELECT * FROM motor_submissions WHERE id=?').get(id);
       if (!row || !['pending', 'processing'].includes(row.analysis_status)) return;
-      if (!canAnalyze(row.patient_id)) {
+      if (!await canAnalyze(row.patient_id)) {
         db.prepare("UPDATE motor_submissions SET analysis_status='declined' WHERE id=?").run(id);
+        reconcileProgress({ ...row, analysis_status: 'declined' });
         return;
       }
       db.prepare("UPDATE motor_submissions SET analysis_status='processing' WHERE id=?").run(id);
@@ -48,6 +69,7 @@ export function motorApi({
         const report = await analyze(
           await readFile(resolve(dataDir, 'uploads', row.filename)),
           motorExercises.find(e => e.id === row.exercise_id),
+          { canUseHosted: () => canAnalyze(row.patient_id) },
         );
         db.prepare("UPDATE motor_submissions SET analysis_status='ready',report=? WHERE id=?").run(
           JSON.stringify(report),
@@ -55,8 +77,10 @@ export function motorApi({
         );
       } catch {
         // Preserve the original for human review when inference fails or the model is offline.
-        db.prepare("UPDATE motor_submissions SET analysis_status='unavailable' WHERE id=?").run(id);
+        const status = await canAnalyze(row.patient_id) ? 'unavailable' : 'declined';
+        db.prepare("UPDATE motor_submissions SET analysis_status=? WHERE id=?").run(status, id);
       }
+      reconcileProgress(db.prepare('SELECT * FROM motor_submissions WHERE id=?').get(id));
     });
   }
   db.prepare(
@@ -70,8 +94,12 @@ export function motorApi({
     summaries(patientId, role) {
       return rows(patientId).map(({ filename, photo_hash, report, ...row }) => ({
         ...row,
+        ...receipt({ ...row, report }),
         report: ['therapist', 'admin'].includes(role) && report ? JSON.parse(report) : null,
       }));
+    },
+    familyProgressSnapshot(patientId) {
+      return db.prepare('SELECT * FROM motor_submissions WHERE patient_id=? ORDER BY created_at DESC,rowid DESC').all(patientId).filter(counted).map(({ report, filename, photo_hash, ...row }) => row);
     },
     waitForIdle: () => work,
     async handle(req, res, path, u) {
@@ -127,28 +155,16 @@ export function motorApi({
             existing.practice_day !== day
           )
             fail(409, 'Submission ID conflicts with an existing photo.');
-          return json(res, 200, { id });
+          return json(res, 200, receipt(existing));
         }
-        if (
-          db
-            .prepare(
-              "SELECT COUNT(*) AS n FROM motor_submissions WHERE analysis_status IN ('pending','processing')",
-            )
-            .get().n >= 20
-        )
-          fail(429, 'Analysis queue is busy. Keep your photo and try again soon.');
+        const queueBusy = db.prepare("SELECT COUNT(*) AS n FROM motor_submissions WHERE analysis_status IN ('pending','processing')").get().n >= 20;
         const filename = `motor-${id}.${mime === 'image/png' ? 'png' : 'jpg'}`;
         await writeFile(resolve(dataDir, 'uploads', filename), photo, {
           flag: 'wx',
         }).catch(() => fail(409, 'Photo upload conflict.'));
-        const status = canAnalyze(p.id) ? 'pending' : 'declined';
+        const status = await canAnalyze(p.id) ? queueBusy ? 'unavailable' : 'pending' : 'declined';
         db.exec('BEGIN');
         try {
-          const alreadyCounted = db
-            .prepare(
-              'SELECT 1 FROM motor_submissions WHERE patient_id=? AND plan_id=? AND exercise_id=? AND practice_day=?',
-            )
-            .get(p.id, plan.id, b.exerciseId, day);
           db.prepare(
             'INSERT INTO motor_submissions(id,patient_id,plan_id,exercise_id,filename,mime,bytes,photo_hash,practice_day,created_at,analysis_status) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
           ).run(
@@ -164,16 +180,7 @@ export function motorApi({
             now(),
             status,
           );
-          if (!alreadyCounted)
-            db.prepare('INSERT INTO progress VALUES(?,?,?,?,?,?,?)').run(
-              randomUUID(),
-              p.id,
-              plan.id,
-              b.exerciseId,
-              motorExercises.find(e => e.id === b.exerciseId).minutes,
-              now(),
-              now(),
-            );
+          reconcileProgress(db.prepare('SELECT * FROM motor_submissions WHERE id=?').get(id));
           db.exec('COMMIT');
         } catch (error) {
           db.exec('ROLLBACK');
@@ -182,9 +189,9 @@ export function motorApi({
         }
         audit(db, u.id, 'Uploaded motor practice', p.id, id);
         if (status === 'pending') enqueue(id);
-        return json(res, 201, { id });
+        return json(res, 201, receipt(db.prepare('SELECT * FROM motor_submissions WHERE id=?').get(id)));
       }
-      const match = path.match(/^\/api\/motor-submissions\/([^/]+)\/(photo|review|analyze)$/);
+      const match = path.match(/^\/api\/motor-submissions\/([^/]+)\/(photo|review|analyze|status)$/);
       if (!match) return false;
       const row = db.prepare('SELECT * FROM motor_submissions WHERE id=?').get(match[1]);
       if (!row) fail(404, 'Practice photo not found.');
@@ -199,20 +206,23 @@ export function motorApi({
         res.end(bytes);
         return true;
       }
+      if (match[2] === 'status' && req.method === 'GET') return json(res, 200, receipt(row));
       requireRole(u, 'therapist');
       if (match[2] === 'review' && req.method === 'POST') {
         const b = await body(req);
+        const outcome = b.therapistOutcome ?? row.therapist_outcome;
+        if (!['on_track','needs_practice','not_assessed'].includes(outcome)) fail(400, 'Choose a valid therapist assessment.');
         db.prepare(
-          'UPDATE motor_submissions SET review_note=?,reviewed_by=?,reviewed_at=? WHERE id=?',
-        ).run(text(b.note, 'Therapist feedback', 2000), u.id, now(), row.id);
+          'UPDATE motor_submissions SET review_note=?,reviewed_by=?,reviewed_at=?,therapist_outcome=? WHERE id=?',
+        ).run(text(b.note, 'Therapist feedback', 2000), u.id, now(), outcome, row.id);
         audit(db, u.id, 'Reviewed motor practice', row.patient_id, row.id);
         json(res, 200, { ok: true });
         return true;
       }
       if (match[2] === 'analyze' && req.method === 'POST') {
-        if (!canAnalyze(row.patient_id))
+        if (!await canAnalyze(row.patient_id))
           fail(409, 'Optional automated analysis was not agreed to.');
-        if (!['pending', 'processing', 'ready'].includes(row.analysis_status)) {
+        if (!['pending', 'processing'].includes(row.analysis_status) && (row.analysis_status !== 'ready' || feedback(row)?.replacementRequired)) {
           if (
             db
               .prepare(
@@ -224,6 +234,7 @@ export function motorApi({
           db.prepare("UPDATE motor_submissions SET analysis_status='pending' WHERE id=?").run(
             row.id,
           );
+          reconcileProgress({ ...row, analysis_status: 'pending' });
           enqueue(row.id);
           audit(db, u.id, 'Retried motor analysis', row.patient_id, row.id);
         }

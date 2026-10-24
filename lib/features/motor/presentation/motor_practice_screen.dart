@@ -15,7 +15,9 @@ import '../../../shared/widgets/celebration.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../data/motor_repository_providers.dart';
+import '../domain/motor.dart';
 import 'controllers/motor_controllers.dart';
+import 'motor_capture_strings.dart';
 import 'motor_demo.dart';
 
 /// The child watches the guide, draws on paper, and a grown-up sends a
@@ -37,6 +39,9 @@ class _MotorPracticeScreenState extends ConsumerState<MotorPracticeScreen> {
   // service counts it once.
   String _submissionId = const Uuid().v4();
   bool _working = false;
+  bool _checkingPhoto = false;
+  bool _savedPending = false;
+  MotorRetakeReason? _retakeReason;
   String? _error;
 
   Future<void> _run(Future<void> Function() action) async {
@@ -60,24 +65,65 @@ class _MotorPracticeScreenState extends ConsumerState<MotorPracticeScreen> {
     setState(() {
       _photo = photo;
       _submissionId = const Uuid().v4();
+      _retakeReason = null;
+      _savedPending = false;
     });
   });
 
   Future<void> _send(String planId) => _run(() async {
     final l10n = context.l10n;
-    await ref
-        .read(motorActionsProvider)
-        .submit(
-          childId: ref.read(currentUserProvider).id,
-          planId: planId,
-          exerciseId: widget.exerciseId,
-          submissionId: _submissionId,
-          photo: _photo!,
-        );
+    final childId = ref.read(currentUserProvider).id;
+    if (!_savedPending) {
+      await ref
+          .read(motorActionsProvider)
+          .submit(
+            childId: childId,
+            planId: planId,
+            exerciseId: widget.exerciseId,
+            submissionId: _submissionId,
+            photo: _photo!,
+          );
+    }
+    if (!mounted) return;
+    setState(() {
+      _checkingPhoto = true;
+      _savedPending = true;
+    });
+    try {
+      final submission = await _checkCapture(childId);
+      if (!mounted) return;
+      ref.invalidate(motorRecordProvider(childId));
+      if (submission?.captureFeedback?.replacementRequired == true) {
+        setState(() {
+          _retakeReason = submission!.captureFeedback!.reason;
+          _savedPending = false;
+        });
+        return;
+      }
+      if (submission == null || submission.checkingPhoto) return;
+      _savedPending = false;
+    } finally {
+      if (mounted) setState(() => _checkingPhoto = false);
+    }
     if (!mounted) return;
     await showCelebration(context, message: l10n.drawingSent);
     if (mounted) context.pop();
   });
+
+  Future<MotorSubmission?> _checkCapture(String childId) async {
+    MotorSubmission? submission;
+    // Delivery has already succeeded. Bound the wait so an offline model can
+    // never prevent the child from leaving or their therapist seeing the photo.
+    for (var attempt = 0; attempt < 16 && mounted; attempt++) {
+      final record = await ref.read(motorRepositoryProvider).recordFor(childId);
+      submission = record.submissions
+          .where((item) => item.id == _submissionId)
+          .firstOrNull;
+      if (submission == null || !submission.checkingPhoto) return submission;
+      if (attempt < 15) await Future<void>.delayed(const Duration(seconds: 2));
+    }
+    return submission;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +138,7 @@ class _MotorPracticeScreenState extends ConsumerState<MotorPracticeScreen> {
     return ActionPage(
       title: exercise?.name ?? l10n.drawingTitle,
       intro: l10n.motorPracticeIntro,
-      onBack: _working ? null : () => context.pop(),
+      onBack: _working && !_checkingPhoto ? null : () => context.pop(),
       backLabel: l10n.back,
       error: _error,
       actions: [
@@ -106,20 +152,36 @@ class _MotorPracticeScreenState extends ConsumerState<MotorPracticeScreen> {
           icon: LucideIcons.camera,
           onPressed: _working ? null : _pick,
         ),
-        if (_photo != null && planId != null)
+        if (_photo != null && planId != null && _retakeReason == null)
           PrimaryButton(
-            label: _working ? l10n.drawingSending : l10n.motorSendPhoto,
+            label: _checkingPhoto
+                ? MotorCaptureStrings.checking
+                : _working
+                ? l10n.drawingSending
+                : _savedPending
+                ? MotorCaptureStrings.checkAgain
+                : l10n.motorSendPhoto,
             icon: LucideIcons.send,
             onPressed: _working ? null : () => _send(planId),
           ),
       ],
       children: [
+        if (_retakeReason != null)
+          Semantics(
+            liveRegion: true,
+            child: InfoNotice(MotorCaptureStrings.retake(_retakeReason!)),
+          ),
+        if (_checkingPhoto)
+          const InfoNotice(MotorCaptureStrings.checking)
+        else if (_savedPending)
+          const InfoNotice(MotorCaptureStrings.savedPending),
         InfoNotice(l10n.motorComfort),
         if (exercise == null)
           const Skeleton(height: AppSizes.signaturePad)
         else
           MotorDemo(exercise: exercise),
         Text(l10n.motorPhotoInstructions),
+        const Text(MotorCaptureStrings.instructions),
         if (_photo != null) _PhotoPreview(photo: _photo!),
       ],
     );

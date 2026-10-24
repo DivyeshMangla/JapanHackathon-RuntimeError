@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,9 +10,17 @@ final motorExercisesProvider = FutureProvider<List<MotorExercise>>(
   (ref) => ref.watch(motorRepositoryProvider).exercises(),
 );
 
-final motorRecordProvider = FutureProvider.family<MotorRecord, String>(
-  (ref, childId) => ref.watch(motorRepositoryProvider).recordFor(childId),
-);
+final motorRecordProvider = FutureProvider.family<MotorRecord, String>((
+  ref,
+  childId,
+) async {
+  final record = await ref.watch(motorRepositoryProvider).recordFor(childId);
+  if (record.submissions.any((submission) => submission.checkingPhoto)) {
+    final timer = Timer(const Duration(seconds: 3), ref.invalidateSelf);
+    ref.onDispose(timer.cancel);
+  }
+  return record;
+});
 
 final motorActionsProvider = Provider<MotorActions>(MotorActions.new);
 
@@ -53,8 +62,15 @@ class MotorActions {
     _ref.invalidate(motorRecordProvider(childId));
   }
 
-  Future<void> review(String childId, String submissionId, String note) async {
-    await _ref.read(motorRepositoryProvider).review(submissionId, note);
+  Future<void> review(
+    String childId,
+    String submissionId,
+    String note, {
+    MotorTherapistOutcome outcome = MotorTherapistOutcome.notAssessed,
+  }) async {
+    await _ref
+        .read(motorRepositoryProvider)
+        .review(submissionId, note, outcome: outcome);
     _ref.invalidate(motorRecordProvider(childId));
   }
 

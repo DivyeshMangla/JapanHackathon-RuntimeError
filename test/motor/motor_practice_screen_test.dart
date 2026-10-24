@@ -53,10 +53,21 @@ class _Photos extends MotorPhotoPicker {
 
 class _Repository implements MotorRepository {
   final uploads = <({String id, Uint8List bytes})>[];
+  bool failUploads = true;
+  bool rejectPhotos = false;
+  bool pendingPhotos = false;
+  MotorSubmission? receipt;
   @override
   Future<List<MotorExercise>> exercises() async => [_exercise];
   @override
-  Future<MotorRecord> recordFor(String childId) async => _record;
+  Future<MotorRecord> recordFor(String childId) async => receipt == null
+      ? _record
+      : MotorRecord(
+          planId: 'plan',
+          exerciseIds: ['motor-lines'],
+          submissions: [receipt!],
+          consented: true,
+        );
   @override
   Future<void> submit({
     required String childId,
@@ -67,10 +78,27 @@ class _Repository implements MotorRepository {
     required DateTime day,
   }) async {
     uploads.add((id: submissionId, bytes: Uint8List.fromList(photo)));
-    throw const NetworkFailure(
-      NetworkProblem.rejected,
-      status: 503,
-      serverMessage: 'Retry later',
+    if (failUploads) {
+      throw const NetworkFailure(
+        NetworkProblem.rejected,
+        status: 503,
+        serverMessage: 'Retry later',
+      );
+    }
+    receipt = MotorSubmission(
+      id: submissionId,
+      exerciseId: exerciseId,
+      practiceDay: '2026-10-25',
+      status: pendingPhotos
+          ? MotorAnalysisStatus.processing
+          : MotorAnalysisStatus.ready,
+      createdAt: DateTime(2026, 10, 25),
+      captureFeedback: rejectPhotos
+          ? const MotorCaptureFeedback(
+              replacementRequired: true,
+              reason: MotorRetakeReason.unrelatedPhoto,
+            )
+          : null,
     );
   }
 
@@ -83,7 +111,11 @@ class _Repository implements MotorRepository {
   @override
   Future<Uint8List> photo(String submissionId) async => _photo;
   @override
-  Future<void> review(String submissionId, String note) async {}
+  Future<void> review(
+    String submissionId,
+    String note, {
+    MotorTherapistOutcome outcome = MotorTherapistOutcome.notAssessed,
+  }) async {}
   @override
   Future<void> retryAnalysis(String submissionId) async {}
 }
@@ -167,4 +199,62 @@ void main() {
     expect(find.byType(Image), findsOneWidget);
     expect(find.text('Send to my therapist'), findsOneWidget);
   });
+
+  testWidgets(
+    'unrelated photo asks for replacement and a new photo gets a new submission',
+    (tester) async {
+      final repository = _Repository()
+        ..failUploads = false
+        ..rejectPhotos = true;
+      await _open(tester, _Photos(), repository);
+      await tester.tap(find.text('Take a practice photo'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Send to my therapist'));
+      await tester.tap(find.text('Send to my therapist'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Please take or choose a photo of your drawing on paper, then send it again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Send to my therapist'), findsNothing);
+      expect(repository.receipt!.countsAsPractice, isFalse);
+      await tester.ensureVisible(find.text('Choose a different photo'));
+      await tester.tap(find.text('Choose a different photo'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Send to my therapist'));
+      await tester.tap(find.text('Send to my therapist'));
+      await tester.pumpAndSettle();
+      expect(repository.uploads, hasLength(2));
+      expect(repository.uploads.first.id, isNot(repository.uploads.last.id));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'checking a saved pending photo again does not reupload its bytes',
+    (tester) async {
+      final repository = _Repository()
+        ..failUploads = false
+        ..pendingPhotos = true;
+      await _open(tester, _Photos(), repository);
+      await tester.tap(find.text('Take a practice photo'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Send to my therapist'));
+      await tester.tap(find.text('Send to my therapist'));
+      await tester.pump();
+      for (var attempt = 0; attempt < 17; attempt++) {
+        await tester.pump(const Duration(seconds: 2));
+      }
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Check my photo'));
+      await tester.tap(find.text('Check my photo'));
+      await tester.pump();
+      expect(repository.uploads, hasLength(1));
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 2));
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

@@ -6,12 +6,23 @@ services:
     environment:
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN to the https URL clients use}
       USEFUL_WORDS_KEY: ${USEFUL_WORDS_KEY:?set USEFUL_WORDS_KEY to a base64-encoded 32-byte key}
+      EXPRESSIONS_KEY: ${EXPRESSIONS_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      MOTOR_ML_PROVIDER: ${MOTOR_ML_PROVIDER:-ollama}
+      MOTOR_ML_MODEL: ${MOTOR_ML_MODEL:-}
+      MOTOR_ML_TIMEOUT_MS: ${MOTOR_ML_TIMEOUT_MS:-300000}
+      SPEECH_ML_PROVIDER: ${SPEECH_ML_PROVIDER:-local}
+      SPEECH_ML_URL: ${SPEECH_ML_URL:-}
+      SPEECH_ML_MODEL: ${SPEECH_ML_MODEL:-}
+      SPEECH_ML_LANGUAGE: ${SPEECH_ML_LANGUAGE:-en}
+      SPEECH_ML_TIMEOUT_MS: ${SPEECH_ML_TIMEOUT_MS:-15000}
     volumes:
       - melo-data:/data
     restart: unless-stopped
 
   ollama:
     image: ollama/ollama:latest
+    profiles: ["local-vision"]
     # Share loopback with the backend; the model API stays off the public tunnel.
     network_mode: "service:melo-backend"
     environment:
@@ -27,6 +38,7 @@ services:
 
   ollama-model-init:
     image: ollama/ollama:latest
+    profiles: ["local-vision"]
     network_mode: "service:melo-backend"
     depends_on:
       ollama:

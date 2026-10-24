@@ -10,14 +10,15 @@ import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/action_page.dart';
 import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/failure_feedback.dart';
-import '../../../shared/widgets/feedback_dialog.dart';
 import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../data/motor_repository_providers.dart';
 import '../domain/motor.dart';
 import 'controllers/motor_controllers.dart';
+import 'motor_capture_strings.dart';
+import 'motor_report_strings.dart';
 
-/// One drawing photo for the therapist: the original on request, the local
+/// One drawing photo for the therapist: the original on request, the configured
 /// model's provisional report, and the therapist's own feedback.
 class MotorReviewCard extends ConsumerStatefulWidget {
   const MotorReviewCard({
@@ -46,16 +47,20 @@ class _MotorReviewCardState extends ConsumerState<MotorReviewCard> {
   }
 
   Future<void> _review() async {
-    final note = await showDialog<String>(
+    final decision = await showDialog<_MotorReviewDecision>(
       context: context,
-      builder: (_) =>
-          FeedbackDialog(initial: widget.submission.reviewNote ?? ''),
+      builder: (_) => _MotorReviewDialog(submission: widget.submission),
     );
-    if (note == null || !mounted) return;
+    if (decision == null || !mounted) return;
     await _change(
       () => ref
           .read(motorActionsProvider)
-          .review(widget.patientId, widget.submission.id, note),
+          .review(
+            widget.patientId,
+            widget.submission.id,
+            decision.note,
+            outcome: decision.outcome,
+          ),
     );
   }
 
@@ -81,6 +86,10 @@ class _MotorReviewCardState extends ConsumerState<MotorReviewCard> {
             MotorAnalysisStatus.pending ||
             MotorAnalysisStatus.processing => l10n.motorAnalysisPending,
           }, style: text.bodySmall),
+          if (submission.captureFeedback?.replacementRequired == true) ...[
+            const SizedBox(height: AppSpacing.sm),
+            const Text(MotorCaptureStrings.replaceTitle),
+          ],
           const SizedBox(height: AppSpacing.md),
           SecondaryButton(
             label: l10n.motorViewPhoto,
@@ -180,6 +189,11 @@ class _Report extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            MotorReportStrings.title,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          if (report.validation != null) InfoNotice(report.validation!),
           if (report.imageQuality == 'retake') InfoNotice(l10n.motorRetake),
           Text(report.observations),
           if (report.expectedResult != null)
@@ -194,8 +208,24 @@ class _Report extends StatelessWidget {
               rating(report.spacing),
             ),
           ),
+          if (report.expectedCount != null)
+            Text(
+              '${MotorReportStrings.expectedCount}: ${report.expectedCount}',
+            ),
+          if (report.observedCount != null)
+            Text(
+              '${MotorReportStrings.observedCount}: ${report.observedCount}',
+            ),
+          if (report.evidence != null)
+            _ReportEvidence(evidence: report.evidence!),
           const SizedBox(height: AppSpacing.xs),
           Text(report.suggestion),
+          for (final limitation in report.limitations) Text(limitation),
+          if (report.rubricVersion != null)
+            Text(
+              '${MotorReportStrings.rubric}: ${report.rubricVersion}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.motorModel(report.model),
@@ -203,6 +233,112 @@ class _Report extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ReportEvidence extends StatelessWidget {
+  const _ReportEvidence({required this.evidence});
+  final MotorEvidence evidence;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (evidence.alignment.isNotEmpty)
+        Text('${MotorReportStrings.alignmentEvidence}: ${evidence.alignment}'),
+      if (evidence.formation.isNotEmpty)
+        Text('${MotorReportStrings.formationEvidence}: ${evidence.formation}'),
+      if (evidence.spacing.isNotEmpty)
+        Text('${MotorReportStrings.spacingEvidence}: ${evidence.spacing}'),
+    ],
+  );
+}
+
+class _MotorReviewDecision {
+  const _MotorReviewDecision(this.note, this.outcome);
+  final String note;
+  final MotorTherapistOutcome outcome;
+}
+
+class _MotorReviewDialog extends StatefulWidget {
+  const _MotorReviewDialog({required this.submission});
+  final MotorSubmission submission;
+  @override
+  State<_MotorReviewDialog> createState() => _MotorReviewDialogState();
+}
+
+class _MotorReviewDialogState extends State<_MotorReviewDialog> {
+  late final _note = TextEditingController(
+    text: widget.submission.reviewNote ?? '',
+  );
+  late MotorTherapistOutcome _outcome = widget.submission.therapistOutcome;
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.feedbackTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(MotorReportStrings.shared),
+            const SizedBox(height: AppSpacing.md),
+            DropdownButtonFormField<MotorTherapistOutcome>(
+              initialValue: _outcome,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: MotorReportStrings.outcome,
+              ),
+              items: [
+                for (final value in MotorTherapistOutcome.values)
+                  DropdownMenuItem(
+                    value: value,
+                    child: Text(switch (value) {
+                      MotorTherapistOutcome.onTrack =>
+                        MotorReportStrings.onTrack,
+                      MotorTherapistOutcome.needsPractice =>
+                        MotorReportStrings.needsPractice,
+                      MotorTherapistOutcome.notAssessed =>
+                        MotorReportStrings.notAssessed,
+                    }),
+                  ),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _outcome = value);
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _note,
+              maxLength: 2000,
+              maxLines: 4,
+              decoration: InputDecoration(labelText: l10n.feedbackLabel),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          onPressed: _note.text.trim().isEmpty
+              ? null
+              : () => Navigator.pop(
+                  context,
+                  _MotorReviewDecision(_note.text.trim(), _outcome),
+                ),
+          child: Text(l10n.save),
+        ),
+      ],
     );
   }
 }
