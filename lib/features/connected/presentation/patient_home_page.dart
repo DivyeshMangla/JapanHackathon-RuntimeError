@@ -12,6 +12,8 @@ import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../../shared/widgets/seal_mark.dart';
+import '../../useful_words/presentation/child_word_page.dart';
+import '../../useful_words/presentation/word_strings.dart';
 import '../data/connected_service.dart';
 import '../domain/connected_models.dart';
 import 'connected_actions.dart';
@@ -92,6 +94,13 @@ class _PatientHomePageState extends State<PatientHomePage>
           ),
       ],
       children: [
+        PrimaryButton(
+          label: WordStrings.title,
+          icon: LucideIcons.messageCircle,
+          onPressed: () => _open(
+            ChildWordPage(repository: service.wordsFor(service.user!.id)),
+          ),
+        ),
         if (_notice != null)
           InfoNotice(_notice!, icon: LucideIcons.circleCheck),
         if (service.outbox.isNotEmpty) OutboxCard(service: service),

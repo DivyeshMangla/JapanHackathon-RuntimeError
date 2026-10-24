@@ -10,9 +10,9 @@ import { now, consentVersion } from '../src/db.mjs';
 
 const password='TestPassword!2026';
 const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6o1sAAAAASUVORK5CYII=';
-async function fixture(t) {
+async function fixture(t, options = {}) {
   const dir=await mkdtemp(join(tmpdir(),'melo-api-'));
-  const app=createApp({dataDir:dir});
+  const app=createApp({dataDir:dir, ...options});
   await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
   const base=`http://127.0.0.1:${app.server.address().port}`;
   t.after(async()=>{app.server.closeAllConnections();await new Promise(resolve=>app.server.close(resolve));app.db.close();await rm(dir,{recursive:true,force:true});});
@@ -132,4 +132,74 @@ test('administrator-created therapists start approved, self-registered ones wait
   const registered = await f.call('/auth/register', 'POST', { ...details, email: 'registered@test.example' });
   assert.equal(registered.status, 201);
   assert.equal(registered.data.user.status, 'pending');
+});
+
+test('useful words preserve exact audio, encrypt payloads and isolate paired accounts with retry and ML failure', async t => {
+  const f=await fixture(t);
+  const child=f.add('patient'), therapist=f.add('therapist'), other=f.add('therapist'), stranger=f.add('patient'), admin=f.add('admin');
+  f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
+  const ct=await f.login(child), tt=await f.login(therapist), ot=await f.login(other), st=await f.login(stranger), at=await f.login(admin);
+  const path=`/useful-words/patients/${child.id}`;
+  for(const token of [undefined,ot,st,at]) assert.ok([401,403].includes((await f.call(path,'GET',undefined,token)).status));
+  const enrollment={birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true};
+  assert.equal((await f.call(`${path}/enrollment`,'PUT',enrollment,ct)).status,403);
+  assert.equal((await f.call(`${path}/enrollment`,'PUT',{...enrollment,birthDate:'2000-01-01'},tt)).status,400);
+  assert.equal((await f.call(`${path}/enrollment`,'PUT',{...enrollment,usesSpeech:false},tt)).status,400);
+  assert.equal((await f.call(`${path}/enrollment`,'PUT',enrollment,tt)).status,200);
+  const wav=Buffer.alloc(100);wav.write('RIFF');wav.writeUInt32LE(92,4);wav.write('WAVE',8);
+  const word=await f.call(`${path}/words`,'POST',{word:'water',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
+  assert.equal(word.status,201);
+  const payload={id:randomUUID(),wordId:word.data.id,audio:wav.toString('base64')};
+  assert.equal((await f.call(`${path}/attempts`,'POST',payload,ct)).status,409);
+  const version=(await f.call(path,'GET',undefined,ct)).data.consentVersion;
+  const consent={version,guardianName:'Guardian Example',relationship:'Parent',guardianConsent:true};
+  assert.equal((await f.call(`${path}/consent`,'POST',consent,tt)).status,403);
+  assert.equal((await f.call(`${path}/consent`,'POST',{...consent,guardianConsent:false},ct)).status,400);
+  assert.equal((await f.call(`${path}/consent`,'POST',consent,ct)).status,201);
+  assert.equal((await f.call(`${path}/attempts`,'POST',payload,tt)).status,403);
+  assert.equal((await f.call(`${path}/attempts`,'POST',payload,ct)).status,201);
+  const repeats=await Promise.all(Array.from({length:3},()=>f.call(`${path}/attempts`,'POST',payload,ct)));
+  assert.ok(repeats.every(r=>r.status===200));
+  const different=Buffer.from(wav);different[99]=42;
+  assert.equal((await f.call(`${path}/attempts`,'POST',{...payload,audio:different.toString('base64')},ct)).status,409);
+  const attempts=(await f.call(path,'GET',undefined,tt)).data.attempts;
+  assert.equal(attempts.length,1);assert.equal(attempts[0].transcriptionStatus,'failed');assert.equal(attempts[0].transcript,null);
+  const audioPath=`${path}/attempts/${payload.id}/audio`;
+  assert.deepEqual(Buffer.from((await f.call(audioPath,'GET',undefined,tt)).data.audio,'base64'),wav);
+  assert.deepEqual(Buffer.from((await f.call(`${path}/words/${word.data.id}/audio`,'GET',undefined,ct)).data.audio,'base64'),wav);
+  for(const token of [ct,ot,st,at]) assert.equal((await f.call(audioPath,'GET',undefined,token)).status,403);
+  const stored=f.db.prepare("SELECT payload FROM useful_word_records WHERE kind='attempt'").get();
+  assert.ok(!Buffer.from(stored.payload).includes(Buffer.from(payload.audio)));
+  const review={feedback:'You can use this word when you need water.',reviewed:true,feedbackAudio:wav.toString('base64')};
+  assert.equal((await f.call(`${path}/attempts/${payload.id}/review`,'PUT',review,ct)).status,403);
+  assert.equal((await f.call(`${path}/attempts/${payload.id}/review`,'PUT',review,tt)).status,200);
+  const childView=(await f.call(path,'GET',undefined,ct)).data.attempts[0];
+  assert.equal(childView.feedback,review.feedback);assert.equal(childView.reviewed,true);assert.equal(childView.hasFeedbackAudio,true);
+  assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${payload.id}/feedback`,'GET',undefined,ct)).data.audio,'base64'),wav);
+  f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(other.id,child.id);
+  assert.equal((await f.call(audioPath,'GET',undefined,tt)).status,403);
+  assert.equal((await f.call(`${path}/attempts`,'POST',{...payload,id:randomUUID()},ct)).status,409);
+});
+
+test('useful word delivery completes while recognition is stalled; suggestions never alter audio or review', async t => {
+  let finish;
+  const recognition=new Promise(resolve=>{finish=resolve;});
+  const f=await fixture(t,{transcriber:{suggest:()=>recognition}});
+  const child=f.add('patient'), therapist=f.add('therapist');
+  f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
+  const ct=await f.login(child), tt=await f.login(therapist), path=`/useful-words/patients/${child.id}`;
+  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
+  const version=(await f.call(path,'GET',undefined,ct)).data.consentVersion;
+  await f.call(`${path}/consent`,'POST',{version,guardianName:'Guardian',relationship:'Parent',guardianConsent:true},ct);
+  const wav=Buffer.alloc(100);wav.write('RIFF');wav.write('WAVE',8);
+  const word=await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
+  const id=randomUUID();
+  const delivered=await f.call(`${path}/attempts`,'POST',{id,wordId:word.data.id,audio:wav.toString('base64')},ct);
+  assert.equal(delivered.status,201);assert.equal(delivered.data.status,'delivered');
+  assert.equal((await f.call(path,'GET',undefined,tt)).data.attempts[0].transcriptionStatus,'pending');
+  await f.call(`${path}/attempts/${id}/review`,'PUT',{feedback:'Thanks for sharing.',reviewed:true},tt);
+  finish('help'); await new Promise(resolve=>setImmediate(resolve));
+  const attempt=(await f.call(path,'GET',undefined,tt)).data.attempts[0];
+  assert.equal(attempt.transcript,'help');assert.equal(attempt.reviewed,true);assert.equal(attempt.feedback,'Thanks for sharing.');
+  assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${id}/audio`,'GET',undefined,tt)).data.audio,'base64'),wav);
 });

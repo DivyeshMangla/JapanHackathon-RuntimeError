@@ -14,6 +14,7 @@ import '../../../core/errors/setup_failure.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../crypto/pin_service.dart';
 import '../../../data/setup_repository.dart';
+import '../../useful_words/data/word_repository.dart';
 import '../domain/connected_models.dart';
 
 const _connectTimeout = Duration(seconds: 10);
@@ -278,6 +279,39 @@ class ConnectedService extends ChangeNotifier {
       }
     }
     notifyListeners();
+  }
+
+  WordRepository wordsFor(String patientId) {
+    final owner = _userId;
+    final cacheKey = 'usefulWordDraft:$owner:$patientId';
+    void checkSession() {
+      if (_user?.id != owner || _locked) {
+        throw const ConnectedFailure(ConnectedFailureReason.sessionEnded);
+      }
+    }
+
+    return WordRepository(
+      patientId,
+      (path, {method = 'GET', data}) async {
+        checkSession();
+        final response = await _request(path, method: method, data: data);
+        checkSession();
+        return response;
+      },
+      () {
+        checkSession();
+        return _box.get(cacheKey);
+      },
+      (value) async {
+        checkSession();
+        if (value == null) {
+          await _box.delete(cacheKey);
+        } else {
+          await _box.put(cacheKey, value);
+        }
+        await _box.flush();
+      },
+    );
   }
 
   Future<void> submitConsent({

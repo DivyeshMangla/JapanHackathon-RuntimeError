@@ -119,3 +119,48 @@ The API tests use isolated temporary SQLite databases and synthetic records.
 They exercise auth, approval, access isolation, reassignment, clinical gates,
 retry idempotency, recording upload/playback/review, rate limiting, password
 changes, and persistence. They do not touch the local demo database.
+
+## Say a Useful Word
+
+This separate child practice feature uses the connected accounts and existing
+administrator-authorized therapist pairing. It does not use the adult study's
+consent, dosage, capture-quality judgments, or voice analysis. Its paths begin
+`/api/useful-words/patients/:childId`:
+
+- `GET /`: enrollment, assignments and attempts grouped by word/date in the app.
+- `PUT /enrollment`: assigned therapist confirms date of birth (under 17), speech
+  use and therapist-selected goals.
+- `POST /consent`: guardian name, relationship, current consent version and
+  agreement, entered in the child's authenticated account. This is explicitly
+  prototype wording; approved consent and guardian identity verification are
+  required before real child use. There is no approval step for each attempt.
+- `POST /words`: therapist supplies word, base64 PNG/JPEG picture and original
+  WAV example; `GET /words/:id/audio` returns that example.
+- `POST /attempts`: child sends an immutable submission id, word id and original
+  base64 WAV. Identical retries return the same receipt; conflicting audio is
+  rejected. Delivery acknowledges durable storage before transcription.
+- `GET /attempts/:id/audio`: **only the currently assigned therapist**, including
+  after reassignment; administrators and other patients cannot retrieve audio.
+- `PUT /attempts/:id/review`: written/recorded feedback and explicit review flag.
+  `GET /attempts/:id/feedback` lets the child hear therapist feedback.
+
+Useful-word payloads (including audio, pictures, feedback and guardian details)
+are AES-256-GCM encrypted in SQLite. Set `USEFUL_WORDS_KEY` to a base64-encoded
+32-byte secret from your server's secret manager; startup requires it in
+production. Development generates a local 0600 key file in the data directory.
+Back up and protect that key separately; never commit it. Other legacy backend
+records still have the deployment boundary described above. Release mobile
+builds require HTTPS. TLS termination and encrypted backups are deployment
+responsibilities.
+
+The mobile retry draft is stored in the existing account-scoped encrypted Hive
+box and keeps its submission id across app restarts. Recording is foreground
+only, asks permission on Record, and has no child-facing timer. Unsaved audio is
+held in memory after capture; temporary native capture/playback files are removed
+on completion/disposal. Device termination during recording can leave a temporary
+file in the OS-managed app cache, so device/cache protection remains necessary.
+
+`UnavailableTranscriber` is a clearly labeled mock integration: it produces
+“Could not transcribe.” A real server-only recognizer may replace its `suggest`
+method. Recognition never modifies the original or generates scores, judgments,
+diagnoses, severity, or emotion predictions. There are no client API keys.

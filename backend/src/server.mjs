@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { usefulWords } from './useful-words.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
@@ -25,7 +26,7 @@ async function body(req, max = 1024 * 1024) {
 }
 function json(res, status, value) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); }
 
-export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'data'), secureCookies = process.env.NODE_ENV === 'production', origin = process.env.PUBLIC_ORIGIN } = {}) {
+export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'data'), secureCookies = process.env.NODE_ENV === 'production', origin = process.env.PUBLIC_ORIGIN, transcriber } = {}) {
   const db = openDatabase(dataDir);
   const findUser = id => db.prepare('SELECT * FROM users WHERE id=?').get(id);
   const requireRole = (u, ...roles) => { if (!roles.includes(u.role)) fail(403, 'You do not have access to this action.'); };
@@ -47,6 +48,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
     const days = db.prepare("SELECT COUNT(DISTINCT substr(completed_at,1,10)) AS n FROM progress WHERE patient_id=? AND completed_at>=?").get(p.id, firstDay.toISOString()).n;
     return { ...publicUser(p), therapist_name: findUser(p.therapist_id)?.name || null, consent_status: consent?.status || 'missing', has_plan: !!plan, active_days: days, ...activity };
   };
+  const wordRoutes = usefulWords({ db, dataDir, fail, text, body, json, findUser, transcriber });
   const server = createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'same-origin');
@@ -96,6 +98,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
       }
       if (path.startsWith('/api/')) {
         const u = authenticate(db, req); if (!u) fail(401, 'Please sign in.');
+        if (await wordRoutes(req, res, url, u)) return;
         if (path === '/api/auth/me' && method === 'GET') return json(res, 200, { user: publicUser(u) });
         if (path === '/api/auth/logout' && method === 'POST') {
           db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(requestToken(req)));
