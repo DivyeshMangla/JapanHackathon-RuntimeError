@@ -4,6 +4,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/action_page.dart';
 import '../../../shared/widgets/ink_card.dart';
+import '../../../shared/widgets/labeled_text_field.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../setup/presentation/signature_pad.dart';
 import '../data/connected_service.dart';
@@ -22,6 +23,14 @@ class ConsentPage extends StatefulWidget {
 }
 
 class _ConsentPageState extends State<ConsentPage> with ConnectedActions {
+  final _signer = TextEditingController();
+
+  @override
+  void dispose() {
+    _signer.dispose();
+    super.dispose();
+  }
+
   final _answers = {
     for (final statement in ConsentStatement.values) statement: false,
   };
@@ -37,7 +46,11 @@ class _ConsentPageState extends State<ConsentPage> with ConnectedActions {
     final navigator = Navigator.of(context);
     final submitted = await run(
       'submit',
-      () => service.submitConsent(answers: _answers, signaturePng: png),
+      () => service.submitConsent(
+        answers: _answers,
+        signaturePng: png,
+        signerName: _signer.text.trim(),
+      ),
     );
     if (submitted) navigator.pop();
   }
@@ -92,8 +105,14 @@ class _ConsentPageState extends State<ConsentPage> with ConnectedActions {
                         setState(() => _answers[statement] = value == true),
             ),
           ),
+        LabeledTextField(
+          controller: _signer,
+          label: l10n.motorSignerName,
+          onChanged: (_) => setState(() {}),
+          enabled: !busy,
+        ),
         SectionLabel(l10n.connectedSignHeading),
-        if (_readyToSign)
+        if (_readyToSign && _signer.text.trim().isNotEmpty)
           SignaturePad(
             onSave: _submit,
             saveLabel: l10n.connectedSubmitConsent,

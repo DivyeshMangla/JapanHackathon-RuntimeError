@@ -13,7 +13,7 @@
   font-weight: 600;
 }
 :root {
-  font-family: "Nunito Sans", Arial, sans-serif;
+  font-family: 'Nunito Sans', Arial, sans-serif;
   color: #34408f;
   background: #fffbf4;
   font-synthesis: none;
@@ -1194,4 +1194,47 @@ dialog::backdrop {
   .top-actions > .avatar {
     display: none;
   }
+}
+
+.therapist-workspace {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px;
+}
+.therapist-workspace .topbar {
+  position: static;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.motor-review {
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+}
+.motor-photo {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  margin: 16px 0;
+  background: var(--paper);
+}
+.motor-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+}
+.motor-metrics {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) 2fr;
+  gap: 8px;
+}
+.motor-metrics dd {
+  margin: 0;
+}
+.motor-feedback {
+  margin-top: 16px;
+}
+.motor-feedback .form-error:empty {
+  display: none;
 }

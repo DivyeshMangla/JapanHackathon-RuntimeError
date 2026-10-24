@@ -1483,10 +1483,10 @@
   "connectedConsentTitle": "Your consent",
   "connectedStudyInformation": "Study information",
   "connectedConsentUnavailable": "Connect to the internet to load the consent document.",
-  "connectedConsentAdult": "I confirm I am 18 or older.",
+  "connectedConsentAdult": "I am 18 or older and am signing for myself, or as this child’s parent or legal guardian.",
   "connectedConsentParticipation": "I have read the information and agree to take part.",
-  "connectedConsentDataSharing": "I agree to store and share my data with my assigned care team.",
-  "connectedConsentAnalysis": "I agree to anonymised analysis of my data.",
+  "connectedConsentDataSharing": "I agree to share the participant’s profile, practice records, handwriting photos and recordings with their assigned therapist through this service.",
+  "connectedConsentAnalysis": "I agree to optional automated analysis of practice samples, including handwriting photos. A therapist must check the findings.",
   "connectedRequired": "Required",
   "connectedOptional": "Optional",
   "connectedSignHeading": "Draw your signature",
@@ -1531,7 +1531,7 @@
   "connectedApproveConsent": "Approve consent",
   "connectedAssessmentSection": "Clinical assessment",
   "connectedAge": "Age in years",
-  "connectedAgeRange": "Enter an age from 18 to 120.",
+  "connectedAgeRange": "Enter an age from 1 to 120.",
   "connectedDemographic": "Demographic information",
   "connectedClinical": "Clinical assessment notes",
   "connectedSaveAssessment": "Save assessment",
@@ -1609,5 +1609,99 @@
   "connectedFailureMicrophone": "Allow microphone access to record.",
   "connectedFailureNoRecording": "Nothing was recorded. Try again.",
   "connectedFailureRecordingUnavailable": "This recording is not available to your account.",
-  "connectedBack": "Back"
+  "connectedBack": "Back",
+  "motorSignerName": "Full name of adult signing (parent or legal guardian for a child)",
+  "motorWatch": "Watch, then try on paper",
+  "motorDemoDescription": "Writing guide with start dots. Follow the numbered instructions; replay to see each stroke in order.",
+  "motorReplay": "Show me the strokes",
+  "motorPracticeIntro": "Watch the demo. Try it slowly on paper. A grown-up can help you send a photo to your therapist.",
+  "motorComfort": "Sit comfortably, support your feet and rest your forearm. Relax your hand. Take a break whenever you need one; stop if your hand hurts or feels tired.",
+  "motorChoosePhoto": "Choose practice photo",
+  "motorSendPhoto": "Send to my therapist",
+  "motorDone": "Back to today’s practice",
+  "motorPhotoLimit": "Choose a JPEG or PNG photo up to 6 MB.",
+  "motorOriginalPhoto": "Original, unedited practice photo",
+  "motorInvalidPhoto": "This photo could not be displayed. Choose a different JPEG or PNG.",
+  "motorPhotoInstructions": "Photograph just the paper in good light. Keep the whole exercise in view, without faces or names. Check the preview before sending. Keep the photo until your upload succeeds.",
+  "motorPhotoSaved": "Your photo was sent. Your therapist can check the original and send you feedback. Well done for practising!",
+  "motorDailyTitle": "Today’s little practice",
+  "motorDailyProgress": "{done} of {total} activities have a photo today",
+  "@motorDailyProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "motorDailyGuidance": "One gentle round each day: about 4 minutes for all three activities, with breaks. Your therapist chooses which tasks suit you. Practice may help you build skills over time.",
+  "motorStart": "Try {name} · {minutes} min",
+  "@motorStart": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "motorPracticeAgain": "{name} · photo sent, practise again if comfortable",
+  "@motorPracticeAgain": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "motorAwaitingReview": "Photo received · awaiting your therapist’s feedback",
+  "motorReviewTitle": "Handwriting photos and review",
+  "motorReportCaution": "Automated visual observations are provisional. Check the original before giving feedback. A still photo cannot assess grip, pressure, movement, diagnose a condition or establish clinical improvement.",
+  "motorEmpty": "No handwriting photos submitted yet.",
+  "motorAnalysisReady": "Automated report ready · therapist review required",
+  "motorAnalysisUnavailable": "Analysis unavailable. Original photo is available for your review; retry when the local vision model is running.",
+  "motorAnalysisDeclined": "Automated analysis declined · therapist review only",
+  "motorAnalysisPending": "Automated analysis queued or processing. Refresh to check.",
+  "motorViewPhoto": "View original photo / reload",
+  "motorPhotoLoadFailed": "Could not load this photo. Try again using View original photo.",
+  "motorRetake": "The model could not assess this photo. Check the original and consider requesting a clearer photo.",
+  "motorReportMetrics": "Alignment: {alignment} · Formation: {formation} · Spacing: {spacing}",
+  "@motorReportMetrics": {
+    "placeholders": {
+      "alignment": {
+        "type": "String"
+      },
+      "formation": {
+        "type": "String"
+      },
+      "spacing": {
+        "type": "String"
+      }
+    }
+  },
+  "motorModel": "Model: {model} · unvalidated visual observations",
+  "@motorModel": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "motorRetryAnalysis": "Retry automated analysis",
+  "motorFeedback": "Therapist feedback: {note}",
+  "@motorFeedback": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "motorReviewAction": "Add or update therapist feedback",
+  "motorEmerging": "emerging",
+  "motorDeveloping": "developing",
+  "motorConsistent": "consistent",
+  "motorNotAssessable": "not assessable",
+  "motorPhotoPickFailed": "Could not open that photo. Try choosing a JPEG or PNG again."
 }

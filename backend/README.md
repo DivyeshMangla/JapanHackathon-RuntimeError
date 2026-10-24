@@ -174,3 +174,75 @@ file in the OS-managed app cache, so device/cache protection remains necessary.
 “Could not transcribe.” A real server-only recognizer may replace its `suggest`
 method. Recognition never modifies the original or generates scores, judgments,
 diagnoses, severity, or emotion predictions. There are no client API keys.
+
+## Children's daily motor and handwriting practice
+
+The connected exercise library includes Little paths (1 minute), Round and round
+(1 minute) and My letter L (2 minutes). A therapist approves consent, records the
+child's clinical assessment, and prescribes suitable activities as one gentle
+round per day. An adult signs their full name on the participant's account for a
+child. The updated prototype consent version is CONNECTED-DEMO-2. Existing
+accounts must sign the updated information and obtain therapist approval before
+motor plans or photo submission; the prior signed record is retained.
+The child sees an animated, replayable stroke guide and numbered instructions,
+practises on paper, chooses a JPEG/PNG photo, checks its preview and sends it.
+In a freshly seeded demo, `patient@melo.test` is a synthetic 7-year-old with these
+three activities assigned; `meera@melo.test` is the assigned therapist. Both use
+`VoiceDemo!2026`. Existing seeded workspaces are not overwritten.
+
+The current photo picker uses the device's files/photo library; take a photo with
+the device camera first. No new mobile dependency is needed.
+
+The original bytes are retained privately, alongside an analysis report and
+separate therapist feedback. Photo access and feedback follow current assignment,
+including immediate loss of access on reassignment; photo views are audited.
+One completed activity per plan/exercise/local practice date contributes to the
+practice log, even if the child submits another attempt. Daily photo status is
+shown separately from a therapist's evaluation. Uploads are online and retryable
+with the same ID; the preview remains on screen if upload fails. They are not
+added to the offline audio outbox. Photos are bounded to 6 MB and 24 megapixels.
+
+Start a local [Ollama](https://docs.ollama.com/quickstart) server and download a
+vision-capable model before using automated analysis:
+
+```bash
+ollama pull gemma3:4b
+ollama serve
+# In another terminal, start this backend with Node 24+:
+npm run demo
+```
+
+If Ollama is already running, do not start a second server. The defaults are
+`MOTOR_ML_URL=http://127.0.0.1:11434/api/chat` and `MOTOR_ML_MODEL=gemma3:4b`.
+The backend uses Ollama's image chat and structured JSON output APIs; no API key
+or hosted AI service is used. Model download/runtime memory requirements depend
+on the chosen model. This repository does not bundle model weights. No clinically
+validated motor assessment model is included. Outputs describe visible formation,
+alignment and spacing only, using qualitative categories. They cannot determine
+grip, pencil pressure, movement, diagnosis, or improvement from a single photo.
+They must be checked against the original by a therapist.
+
+Analysis runs in a bounded serial queue with a 90-second per-image timeout.
+Pending work survives restart. If inference fails or the model is unavailable,
+the photo remains available for human review and the assigned therapist can retry.
+If optional automated analysis was declined, the model is never called.
+
+Approved therapists may now sign in at the browser dashboard as well as the
+connected mobile app. Their browser view shows only their caseload, consent and
+assessment forms, daily motor plan editor, original practice photos, model reports
+and feedback forms. The administrator's patient detail also includes photo reports.
+
+| Method / path | Access / purpose |
+| --- | --- |
+| POST `/patients/:id/motor-submissions` | Patient: `{id, planId, exerciseId, practiceDay: "YYYY-MM-DD", photo: "base64 JPEG/PNG"}` |
+| GET `/motor-submissions/:id/photo` | Owner, assigned therapist or administrator: original bytes |
+| POST `/motor-submissions/:id/analyze` | Assigned therapist: retry unavailable analysis |
+| POST `/motor-submissions/:id/review` | Assigned therapist: `{note}` after inspecting original |
+
+`GET /patients/:id` includes `motorSubmissions`. Patients receive therapist feedback
+and submission status; unverified model reports are visible to clinicians only.
+
+Practice guidance draws on [NHS children's OT handwriting advice](https://bridgewater.nhs.uk/wp-content/uploads/2021/12/Warrington-Childrens-Occupational-Therapy-Strategies-to-Improve-Handwriting-advice-sheet.pdf)
+and [short, regular task practice](https://cambspborochildrenshealth.nhs.uk/media/q0ehrhfy/1-occupational-therapy-ready-to-learn-pack-small.pdf).
+The sample tasks and dose are starting material for therapist adaptation, not a
+validated treatment or a promise to cure motor coordination difficulties.

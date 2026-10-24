@@ -109,7 +109,7 @@ function renderLogin(error = '') {
     </section>
     <section class="login-panel">
       <div class="login-form">
-        <div class="eyebrow">MELO / ADMIN</div>
+        <div class="eyebrow">MELO / CARE TEAM</div>
         <h2>Welcome back.</h2>
         <p>Sign in to manage your care team and keep your patients moving forward.</p>
         <form id="login">
@@ -131,7 +131,7 @@ function renderLogin(error = '') {
             </div>`
             : ''
         }
-        <p class="login-footer">Administrator access only. Patients and therapists use the mobile app.</p>
+        <p class="login-footer">Administrator and approved therapist access. Patients use the mobile app.</p>
       </div>
     </section>
   </main>`;
@@ -142,10 +142,10 @@ function renderLogin(error = '') {
     const b = Object.fromEntries(new FormData(e.target));
     try {
       const data = await api('/auth/login', 'POST', b);
-      if (data.user.role !== 'admin') {
+      if (!['admin', 'therapist'].includes(data.user.role)) {
         await api('/auth/logout', 'POST', {});
         throw Error(
-          'Use a patient or therapist account in the mobile app. This workspace is for administrators.',
+          'Patients use the mobile app. This workspace is for administrators and approved therapists.',
         );
       }
       user = data.user;
@@ -172,6 +172,13 @@ const navItems = [
 async function load() {
   const ticket = ++loadNumber;
   try {
+    if (user?.role === 'therapist') {
+      const result = await api('/patients');
+      if (ticket !== loadNumber) return;
+      overview = { patients: result.patients };
+      renderTherapist();
+      return;
+    }
     const result = await api('/overview');
     if (ticket !== loadNumber) return;
     overview = result;
@@ -812,6 +819,7 @@ async function patientDialog(id) {
             .join('') || '<p>No recordings uploaded yet.</p>'
         }
       </section>
+      ${motorMarkup(d.motorSubmissions || [])}
       <div class="form-actions"><button class="btn ${p.status === 'active' ? 'danger' : 'secondary'}" id="patient-status">${p.status === 'active' ? 'Disable account' : 'Enable account'}</button>
       <button class="btn secondary" data-close>Done</button>
       </div>`,
@@ -903,7 +911,7 @@ async function start() {
     config = await api('/config');
     try {
       const me = await api('/auth/me');
-      if (me.user.role === 'admin') user = me.user;
+      if (['admin', 'therapist'].includes(me.user.role)) user = me.user;
     } catch {}
     page = navItems.some(n => n[0] === location.hash.slice(1))
       ? location.hash.slice(1)
@@ -916,3 +924,129 @@ async function start() {
   }
 }
 start();
+
+function motorMarkup(submissions) {
+  return html`<section class="detail-section"><h3>Handwriting practice</h3>
+    <p>Automated observations require therapist review. A still photo cannot assess grip, pressure, movement, diagnose a condition or demonstrate clinical improvement.</p>
+    ${
+      submissions
+        .map(
+          s => html`<article class="motor-review">
+      <h4>${esc(config.exercises.find(e => e.id === s.exercise_id)?.name || s.exercise_id)} · ${esc(s.practice_day)}</h4>
+      <a href="/api/motor-submissions/${encodeURIComponent(s.id)}/photo" target="_blank" rel="noopener">Open original photo at full size</a>
+      <img class="motor-photo" loading="lazy" src="/api/motor-submissions/${encodeURIComponent(s.id)}/photo" alt="Original, unedited practice paper">
+      <p>${esc({ ready: 'Automated report · awaiting therapist verification', pending: 'Analysis queued', processing: 'Analysis processing — refresh to check', unavailable: 'Analysis unavailable. Review the original or retry when the local model is running.', declined: 'Automated analysis declined — human review only' }[s.analysis_status] || s.analysis_status)}</p>
+      ${
+        s.report
+          ? html`<p>${esc(s.report.observations)}</p>
+        <dl class="motor-metrics"><dt>Alignment</dt><dd>${esc(s.report.alignment.replaceAll('_', ' '))}</dd><dt>Formation</dt><dd>${esc(s.report.formation.replaceAll('_', ' '))}</dd><dt>Spacing</dt><dd>${esc(s.report.spacing.replaceAll('_', ' '))}</dd></dl>
+        ${s.report.imageQuality === 'retake' ? '<p>A clearer photo may be needed. Check the original.</p>' : ''}
+        <p>${esc(s.report.suggestion)}</p><small>Model: ${esc(s.report.model)} · ${esc(s.report.generatedAt)} · unvalidated visual observations</small>`
+          : ''
+      }
+      ${s.review_note ? `<p><strong>Therapist feedback:</strong> ${esc(s.review_note)}</p>` : '<p>Awaiting therapist feedback</p>'}
+      ${
+        user.role === 'therapist'
+          ? html`<form class="motor-feedback" data-submission="${esc(s.id)}"><label class="field">Your feedback after checking the original<textarea name="note" required maxlength="2000">${esc(s.review_note || '')}</textarea></label><button class="btn" type="submit">Save therapist feedback</button><p class="form-error" role="status"></p></form>
+        ${s.analysis_status === 'unavailable' ? `<button class="btn secondary" data-motor-retry="${esc(s.id)}">Retry analysis</button>` : ''}`
+          : ''
+      }
+    </article>`,
+        )
+        .join('') || '<p>No handwriting photos yet.</p>'
+    }</section>`;
+}
+
+function bindMotor(patientId) {
+  document.querySelectorAll('.motor-feedback').forEach(form =>
+    handleForm(`.motor-feedback[data-submission="${form.dataset.submission}"]`, async b => {
+      await api(`/motor-submissions/${form.dataset.submission}/review`, 'POST', { note: b.note });
+      await therapistPatientDialog(patientId);
+      toast('Therapist feedback saved');
+    }),
+  );
+  document.querySelectorAll('[data-motor-retry]').forEach(
+    button =>
+      (button.onclick = async () => {
+        button.disabled = true;
+        try {
+          await api(`/motor-submissions/${button.dataset.motorRetry}/analyze`, 'POST', {});
+          await therapistPatientDialog(patientId);
+        } catch (error) {
+          toast(error.message);
+          button.disabled = false;
+        }
+      }),
+  );
+}
+
+function renderTherapist() {
+  $('#app').innerHTML = html`<main class="therapist-workspace">
+    <header class="topbar">${brand()}<strong>${esc(user.name)}</strong><button class="btn secondary" id="refresh">Refresh</button><button class="btn secondary" id="logout">Sign out</button></header>
+    <section class="page-header"><h1>Your patients</h1><p>Short daily practice, original photos and your feedback.</p></section>
+    <section class="card table-card">${patientTable(overview.patients)}</section>
+  </main>`;
+  $('#logout').onclick = logout;
+  $('#refresh').onclick = load;
+  document
+    .querySelectorAll('[data-patient]')
+    .forEach(button => (button.onclick = () => therapistPatientDialog(button.dataset.patient)));
+}
+
+async function therapistPatientDialog(id) {
+  try {
+    const d = await api(`/patients/${id}`);
+    const exercises = config.exercises.filter(e => e.kind === 'motor');
+    openDialog(
+      esc(d.patient.name),
+      'Check the original photo before sharing your clinical feedback.',
+      html`
+      <section class="detail-section"><h3>Consent</h3><p>Status: ${esc(d.consent?.status || 'missing')}</p>
+      ${d.consent ? `<p>Signed by ${esc(d.consent.signer_name)}. Optional analysis: ${d.consent.checks.analysis ? 'agreed' : 'declined'}</p><img class="consent-image" src="data:image/png;base64,${esc(d.consent.signature_png)}" alt="Adult or guardian signature">` : ''}
+      ${d.consent?.status === 'pending' ? '<form id="approve-care"><label><input type="checkbox" name="paper" required> I checked the adult or guardian signature and confirm the paper copy.</label><button class="btn" type="submit">Approve consent</button></form>' : ''}</section>
+      ${d.consent?.status === 'approved' ? html`<form id="motor-forms"><h3>Clinical assessment</h3><label class="field">Age in years<input name="age" type="number" min="1" max="120" required value="${d.forms?.age || ''}"></label><label class="field">Demographic information<textarea name="demographic" required maxlength="2000">${esc(d.forms?.demographic || '')}</textarea></label><label class="field">Clinical information and suitability<textarea name="clinical" required maxlength="2000">${esc(d.forms?.clinical || '')}</textarea></label><button class="btn" type="submit">Save assessment</button></form>` : ''}
+      ${
+        d.forms && d.consent?.status === 'approved'
+          ? html`<form id="motor-plan"><h3>Daily motor practice plan</h3><p>${esc(config.motorGuidance)}</p>
+      <label class="field">Plan title<input name="title" required maxlength="200" value="${esc(d.plan?.title || 'My daily little practice')}"></label>
+      ${exercises.map(e => `<label class="motor-choice"><input type="checkbox" name="exercise" value="${esc(e.id)}" ${d.plan?.exercises.includes(e.id) || !d.plan ? 'checked' : ''}> ${esc(e.name)} · ${e.minutes} min — ${esc(e.description)}</label>`).join('')}
+      <p>This replaces the current plan. One gentle round per day; adapt to this child's needs.</p>
+      <label class="field">Your instructions<textarea name="notes" maxlength="2000">${esc(d.plan?.notes || '')}</textarea></label><button class="btn" type="submit">Prescribe daily practice</button></form>`
+          : ''
+      }
+      ${motorMarkup(d.motorSubmissions || [])}
+      <div class="form-actions"><button class="btn secondary" id="refresh-patient">Refresh reports</button><button class="btn secondary" data-close>Done</button></div>`,
+    );
+    if ($('#approve-care'))
+      handleForm('#approve-care', async () => {
+        await api(`/patients/${id}/approve-consent`, 'POST', { paperCopy: true });
+        await therapistPatientDialog(id);
+      });
+    if ($('#motor-forms'))
+      handleForm('#motor-forms', async b => {
+        await api(`/patients/${id}/forms`, 'PUT', {
+          age: Number(b.age),
+          demographic: b.demographic,
+          clinical: b.clinical,
+        });
+        await therapistPatientDialog(id);
+      });
+    if ($('#motor-plan'))
+      handleForm('#motor-plan', async b => {
+        const selected = [...document.querySelectorAll('#motor-plan [name=exercise]:checked')].map(
+          e => e.value,
+        );
+        await api(`/patients/${id}/plans`, 'POST', {
+          title: b.title,
+          exercises: selected,
+          sessionsPerDay: 1,
+          notes: b.notes,
+        });
+        await therapistPatientDialog(id);
+      });
+    $('#refresh-patient').onclick = () => therapistPatientDialog(id);
+    bindMotor(id);
+  } catch (error) {
+    toast(error.message);
+  }
+}

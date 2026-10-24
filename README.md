@@ -24,3 +24,7 @@ The guardian completes the separately labeled prototype consent on the child's
 account. The child opens **Say a Useful Word** from their home screen; attempts
 go directly to the therapist, without caregiver approval. This is therapist-guided
 practice, not a validated standalone treatment.
+
+The connected build also includes children's daily motor/handwriting practice,
+animated writing guides, photo uploads, local vision-model analysis and therapist
+review with the original photo. See [motor practice setup](backend/README.md#childrens-daily-motor-and-handwriting-practice).

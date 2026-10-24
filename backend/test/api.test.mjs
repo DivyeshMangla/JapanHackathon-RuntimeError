@@ -15,7 +15,7 @@ async function fixture(t, options = {}) {
   const app=createApp({dataDir:dir, ...options});
   await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
   const base=`http://127.0.0.1:${app.server.address().port}`;
-  t.after(async()=>{app.server.closeAllConnections();await new Promise(resolve=>app.server.close(resolve));app.db.close();await rm(dir,{recursive:true,force:true});});
+  t.after(async()=>{await app.motor.waitForIdle();app.server.closeAllConnections();await new Promise(resolve=>app.server.close(resolve));app.db.close();await rm(dir,{recursive:true,force:true});});
   const hash=await hashPassword(password);
   const add=(role,status='active')=>{const id=randomUUID();app.db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,created_at) VALUES(?,?,?,?,?,?,?)').run(id,`${role} Test`,`${id}@test.example`,hash,role,status,now());return app.db.prepare('SELECT * FROM users WHERE id=?').get(id);};
   const call=async(path,method='GET',body,token,headers={})=>{
@@ -292,3 +292,71 @@ test('useful word delivery completes while recognition is stalled; suggestions n
   assert.equal(attempt.transcript,'help');assert.equal(attempt.reviewed,true);assert.equal(attempt.feedback,'Thanks for sharing.');
   assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${id}/audio`,'GET',undefined,tt)).data.audio,'base64'),wav);
 });
+
+test('child motor practice: consent, photo integrity, real analysis seam, review and reassignment', async t => {
+  let calls=0;
+  const report={imageQuality:'usable',observations:'Three lines are visible.',alignment:'developing',formation:'emerging',spacing:'not_assessable',suggestion:'Try one short line, then rest.',model:'test-vision',generatedAt:now()};
+  const f=await fixture(t,{motorAnalyzer:async()=>{calls++;return report;}});
+  const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),patient=f.add('patient'),outsider=f.add('patient');
+  const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),pt=await f.login(patient),out=await f.login(outsider);
+  const path=`/patients/${patient.id}`;
+  await f.call(`${path}/assignment`,'PUT',{therapistId:therapist.id},at);
+  // A real 128x128 PNG is generated below by the test image helper.
+  const photo=testPhoto();
+  const payload={id:randomUUID(),planId:'missing',exerciseId:'motor-lines',photo:photo.toString('base64'),practiceDay:now().slice(0,10)};
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,409);
+  const priorConsent=randomUUID();
+  f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(priorConsent,patient.id,'CONNECTED-DEMO-1','Earlier signer',png,JSON.stringify({analysis:true}),'approved',now());
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,409);
+  await f.call(`${path}/consent`,'POST',{version:consentVersion,signerName:'Synthetic Parent',signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:true}},pt);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM consents WHERE patient_id=?').get(patient.id).n,2);
+  await f.call(`${path}/approve-consent`,'POST',{paperCopy:true},tt);
+  assert.equal((await f.call(`${path}/forms`,'PUT',{age:7,demographic:'Child with guardian',clinical:'Short supervised practice'},tt)).status,200);
+  const plan=await f.call(`${path}/plans`,'POST',{title:'Daily little practice',exercises:['motor-lines','motor-shapes','motor-letter'],sessionsPerDay:1,notes:'Rest when tired'},tt);
+  assert.equal(plan.status,201);payload.planId=plan.data.plan.id;
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',{...payload,photo:'bm90IGEgcmVhbCBwaG90bw=='},pt)).status,400);
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',{...payload,practiceDay:'2099-01-01'},pt)).status,400);
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',{...payload,exerciseId:'humming'},pt)).status,400);
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,tt)).status,403);
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,out)).status,403);
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,201);
+  await f.motor.waitForIdle();assert.equal(calls,1);
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,200);
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',{...payload,practiceDay:new Date(Date.now()-86400000).toISOString().slice(0,10)},pt)).status,409);
+  const get=await f.call(path,'GET',undefined,tt);
+  assert.equal(get.data.progress.length,1);assert.equal(get.data.progress[0].minutes,1);assert.equal(get.data.motorSubmissions.length,1);assert.equal(get.data.motorSubmissions[0].analysis_status,'ready');assert.deepEqual(get.data.motorSubmissions[0].report,report);
+  assert.equal((await f.call(path,'GET',undefined,pt)).data.motorSubmissions[0].report,null);
+  const media=`/motor-submissions/${payload.id}/photo`;
+  assert.equal((await f.call(media)).status,401);
+  assert.equal((await f.call(media,'GET',undefined,ot)).status,403);
+  const original=await f.call(media,'GET',undefined,tt);assert.equal(original.status,200);assert.deepEqual(Buffer.from(original.data),photo);
+  assert.equal((await f.call(`/motor-submissions/${payload.id}/review`,'POST',{note:'Nice practice. Let us work on one line next time.'},pt)).status,403);
+  assert.equal((await f.call(`/motor-submissions/${payload.id}/review`,'POST',{note:'Nice practice. Let us work on one line next time.'},tt)).status,200);
+  assert.ok((await f.call(path,'GET',undefined,pt)).data.motorSubmissions[0].review_note);
+  const restarted=createApp({dataDir:f.dir});assert.equal(restarted.motor.summaries(patient.id,'therapist')[0].report.model,'test-vision');restarted.db.close();
+  await f.call(`${path}/assignment`,'PUT',{therapistId:other.id},at);
+  assert.equal((await f.call(media,'GET',undefined,tt)).status,403);
+  assert.equal((await f.call(media,'GET',undefined,ot)).status,200);
+});
+
+test('motor analysis failure keeps original and allows retry; declining analysis never invokes model',async t=>{
+  let calls=0;
+  const f=await fixture(t,{motorAnalyzer:async()=>{calls++;throw new Error('Model offline');}});
+  const therapist=f.add('therapist'),patient=f.add('patient');
+  f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,patient.id);
+  const tt=await f.login(therapist),pt=await f.login(patient),path=`/patients/${patient.id}`;
+  const consentId=randomUUID(),planId=randomUUID();
+  f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(consentId,patient.id,consentVersion,'Parent',png,JSON.stringify({analysis:true}),'approved',now());
+  f.db.prepare('INSERT INTO plans VALUES(?,?,?,?,?,?,?,?,?)').run(planId,patient.id,therapist.id,consentId,'Daily practice',JSON.stringify(['motor-lines']),1,'',now());
+  const payload={id:randomUUID(),planId,exerciseId:'motor-lines',photo:testPhoto().toString('base64'),practiceDay:now().slice(0,10)};
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,201);await f.motor.waitForIdle();
+  let entry=(await f.call(path,'GET',undefined,tt)).data.motorSubmissions[0];assert.equal(entry.analysis_status,'unavailable');assert.equal(entry.report,null);
+  assert.equal((await f.call(`/motor-submissions/${payload.id}/analyze`,'POST',{},tt)).status,202);await f.motor.waitForIdle();assert.equal(calls,2);
+  f.db.prepare('UPDATE consents SET checks=? WHERE id=?').run(JSON.stringify({analysis:false}),consentId);
+  const declined={...payload,id:randomUUID()};await f.call(`${path}/motor-submissions`,'POST',declined,pt);await f.motor.waitForIdle();assert.equal(calls,2);
+  entry=(await f.call(path,'GET',undefined,tt)).data.motorSubmissions[0];assert.equal(entry.analysis_status,'declined');
+  assert.equal((await f.call(`/motor-submissions/${declined.id}/analyze`,'POST',{},tt)).status,409);
+  assert.equal((await f.call(`/motor-submissions/${declined.id}/photo`,'GET',undefined,tt)).status,200);
+});
+
+function testPhoto() { return Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAABC0lEQVR4nO3TQREAAAjDMPybBhk8mkjYrrO8Gvs7IE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFOCANgU4oE0BDmhTgAPaFLC/DpTpSzJeKQ2cAAAAAElFTkSuQmCC','base64'); }

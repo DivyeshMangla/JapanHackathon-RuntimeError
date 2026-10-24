@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { motorExercises } from './motor.mjs';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export function openDatabase(dataDir = process.env.DATA_DIR || resolve(root, 'data')) {
@@ -19,7 +20,7 @@ export function openDatabase(dataDir = process.env.DATA_DIR || resolve(root, 'da
   const db = new DatabaseSync(file);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;');
   db.exec(readFileSync(resolve(root, 'migrations/001_initial.sql'), 'utf8'));
-  db.exec(readFileSync(resolve(root, 'migrations/002_care.sql'), 'utf8'));
+  db.exec(readFileSync(resolve(root, 'migrations/003_care.sql'), 'utf8'));
   // SQLite has no ADD COLUMN IF NOT EXISTS, so the column is added once here.
   if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'participant_code')) {
     db.exec('ALTER TABLE users ADD COLUMN participant_code TEXT');
@@ -27,6 +28,7 @@ export function openDatabase(dataDir = process.env.DATA_DIR || resolve(root, 'da
       db.prepare('UPDATE users SET participant_code=? WHERE id=?').run(nextParticipantCode(db), id);
     }
   }
+  db.exec(readFileSync(resolve(root, 'migrations/002_motor.sql'), 'utf8'));
   return db;
 }
 export function nextParticipantCode(db) {
@@ -43,5 +45,6 @@ export function publicUser(user) {
 export function audit(db, actor, action, target = null, detail = '') {
   db.prepare('INSERT INTO audit VALUES (?, ?, ?, ?, ?, ?)').run(randomUUID(), actor, action, target, detail, now());
 }
-export const consentVersion = 'CONNECTED-DEMO-1';
-export const consentText = 'Prototype consent: I understand that this demonstration stores my profile, practice progress and voice recordings on the connected service and shares them with my assigned therapist. This placeholder must be replaced with approved study information before participant recruitment.';
+export const exercises = [...motorExercises];
+export const consentVersion = 'CONNECTED-DEMO-2';
+export const consentText = 'Prototype consent: I understand that this demonstration stores my profile, practice progress, handwriting photos and voice recordings on the connected service and shares them with my assigned therapist. An adult signs for a child. Optional automated analysis describes visible practice marks and requires therapist review. This placeholder must be replaced with approved study information before participant recruitment.';

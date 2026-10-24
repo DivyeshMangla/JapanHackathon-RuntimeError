@@ -1,5 +1,9 @@
 # Melo admin
 
+Administrators and approved therapists can sign in. Therapists see only their
+assigned patients, with child assessment, daily motor plans, original photos,
+automated observations and feedback. Administrators retain workspace management.
+
 Buildless HTML, CSS and JavaScript. No dependency installation or separate build is required.
 The backend serves this directory and its API on the same origin. Run `npm run demo`
 from `backend/`, then open http://127.0.0.1:8787.

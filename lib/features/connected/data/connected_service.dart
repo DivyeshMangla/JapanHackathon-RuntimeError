@@ -317,13 +317,14 @@ class ConnectedService extends ChangeNotifier {
   Future<void> submitConsent({
     required Map<ConsentStatement, bool> answers,
     required List<int> signaturePng,
+    String? signerName,
   }) async {
     await _request(
       '/patients/$_userId/consent',
       method: 'POST',
       data: {
         'version': _config.consentVersion,
-        'signerName': _user!.name,
+        'signerName': signerName ?? _user!.name,
         'checks': {
           for (final statement in ConsentStatement.values)
             statement.name: answers[statement] == true,
@@ -369,6 +370,41 @@ class ConnectedService extends ChangeNotifier {
     method: 'POST',
     data: {'note': note},
   );
+
+  Future<void> submitMotorPhoto({
+    required String submissionId,
+    required String planId,
+    required String exerciseId,
+    required List<int> photo,
+    required String practiceDay,
+  }) async {
+    await _request(
+      '/patients/$_userId/motor-submissions',
+      method: 'POST',
+      data: {
+        'id': submissionId,
+        'planId': planId,
+        'exerciseId': exerciseId,
+        'photo': base64Encode(photo),
+        'practiceDay': practiceDay,
+      },
+    );
+    await refresh();
+  }
+
+  Future<void> reviewMotor(String id, String note) => _request(
+    '/motor-submissions/$id/review',
+    method: 'POST',
+    data: {'note': note},
+  );
+  Future<void> retryMotor(String id) => _request(
+    '/motor-submissions/$id/analyze',
+    method: 'POST',
+    data: const {},
+  );
+
+  Future<Uint8List> motorPhoto(String id) =>
+      _mediaBytes('/motor-submissions/$id/photo');
 
   Future<void> savePractice({
     required String planId,
@@ -440,12 +476,13 @@ class ConnectedService extends ChangeNotifier {
     await _clearSession();
   }
 
-  Future<Uint8List> recordingAudio(String recordingId) async {
+  Future<Uint8List> recordingAudio(String recordingId) =>
+      _mediaBytes('/recordings/$recordingId/audio');
+
+  Future<Uint8List> _mediaBytes(String path) async {
     final client = HttpClient()..connectionTimeout = _connectTimeout;
     try {
-      final request = await client.getUrl(
-        Uri.parse('$baseUrl/api/recordings/$recordingId/audio'),
-      );
+      final request = await client.getUrl(Uri.parse('$baseUrl/api$path'));
       request.headers.set('Authorization', 'Bearer $_token');
       final response = await request.close().timeout(_responseTimeout);
       if (response.statusCode != HttpStatus.ok) {

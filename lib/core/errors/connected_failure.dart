@@ -19,6 +19,8 @@ enum ConnectedFailureReason {
   microphoneDenied,
   noRecording,
   recordingUnavailable,
+  photoUnavailable,
+  photoTooLarge,
 }
 
 final class ConnectedFailure implements Exception {

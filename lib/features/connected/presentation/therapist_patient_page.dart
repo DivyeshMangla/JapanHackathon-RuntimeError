@@ -18,6 +18,7 @@ import '../../useful_words/presentation/word_strings.dart';
 import '../data/connected_service.dart';
 import '../domain/connected_models.dart';
 import 'connected_actions.dart';
+import 'motor_sections.dart';
 import 'patient_sections.dart';
 
 /// The server accepts plans of one to six exercises.
@@ -177,6 +178,15 @@ class _TherapistPatientPageState extends State<TherapistPatientPage>
     if (file != null && await file.exists()) await file.delete();
   }
 
+  Future<void> _reviewMotor(String id) async {
+    final note = await showDialog<String>(
+      context: context,
+      builder: (_) => const FeedbackDialog(),
+    );
+    if (note == null || !mounted) return;
+    await _change('motor-review', () => service.reviewMotor(id, note));
+  }
+
   Future<void> _review(String recordingId) async {
     final note = await showDialog<String>(
       context: context,
@@ -281,6 +291,18 @@ class _TherapistPatientPageState extends State<TherapistPatientPage>
               ),
             ),
           PracticeSection(record: record, library: service.config),
+          MotorReviewsSection(
+            service: service,
+            submissions: record.motorSubmissions,
+            onReview: (id) {
+              if (!busy) unawaited(_reviewMotor(id));
+            },
+            onRetry: (id) {
+              if (!busy) {
+                unawaited(_change('motor-retry', () => service.retryMotor(id)));
+              }
+            },
+          ),
           RecordingsSection(
             recordings: record.recordings,
             library: service.config,

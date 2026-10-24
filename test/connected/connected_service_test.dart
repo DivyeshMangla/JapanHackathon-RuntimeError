@@ -89,7 +89,9 @@ void main() {
         } else {
           response = {'user': accounts[owner]};
         }
-      } else if (path.endsWith('/progress') || path.endsWith('/recordings')) {
+      } else if (path.endsWith('/progress') ||
+          path.endsWith('/recordings') ||
+          path.endsWith('/motor-submissions')) {
         received.add({'owner': owner, 'path': path, 'body': body});
         if (rejectSync) {
           request.response.statusCode = 503;
@@ -120,6 +122,32 @@ void main() {
     await box.close();
     await directory.delete(recursive: true);
   });
+
+  test(
+    'motor photo failures surface and retry preserves original bytes and ID',
+    () async {
+      await service.signIn('a@example.test', 'example-password');
+      Future<void> send() => service.submitMotorPhoto(
+        submissionId: 'photo-1',
+        planId: 'plan-a',
+        exerciseId: 'motor-lines',
+        photo: [1, 2, 3, 4],
+        practiceDay: '2026-10-24',
+      );
+      rejectSync = true;
+      await expectLater(send(), throwsA(isA<ConnectedFailure>()));
+      expect(service.outbox, isEmpty);
+      rejectSync = false;
+      await send();
+      expect(received, hasLength(2));
+      expect(received.first['body'], received.last['body']);
+      expect((received.last['body'] as Map)['photo'], 'AQIDBA==');
+      expect(
+        received.last['path'],
+        '/api/patients/patient-a/motor-submissions',
+      );
+    },
+  );
 
   test(
     'failed progress upload survives restart and retries the same event ID',
