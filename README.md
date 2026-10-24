@@ -24,3 +24,8 @@ The guardian completes the separately labeled prototype consent on the child's
 account. The child opens **Say a Useful Word** from their home screen; attempts
 go directly to the therapist, without caregiver approval. This is therapist-guided
 practice, not a validated standalone treatment.
+
+The feature is now labeled **Say a Word** and includes therapist-only automated
+analysis reports and separate clinician corrections. With no validated
+pronunciation model configured, reports say **Unable to assess reliably** and
+provide no accuracy score. Recognition failure never blocks original audio.

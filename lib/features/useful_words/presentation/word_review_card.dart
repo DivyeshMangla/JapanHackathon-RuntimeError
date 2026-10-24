@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/action_page.dart';
 import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/ink_card.dart';
 import '../data/word_repository.dart';
 import '../domain/useful_word.dart';
+import 'word_analysis_panel.dart';
 import 'word_audio_controller.dart';
 import 'word_capture_panel.dart';
 import 'word_page_actions.dart';
@@ -21,7 +21,9 @@ class WordReviewCard extends StatefulWidget {
     required this.attempt,
     required this.repository,
     required this.onSaved,
+    this.audio,
   });
+  final WordAudioController? audio;
   final WordAttempt attempt;
   final WordRepository repository;
   final VoidCallback onSaved;
@@ -30,13 +32,17 @@ class WordReviewCard extends StatefulWidget {
 }
 
 class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
-  final _audio = WordAudioController();
+  late final _audio = widget.audio ?? WordAudioController();
+  late final _correction = TextEditingController(
+    text: widget.attempt.analysisCorrection ?? '',
+  );
   late final _feedback = TextEditingController(text: widget.attempt.feedback);
   late bool _reviewed = widget.attempt.reviewed;
   bool _saved = false;
   @override
   void dispose() {
     _feedback.dispose();
+    _correction.dispose();
     _audio.dispose();
     super.dispose();
   }
@@ -47,6 +53,7 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
         widget.attempt.id,
         _feedback.text,
         _reviewed,
+        analysisCorrection: _correction.text,
         audio: _audio.audio,
         preserveAudio: widget.attempt.hasFeedbackAudio && _audio.audio == null,
       ),
@@ -76,6 +83,14 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
                     ),
                   ),
             onStop: () => unawaited(_audio.stopPlayback()),
+          ),
+          const Divider(),
+          WordAnalysisPanel(
+            report: attempt.analysisReport,
+            targetWord: attempt.word,
+            recognizedWord: attempt.transcript,
+            correction: _correction,
+            enabled: !busy,
           ),
           const Divider(),
           TextField(
@@ -155,15 +170,6 @@ class _WordReviewPlayback extends StatelessWidget {
         label: WordStrings.stopPlayback,
         icon: LucideIcons.square,
         onPressed: onStop,
-      ),
-      const SizedBox(height: AppSpacing.md),
-      const Text(WordStrings.ai),
-      Text(
-        attempt.transcriptionStatus == 'suggested'
-            ? attempt.transcript ?? WordStrings.noTranscript
-            : attempt.transcriptionStatus == 'pending'
-            ? WordStrings.transcribing
-            : WordStrings.noTranscript,
       ),
     ],
   );

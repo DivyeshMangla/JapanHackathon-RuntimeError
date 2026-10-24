@@ -7,9 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:melo/core/errors/connected_failure.dart';
 import 'package:melo/core/theme/app_theme.dart';
 import 'package:melo/features/useful_words/data/word_repository.dart';
+import 'package:melo/features/useful_words/domain/useful_word.dart';
 import 'package:melo/features/useful_words/domain/word_audio_device.dart';
 import 'package:melo/features/useful_words/presentation/child_word_page.dart';
 import 'package:melo/features/useful_words/presentation/word_audio_controller.dart';
+import 'package:melo/features/useful_words/presentation/word_review_card.dart';
 import 'package:melo/features/useful_words/presentation/word_strings.dart';
 
 class FakeWordDevice implements WordAudioDevice {
@@ -317,6 +319,84 @@ void main() {
       await tester.pumpAndSettle();
       expect(device.active, false);
       expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'therapist sees unassessable report and saves a separate analysis correction',
+    (tester) async {
+      final device = FakeWordDevice();
+      final audio = WordAudioController(device: device);
+      Map<String, dynamic>? saved;
+      final repo = WordRepository(
+        'child',
+        (path, {method = 'GET', data}) async {
+          saved = data;
+          return {};
+        },
+        () => null,
+        (value) async {},
+      );
+      final attempt = WordAttempt.fromJson({
+        'id': 'attempt',
+        'word': 'help',
+        'date': '2026-10-24T12:00:00Z',
+        'transcriptionStatus': 'suggested',
+        'transcript': 'help',
+        'feedback': '',
+        'hasFeedbackAudio': false,
+        'reviewed': false,
+        'analysisReport': {
+          'targetWord': 'help',
+          'recognizedWord': 'help',
+          'textComparison': 'same_text',
+          'processingStatus': 'complete',
+          'validation': 'No validated pronunciation model configured.',
+          'limitations': [
+            'Recognition confidence is not pronunciation accuracy.',
+          ],
+        },
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: WordReviewCard(
+                attempt: attempt,
+                repository: repo,
+                audio: audio,
+                onSaved: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(WordStrings.reportTitle), findsOneWidget);
+      expect(find.text(WordStrings.unable), findsOneWidget);
+      expect(find.text(WordStrings.sameText), findsOneWidget);
+      expect(find.text(WordStrings.accuracyUnavailable), findsOneWidget);
+      final correction = find.byType(TextField).first;
+      await tester.ensureVisible(correction);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        correction,
+        'Therapist observed a different sound.',
+      );
+      final save = find.text(WordStrings.review);
+      await tester.ensureVisible(save);
+      await tester.pumpAndSettle();
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(
+        saved!['analysisCorrection'],
+        'Therapist observed a different sound.',
+      );
+      expect(saved!.containsKey('analysisReport'), false);
+      expect(attempt.analysisReport!.recognizedWord, 'help');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
     },
   );
 }

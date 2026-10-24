@@ -163,7 +163,7 @@ test('useful words preserve exact audio, encrypt payloads and isolate paired acc
   const different=Buffer.from(wav);different[99]=42;
   assert.equal((await f.call(`${path}/attempts`,'POST',{...payload,audio:different.toString('base64')},ct)).status,409);
   const attempts=(await f.call(path,'GET',undefined,tt)).data.attempts;
-  assert.equal(attempts.length,1);assert.equal(attempts[0].transcriptionStatus,'failed');assert.equal(attempts[0].transcript,null);
+  assert.equal(attempts.length,1);assert.equal(attempts[0].transcriptionStatus,'failed');assert.equal(attempts[0].transcript,null);assert.equal(attempts[0].analysisReport.assessment,'Unable to assess reliably');assert.equal(attempts[0].analysisReport.processingStatus,'failed');assert.equal(attempts[0].analysisReport.pronunciationAccuracy,null);
   const audioPath=`${path}/attempts/${payload.id}/audio`;
   assert.deepEqual(Buffer.from((await f.call(audioPath,'GET',undefined,tt)).data.audio,'base64'),wav);
   assert.deepEqual(Buffer.from((await f.call(`${path}/words/${word.data.id}/audio`,'GET',undefined,ct)).data.audio,'base64'),wav);
@@ -201,5 +201,35 @@ test('useful word delivery completes while recognition is stalled; suggestions n
   finish('help'); await new Promise(resolve=>setImmediate(resolve));
   const attempt=(await f.call(path,'GET',undefined,tt)).data.attempts[0];
   assert.equal(attempt.transcript,'help');assert.equal(attempt.reviewed,true);assert.equal(attempt.feedback,'Thanks for sharing.');
+  assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${id}/audio`,'GET',undefined,tt)).data.audio,'base64'),wav);
+});
+
+test('analysis reports are therapist-only, never score ASR text and preserve clinician corrections', async t => {
+  let finish;
+  const recognition=new Promise(resolve=>{finish=resolve;});
+  const f=await fixture(t,{transcriber:{suggest:()=>recognition}});
+  const child=f.add('patient'), therapist=f.add('therapist'), other=f.add('therapist');
+  f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
+  const ct=await f.login(child),tt=await f.login(therapist),ot=await f.login(other),path=`/useful-words/patients/${child.id}`;
+  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
+  const version=(await f.call(path,'GET',undefined,ct)).data.consentVersion;
+  assert.equal((await f.call(`${path}/consent`,'POST',{version:'USEFUL-WORD-GUARDIAN-DEMO-1',guardianName:'Guardian',relationship:'Parent',guardianConsent:true},ct)).status,400);
+  await f.call(`${path}/consent`,'POST',{version,guardianName:'Guardian',relationship:'Parent',guardianConsent:true},ct);
+  const wav=Buffer.alloc(100);wav.write('RIFF');wav.write('WAVE',8);
+  const word=await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
+  const id=randomUUID(),reviewPath=`${path}/attempts/${id}/review`;
+  assert.equal((await f.call(`${path}/attempts`,'POST',{id,wordId:word.data.id,audio:wav.toString('base64')},ct)).status,201);
+  const correction='I heard an initial sound that differs; assess in session.';
+  assert.equal((await f.call(reviewPath,'PUT',{feedback:'Thanks for sharing.',reviewed:true,analysisCorrection:correction},ot)).status,403);
+  assert.equal((await f.call(reviewPath,'PUT',{feedback:'Thanks for sharing.',reviewed:true,analysisCorrection:correction},tt)).status,200);
+  finish('help'); await new Promise(resolve=>setImmediate(resolve));
+  const attempt=(await f.call(path,'GET',undefined,tt)).data.attempts[0],report=attempt.analysisReport;
+  assert.equal(report.targetWord,'help');assert.equal(report.recognizedWord,'help');assert.equal(report.textComparison,'same_text');
+  assert.equal(report.assessment,'Unable to assess reliably');assert.equal(report.pronunciationAccuracy,null);assert.equal(report.modelConfidence,null);
+  assert.deepEqual(report.possibleSoundDifferences,[]);assert.deepEqual(report.recognizedSounds,[]);
+  assert.ok(report.limitations.some(l=>l.includes('not pronunciation accuracy')));
+  assert.equal(attempt.analysisCorrection.text,correction);assert.equal(attempt.analysisCorrection.therapistId,therapist.id);
+  const childView=(await f.call(path,'GET',undefined,ct)).data.attempts[0];
+  assert.equal(childView.analysisReport,undefined);assert.equal(childView.analysisCorrection,undefined);
   assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${id}/audio`,'GET',undefined,tt)).data.audio,'base64'),wav);
 });

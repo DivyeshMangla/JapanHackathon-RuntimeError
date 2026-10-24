@@ -164,3 +164,31 @@ file in the OS-managed app cache, so device/cache protection remains necessary.
 “Could not transcribe.” A real server-only recognizer may replace its `suggest`
 method. Recognition never modifies the original or generates scores, judgments,
 diagnoses, severity, or emotion predictions. There are no client API keys.
+
+### Automated pronunciation report
+
+The feature is labeled **Say a Word** in the app. Each delivered attempt has an
+independent encrypted `analysisReport` snapshot available only to the assigned
+therapist. It includes the target, suggested recognized text, a text-only
+comparison, unavailable sound/accuracy/confidence fields, and explicit model and
+recording-quality limitations. No validated pronunciation model is installed:
+reports say **Unable to assess reliably**, even when recognized text matches.
+Speech-recognition confidence is never converted into pronunciation accuracy,
+and text differences are never interpreted as phonetic differences. This is a
+conservative mock assessment integration, not a functioning pronunciation model.
+
+Recognition has a 15-second deadline and does not delay delivery. Failure or
+expiry leaves the unchanged original available with an unassessable report.
+Legacy attempts also receive a conservative report when read. A future model
+integration requires reviewed validation evidence covering the child's age,
+language and speech characteristics, plus reliable quality/eligibility gates;
+the current API intentionally has no path for accepting an accuracy score.
+
+`PUT /attempts/:id/review` additionally accepts optional `analysisCorrection`
+(up to 4000 characters), stored with server-derived therapist identity/date.
+Corrections never overwrite the automated snapshot, and later recognition cannot
+overwrite a correction. Reports/corrections are excluded from the child's API
+view; only explicit clinician feedback is shown. The guardian consent version
+is now `USEFUL-WORD-GUARDIAN-DEMO-2` with analysis disclosures; older consent must
+be renewed before new submissions. Approved wording and guardian identity
+verification remain deployment requirements.

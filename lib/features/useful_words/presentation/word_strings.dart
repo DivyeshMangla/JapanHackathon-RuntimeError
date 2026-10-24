@@ -1,5 +1,5 @@
 abstract final class WordStrings {
-  static const title = 'Say a Useful Word';
+  static const title = 'Say a Word';
   static const guidance = 'Listen if you like. Try the word when you’re ready.';
   static const scope =
       'Therapist-guided speech practice. This is not a validated standalone treatment and does not guarantee speech improvement.';
@@ -35,7 +35,24 @@ abstract final class WordStrings {
   static const transcribing =
       'Transcript pending. Original recording is delivered.';
   static const mock =
-      'Mock integration: speech recognition is not configured. Audio delivery works independently.';
+      'Mock integration: speech recognition and validated pronunciation assessment are not configured. Reports state Unable to assess reliably. Audio delivery works independently.';
+  static const reportTitle = 'Automated estimate requiring therapist review';
+  static const unable = 'Unable to assess reliably';
+  static const target = 'Target word';
+  static const recognized = 'Recognized word or sounds';
+  static const unavailable = 'Unavailable';
+  static const accuracyUnavailable =
+      'Pronunciation accuracy: unavailable. No validated model is configured.';
+  static const soundsUnavailable = 'Possible sound differences: not assessed.';
+  static const confidenceUnavailable =
+      'Model confidence: unavailable. Recognition confidence is not pronunciation accuracy.';
+  static const sameText =
+      'Recognized text matches the target. This is a text comparison only.';
+  static const differentText =
+      'Recognized text differs from the target. This does not identify sound differences.';
+  static const correction = 'Therapist correction of analysis (optional)';
+  static const correctionHint =
+      'Keep your correction separate from the automated estimate. Only feedback is shown to the child.';
   static const feedback = 'Therapist feedback';
   static const playFeedback = 'Listen to feedback';
   static const therapist = 'Words and recordings';
@@ -49,7 +66,7 @@ abstract final class WordStrings {
   static const guardianName = 'Guardian’s full name';
   static const relationship = 'Relationship to child';
   static const guardianAgree =
-      'I am authorized to consent for this child. I agree to recording, encrypted storage and direct sharing of original audio with the assigned therapist. Automated transcription may suggest text separately. I can contact the therapist to withdraw consent.';
+      'I am authorized to consent for this child. I agree to recording, encrypted storage and direct sharing of original audio with the assigned therapist. Automated transcription and pronunciation reports may be generated for therapist review. These estimates may be inaccurate and may be unable to assess pronunciation reliably. I can contact the therapist to withdraw consent.';
   static const consent = 'Give guardian consent';
   static const assign = 'Assign a word';
   static const word = 'Useful word';

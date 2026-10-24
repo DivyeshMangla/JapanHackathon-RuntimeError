@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID, createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { pronunciationReport, recognizeWithDeadline } from './pronunciation-report.mjs';
 
 // Recognition is deliberately independent of accepting audio. Replace this seam
 // with a server-side recognizer; it must never change the stored original.
@@ -48,21 +49,23 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
     return bytes;
   };
   const therapist = u => { if (u.role !== 'therapist') fail(403,'Only the assigned therapist can do this.'); };
-  const consentVersion = 'USEFUL-WORD-GUARDIAN-DEMO-1';
-  const summary = a => ({ id:a.id, wordId:a.wordId, word:a.word, date:a.date, transcript:a.transcript,
-    transcriptionStatus:a.transcriptionStatus, feedback:a.feedback, hasFeedbackAudio:!!a.feedbackAudio, reviewed:a.reviewed });
+  const consentVersion = 'USEFUL-WORD-GUARDIAN-DEMO-2';
+  const summary = (a, includeAnalysis) => ({ id:a.id, wordId:a.wordId, word:a.word, date:a.date, transcript:a.transcript,
+    transcriptionStatus:a.transcriptionStatus, feedback:a.feedback, hasFeedbackAudio:!!a.feedbackAudio, reviewed:a.reviewed,
+    ...(includeAnalysis ? {analysisReport:a.analysisReport || pronunciationReport(a.word,a.transcript,a.transcriptionStatus==='pending'?'pending':a.transcriptionStatus==='failed'?'failed':'complete'),analysisCorrection:a.analysisCorrection || null} : {}) });
   const pending = new Set();
   async function transcribe(patientId, attempt) {
     try {
-      const transcript = await transcriber.suggest(Buffer.from(attempt.audio,'base64'));
+      const transcript = await recognizeWithDeadline(transcriber, Buffer.from(attempt.audio,'base64'));
       const current = get('attempt',attempt.id);
       if (!current) return;
       current.transcript = typeof transcript === 'string' && transcript.trim() ? transcript.slice(0,4000) : null;
       current.transcriptionStatus = current.transcript ? 'suggested' : 'failed';
+      current.analysisReport = pronunciationReport(current.word,current.transcript,current.transcript?'complete':'failed');
       put('attempt',current.id,patientId,current);
     } catch {
       const current = get('attempt',attempt.id);
-      if (current) { current.transcriptionStatus='failed'; current.transcript=null; put('attempt',current.id,patientId,current); }
+      if (current) { current.transcriptionStatus='failed'; current.transcript=null; current.analysisReport=pronunciationReport(current.word,null,'failed'); put('attempt',current.id,patientId,current); }
     }
   }
   return async function route(req,res,url,u) {
@@ -80,9 +83,9 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
     const consent = get('consent',patientId);
     if (!action && req.method === 'GET') {
       const words = list('word',patientId).filter(w => w.therapistId === patient.therapist_id);
-      json(res,200,{ enrollment:!!enrollment, consent:!!consent && consent.therapistId===patient.therapist_id,
+      json(res,200,{ enrollment:!!enrollment, consent:!!consent && consent.version===consentVersion && consent.therapistId===patient.therapist_id,
         consentVersion, mockTranscription:transcriber instanceof UnavailableTranscriber,
-        words:words.map(({exampleAudio,...w})=>w), attempts:list('attempt',patientId).sort((a,b)=>b.date.localeCompare(a.date)).map(summary) }); return true;
+        words:words.map(({exampleAudio,...w})=>w), attempts:list('attempt',patientId).sort((a,b)=>b.date.localeCompare(a.date)).map(a=>summary(a,u.role==='therapist')) }); return true;
     }
     if (action === 'enrollment' && req.method === 'PUT') {
       therapist(u); const b=await body(req);
@@ -115,7 +118,7 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
     }
     if (action === 'attempts' && !itemId && req.method === 'POST') {
       if (u.id!==patientId) fail(403,'Only the child can submit their attempt.');
-      if (!consent || consent.therapistId!==patient.therapist_id) fail(409,'Guardian consent is required before recording or sending.');
+      if (!consent || consent.version!==consentVersion || consent.therapistId!==patient.therapist_id) fail(409,'Guardian consent is required before recording or sending.');
       const b=await body(req,17*1024*1024); const id=text(b.id,'Submission ID',80);
       const audio=wav(b.audio), digest=createHash('sha256').update(audio).digest('hex');
       const existing=get('attempt',id);
@@ -125,7 +128,7 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
       }
       const word=list('word',patientId).find(w=>w.id===b.wordId && w.therapistId===patient.therapist_id);
       if (!word) fail(400,'Choose a word assigned by your current therapist.');
-      const attempt={id,wordId:word.id,word:word.word,audio:b.audio,digest,date:new Date().toISOString(),transcript:null,transcriptionStatus:'pending',feedback:'',feedbackAudio:null,reviewed:false};
+      const attempt={id,wordId:word.id,word:word.word,audio:b.audio,digest,date:new Date().toISOString(),transcript:null,transcriptionStatus:'pending',analysisReport:pronunciationReport(word.word,null,'pending'),analysisCorrection:null,feedback:'',feedbackAudio:null,reviewed:false};
       // Persist and acknowledge before recognition; a stalled recognizer cannot
       // hold the delivery response or replace the submitted bytes.
       put('attempt',id,patientId,attempt); json(res,201,{id,status:'delivered'});
@@ -139,8 +142,10 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
       if (subaction === 'review' && req.method === 'PUT') {
         therapist(u); const b=await body(req,17*1024*1024);
         if (typeof b.feedback!=='string' || b.feedback.length>2000 || typeof b.reviewed!=='boolean') fail(400,'Enter feedback up to 2000 characters and a review status.');
+        if (b.analysisCorrection!==undefined && (typeof b.analysisCorrection!=='string' || b.analysisCorrection.length>4000)) fail(400,'Analysis correction must be text up to 4000 characters.');
         if (b.feedbackAudio) wav(b.feedbackAudio);
-        put('attempt',attempt.id,patientId,{...attempt,feedback:b.feedback.trim(),feedbackAudio:b.preserveAudio===true && !b.feedbackAudio?attempt.feedbackAudio:b.feedbackAudio || null,reviewed:b.reviewed}); json(res,200,{ok:true}); return true;
+        const latest=get('attempt',attempt.id);
+        put('attempt',attempt.id,patientId,{...latest,analysisCorrection:b.analysisCorrection===undefined?latest.analysisCorrection:{text:b.analysisCorrection.trim(),therapistId:u.id,date:new Date().toISOString()},feedback:b.feedback.trim(),feedbackAudio:b.preserveAudio===true && !b.feedbackAudio?latest.feedbackAudio:b.feedbackAudio || null,reviewed:b.reviewed}); json(res,200,{ok:true}); return true;
       }
     }
     fail(405,'Method not allowed.');

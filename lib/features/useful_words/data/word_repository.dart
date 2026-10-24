@@ -113,6 +113,7 @@ class WordRepository {
     bool reviewed, {
     Uint8List? audio,
     bool preserveAudio = false,
+    String? analysisCorrection,
   }) async {
     await _request(
       '$_path/attempts/$id/review',
@@ -122,6 +123,7 @@ class WordRepository {
         'reviewed': reviewed,
         'feedbackAudio': audio == null ? null : base64Encode(audio),
         'preserveAudio': preserveAudio,
+        'analysisCorrection': ?analysisCorrection,
       },
     );
   }
