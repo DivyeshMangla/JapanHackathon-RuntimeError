@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Melo takes photos of drawing practice so your therapist can review them.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Melo records your voice exercises so your therapist can review them.</string>
 	<key>CFBundleDevelopmentRegion</key>

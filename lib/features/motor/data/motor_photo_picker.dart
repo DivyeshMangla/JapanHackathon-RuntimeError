@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/errors/app_failure.dart';
 import '../../../core/errors/guard.dart';
@@ -18,29 +18,31 @@ const _maxPickedBytes = 20 * 1024 * 1024;
 /// 6 MB limit.
 const _maxSentSide = 1280;
 
-/// Lets the parent pick a photo of the child's drawing. Only the in-memory
+/// Lets the parent take a photo of the child's drawing. Only the in-memory
 /// copy is kept.
 class MotorPhotoPicker {
   const MotorPhotoPicker();
 
   Future<Uint8List?> pick() => guard(() async {
+    File? capturedFile;
     try {
-      final selected = await FilePicker.pickFile(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png'],
+      final selected = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+        requestFullMetadata: false,
       );
       if (selected == null) return null;
-      final path = selected.path;
-      if (path == null) throw const MediaFailure(MediaProblem.unavailable);
-      final file = File(path);
+      final file = capturedFile = File(selected.path);
       if (await file.length() > _maxPickedBytes) {
         throw const MediaFailure(MediaProblem.tooLarge);
       }
       return await _reencode(await file.readAsBytes());
     } finally {
-      // Mobile pickers may cache an unencrypted copy.
+      // Remove the camera's unencrypted temporary copy after reading it.
       try {
-        await FilePicker.clearTemporaryFiles();
+        if (capturedFile != null && await capturedFile.exists()) {
+          await capturedFile.delete();
+        }
       } catch (error) {
         AppLogger.warning('Photo picker cache cleanup failed', error);
       }

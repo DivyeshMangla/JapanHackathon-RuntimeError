@@ -139,7 +139,7 @@ void main() {
     expect(find.bySemanticsLabel('Drawing, 0 of 1 done'), findsOneWidget);
   });
 
-  testWidgets('leaving child mode needs a password', (tester) async {
+  testWidgets('leaving child mode needs a PIN', (tester) async {
     await _pump(
       tester,
       const Scaffold(body: LeaveChildModeDialog()),
@@ -149,7 +149,7 @@ void main() {
     );
     await tester.tap(find.widgetWithText(TextButton, 'Leave child mode'));
     await tester.pumpAndSettle();
-    expect(find.text('Enter your password.'), findsOneWidget);
+    expect(find.text('Enter a four-digit PIN.'), findsOneWidget);
   });
 
   testWidgets('parent home offers child mode for each child', (tester) async {

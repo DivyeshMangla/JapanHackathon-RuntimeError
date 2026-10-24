@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_failure.dart';
@@ -7,7 +8,7 @@ import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/labeled_text_field.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 
-/// Asks for the parent's password before handing the device back to them,
+/// Asks for the parent's PIN before handing the device back to them,
 /// so a child cannot leave child mode on their own.
 class LeaveChildModeDialog extends ConsumerStatefulWidget {
   const LeaveChildModeDialog({super.key});
@@ -18,19 +19,19 @@ class LeaveChildModeDialog extends ConsumerStatefulWidget {
 }
 
 class _LeaveChildModeDialogState extends ConsumerState<LeaveChildModeDialog> {
-  final _password = TextEditingController();
+  final _pin = TextEditingController();
   bool _checking = false;
   String? _error;
 
   @override
   void dispose() {
-    _password.dispose();
+    _pin.dispose();
     super.dispose();
   }
 
   Future<void> _leave() async {
     final l10n = context.l10n;
-    if (_password.text.isEmpty) {
+    if (_pin.text.length != 4) {
       setState(() => _error = l10n.childModePasswordRequired);
       return;
     }
@@ -41,7 +42,7 @@ class _LeaveChildModeDialogState extends ConsumerState<LeaveChildModeDialog> {
     try {
       final left = await ref
           .read(authControllerProvider.notifier)
-          .endChildMode(_password.text);
+          .endChildMode(_pin.text);
       if (!mounted) return;
       if (left) {
         Navigator.pop(context);
@@ -66,10 +67,14 @@ class _LeaveChildModeDialogState extends ConsumerState<LeaveChildModeDialog> {
           Text(l10n.childModeLeaveBody),
           const SizedBox(height: AppSpacing.md),
           LabeledTextField(
-            controller: _password,
+            controller: _pin,
             label: l10n.childModeParentPassword,
             obscureText: true,
-            autofillHints: const [AutofillHints.password],
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(4),
+            ],
             textInputAction: TextInputAction.done,
             enabled: !_checking,
             errorText: _error,

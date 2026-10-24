@@ -583,11 +583,11 @@
   "motorReplay": "Show me the strokes",
   "motorPracticeIntro": "Watch the demo. Try it slowly on paper. A grown-up can help you send a photo to your therapist.",
   "motorComfort": "Sit comfortably, support your feet and rest your forearm. Relax your hand. Take a break whenever you need one; stop if your hand hurts or feels tired.",
-  "motorChoosePhoto": "Choose practice photo",
+  "motorChoosePhoto": "Take a photo",
   "motorSendPhoto": "Send to my therapist",
   "motorOriginalPhoto": "Original, unedited practice photo",
   "motorInvalidPhoto": "This photo could not be displayed. Choose a different JPEG or PNG.",
-  "motorPhotoInstructions": "Photograph just the paper in good light. Keep the whole exercise in view, without faces or names. Check the preview before sending. Keep the photo until your upload succeeds.",
+  "motorPhotoInstructions": "Tap Take a photo to open the camera. Photograph just the paper in good light. Keep the whole exercise in view, without faces or names. Check the preview before sending.",
   "motorDailyGuidance": "One gentle round each day: about 4 minutes for all three activities, with breaks. Your therapist chooses which tasks suit you. Practice may help you build skills over time.",
   "motorReviewTitle": "Handwriting photos and review",
   "motorReportCaution": "Automated visual observations are provisional. Check the original before giving feedback. A still photo cannot assess grip, pressure, movement, diagnose a condition or establish clinical improvement.",
@@ -693,7 +693,7 @@
       }
     }
   },
-  "drawingNewPhoto": "Choose a different photo",
+  "drawingNewPhoto": "Retake photo",
   "drawingSending": "Sending",
   "drawingSent": "Your drawing is on its way to your therapist.",
   "drawingWaitingTitle": "Not yet",
@@ -782,7 +782,7 @@
       }
     }
   },
-  "childModeStartBody": "{name} will see only their words and drawing practice. To go back to your account you will need your Melo password.",
+  "childModeStartBody": "{name} will see only their words and drawing practice. Choose a four-digit PIN to use when returning to your account.",
   "@childModeStartBody": {
     "description": "Explains that leaving child mode needs the parent's password.",
     "placeholders": {
@@ -793,11 +793,11 @@
   },
   "childModeStartAction": "Start child mode",
   "childModeLeaveTitle": "Leave child mode",
-  "childModeLeaveBody": "Enter your Melo password to go back to your account.",
-  "childModeParentPassword": "Your password",
+  "childModeLeaveBody": "Enter your four-digit PIN to go back to your account.",
+  "childModeParentPassword": "Four-digit PIN",
   "childModeLeaveAction": "Leave child mode",
   "childModeChecking": "Checking",
-  "childModeWrongPassword": "That password is not right.",
-  "childModePasswordRequired": "Enter your password.",
+  "childModeWrongPassword": "That PIN is not right.",
+  "childModePasswordRequired": "Enter a four-digit PIN.",
   "parentConsentMissing": "No consent is on file for this child. Contact your therapist."
 }

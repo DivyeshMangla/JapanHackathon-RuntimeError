@@ -27,7 +27,7 @@ class BackendAuthRepository implements AuthRepository {
       _users.remember(user, current: true);
       return user;
     } on NetworkFailure catch (failure) {
-      // A wrong password is an ordinary outcome, not an error to report.
+      // A wrong PIN is an ordinary outcome, not an error to report.
       if (failure.status == 401) return null;
       rethrow;
     }
@@ -63,20 +63,18 @@ class BackendAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<User> startChildMode(String childId) async =>
-      _adopt(await _client.post('/patients/$childId/child-mode'));
+  Future<User> startChildMode(String childId, String pin) async => _adopt(
+    await _client.post('/patients/$childId/child-mode', body: {'pin': pin}),
+  );
 
   @override
-  Future<User?> endChildMode(String password) async {
+  Future<User?> endChildMode(String pin) async {
     try {
       return _adopt(
-        await _client.post(
-          '/auth/end-child-mode',
-          body: {'password': password},
-        ),
+        await _client.post('/auth/end-child-mode', body: {'pin': pin}),
       );
     } on NetworkFailure catch (failure) {
-      // A wrong password keeps the child where they are.
+      // A wrong PIN keeps the child where they are.
       if (failure.status == 403) return null;
       rethrow;
     }

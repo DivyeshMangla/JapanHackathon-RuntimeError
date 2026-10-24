@@ -36,6 +36,7 @@ export function openDatabase(dataDir = process.env.DATA_DIR || resolve(root, 'da
     db.prepare('UPDATE users SET link_code=? WHERE id=?').run(newLinkCode(db), id);
   }
   db.exec(readFileSync(resolve(root, 'migrations/002_motor.sql'), 'utf8'));
+  if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'child_pin_hash')) db.exec('ALTER TABLE users ADD COLUMN child_pin_hash TEXT');
   return db;
 }
 // Databases created before parents had accounts carry a role CHECK that SQLite
@@ -72,7 +73,7 @@ export function nextParticipantCode(db) {
 export const now = () => new Date().toISOString();
 export function publicUser(user) {
   if (!user) return null;
-  const { password_hash, ...safe } = user;
+  const { password_hash, child_pin_hash, ...safe } = user;
   // A child set up from a parent's code has a placeholder address nobody signs in with.
   return user.role === 'patient' && user.parent_id ? { ...safe, email: null } : safe;
 }

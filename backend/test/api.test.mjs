@@ -67,20 +67,20 @@ test('consent with the child account, child mode, assignment isolation, plans, i
   assert.equal((await f.call(patientPath,'GET',undefined,op)).status,403);
   assert.equal((await f.call(patientPath,'GET',undefined,parentToken)).status,200);
   assert.equal((await f.call(patientPath,'GET',undefined,otherParentToken)).status,403);
-  assert.equal((await f.call(`${patientPath}/child-mode`,'POST',{},otherParentToken)).status,403);
-  assert.equal((await f.call(`${patientPath}/child-mode`,'POST',{},tt)).status,403);
-  // Child mode replaces the parent's session, so only the parent's password leaves it.
-  const childMode=await f.call(`${patientPath}/child-mode`,'POST',{},parentToken);assert.equal(childMode.status,200);
+  assert.equal((await f.call(`${patientPath}/child-mode`,'POST',{pin:'1234'},otherParentToken)).status,403);
+  assert.equal((await f.call(`${patientPath}/child-mode`,'POST',{pin:'1234'},tt)).status,403);
+  // Child mode replaces the parent's session, so only the parent's PIN leaves it.
+  const childMode=await f.call(`${patientPath}/child-mode`,'POST',{pin:'1234'},parentToken);assert.equal(childMode.status,200);
   const firstChild=childMode.data.token;assert.equal((await f.call('/auth/me','GET',undefined,firstChild)).data.user.id,patient.id);
   assert.equal((await f.call('/auth/me','GET',undefined,parentToken)).status,401);
-  assert.equal((await f.call('/auth/end-child-mode','POST',{password:'wrong password'},firstChild)).status,403);
-  assert.equal((await f.call('/auth/end-child-mode','POST',{password},tt)).status,403);
-  const ended=await f.call('/auth/end-child-mode','POST',{password},firstChild);assert.equal(ended.status,200);assert.equal(ended.data.user.id,parent.id);
+  assert.equal((await f.call('/auth/end-child-mode','POST',{pin:'9999'},firstChild)).status,403);
+  assert.equal((await f.call('/auth/end-child-mode','POST',{pin:'1234'},tt)).status,403);
+  const ended=await f.call('/auth/end-child-mode','POST',{pin:'1234'},firstChild);assert.equal(ended.status,200);assert.equal(ended.data.user.id,parent.id);
   assert.equal((await f.call('/auth/me','GET',undefined,firstChild)).status,401);
   parentToken=ended.data.token;assert.equal((await f.call('/auth/me','GET',undefined,parentToken)).data.user.id,parent.id);
-  const childToken=(await f.call(`${patientPath}/child-mode`,'POST',{},parentToken)).data.token;
-  for(let i=0;i<5;i++)assert.equal((await f.call('/auth/end-child-mode','POST',{password:'wrong password'},childToken)).status,403);
-  assert.equal((await f.call('/auth/end-child-mode','POST',{password},childToken)).status,429);
+  const childToken=(await f.call(`${patientPath}/child-mode`,'POST',{pin:'1234'},parentToken)).data.token;
+  for(let i=0;i<5;i++)assert.equal((await f.call('/auth/end-child-mode','POST',{pin:'9999'},childToken)).status,403);
+  assert.equal((await f.call('/auth/end-child-mode','POST',{pin:'1234'},childToken)).status,429);
   parentToken=await f.login(parent);
   const pt=childToken;
   const plan={title:'Practice plan',exercises:['motor-lines','motor-shapes'],sessionsPerDay:1,notes:'Synthetic test plan'};
@@ -147,7 +147,7 @@ test('therapist code links a parent, whose child joins their caseload',async t=>
   assert.deepEqual((await f.call('/patients','GET',undefined,pt)).data.patients.map(p=>p.id),[child.id]);
   assert.equal((await f.call('/patients','GET',undefined,tt)).data.patients[0].parent_name,'Code Parent');
   assert.equal((await f.call(`/patients/${child.id}`,'GET',undefined,tt)).data.consent.status,'approved');
-  const childToken=(await f.call(`/patients/${child.id}/child-mode`,'POST',{},pt)).data.token;
+  const childToken=(await f.call(`/patients/${child.id}/child-mode`,'POST',{pin:'1234'},pt)).data.token;
   const names=(await f.call('/directory','GET',undefined,childToken)).data.users.map(u=>u.role).sort();
   assert.deepEqual(names,['parent','patient','therapist']);
 });

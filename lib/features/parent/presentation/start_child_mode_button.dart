@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -9,7 +10,7 @@ import '../../auth/domain/user.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 
 /// Hands this phone to [child] after the parent confirms. Child mode ends
-/// the parent's session, so the dialog says the password is needed to leave.
+/// the parent's session, so the dialog asks for a PIN to leave.
 class StartChildModeButton extends ConsumerStatefulWidget {
   const StartChildModeButton({
     super.key,
@@ -33,18 +34,38 @@ class _StartChildModeButtonState extends ConsumerState<StartChildModeButton> {
   Future<void> _start() async {
     final l10n = context.l10n;
     final name = widget.child.firstName;
+    var chosenPin = '';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
         title: Text(l10n.childModeStartTitle(name)),
-        content: Text(l10n.childModeStartBody(name)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.childModeStartBody(name)),
+            TextField(
+              onChanged: (value) => chosenPin = value,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.childModeParentPassword,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(4),
+              ],
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialog, false),
             child: Text(l10n.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(dialog, true),
+            onPressed: () {
+              if (chosenPin.length == 4) Navigator.pop(dialog, true);
+            },
             child: Text(l10n.childModeStartAction),
           ),
         ],
@@ -56,7 +77,7 @@ class _StartChildModeButtonState extends ConsumerState<StartChildModeButton> {
       context,
       () => ref
           .read(authControllerProvider.notifier)
-          .startChildMode(widget.child),
+          .startChildMode(widget.child, chosenPin),
     );
     if (mounted) setState(() => _starting = false);
   }

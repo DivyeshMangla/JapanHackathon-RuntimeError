@@ -97,7 +97,7 @@ class _MotorPracticeScreenState extends ConsumerState<MotorPracticeScreen> {
       actions: [
         SecondaryButton(
           label: _photo == null ? l10n.motorChoosePhoto : l10n.drawingNewPhoto,
-          icon: LucideIcons.image,
+          icon: LucideIcons.camera,
           onPressed: _working ? null : _pick,
         ),
         if (_photo != null && planId != null)

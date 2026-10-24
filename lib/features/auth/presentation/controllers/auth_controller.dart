@@ -55,16 +55,16 @@ class AuthController extends AsyncNotifier<User?> {
     );
   }
 
-  Future<void> startChildMode(User child) async {
-    final user = await _repository.startChildMode(child.id);
+  Future<void> startChildMode(User child, String pin) async {
+    final user = await _repository.startChildMode(child.id, pin);
     state = AsyncData(user);
     await ref.read(usageLoggerProvider).record(UsageAction.signIn, user: user);
   }
 
-  /// Returns false on a wrong password without leaving child mode.
-  Future<bool> endChildMode(String password) async {
+  /// Returns false on a wrong PIN without leaving child mode.
+  Future<bool> endChildMode(String pin) async {
     final child = state.value;
-    final parent = await _repository.endChildMode(password);
+    final parent = await _repository.endChildMode(pin);
     if (parent == null) return false;
     await ref
         .read(usageLoggerProvider)

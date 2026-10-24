@@ -28,7 +28,7 @@ Every account's password is `VoiceDemo!2026`.
 | Who | How to get in |
 | --- | --- |
 | Parent | **I'm a parent**, then **I already have an account**: `parent@melo.test` |
-| Child | Signed in as the parent, tap **Start child mode for Ananya**. To leave, tap **Grown-ups: leave child mode** and enter the parent's password |
+| Child | Signed in as the parent, tap **Start child mode for Ananya**. To leave, tap **Grown-ups: leave child mode** and enter the four-digit PIN chosen when starting child mode |
 | Therapist | **I'm a therapist**: `meera@melo.test` (therapist code `MEERA7`) |
 | Admin | **I'm a therapist**: `admin@melo.test`, or the web dashboard |
 
@@ -56,3 +56,7 @@ Say a Word includes therapist-only automated analysis reports and separate
 clinician corrections. No validated pronunciation model is configured, so reports
 say **Unable to assess reliably** and provide no accuracy score. Original audio
 delivery works independently of optional analysis.
+
+Child mode uses a four-digit PIN chosen by the parent each time they start it. Already-open demo sessions without a PIN use `1234`. Account sign-in still uses the account password.
+
+Child mode uses a four-digit PIN chosen by the parent each time they start it. Already-open demo sessions without a PIN use `1234`. Account sign-in still uses the account password.

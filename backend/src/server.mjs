@@ -106,14 +106,15 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
           return json(res, 200, { ok: true });
         }
         if (path === '/api/auth/end-child-mode' && method === 'POST') {
-          requireRole(u, 'patient'); const b = await body(req); const password = text(b.password, 'Password', 128);
+          requireRole(u, 'patient'); const b = await body(req); const pin = text(b.pin, 'PIN', 4);
+          if (!/^\d{4}$/.test(pin)) fail(400, 'Enter a four-digit PIN.');
           const key = `child-mode:${u.id}`; const attempts = db.prepare('SELECT * FROM login_attempts WHERE key=?').get(key);
           if (attempts?.reset_at > Date.now() && attempts.failures >= 5) fail(429, 'Too many attempts. Try again in 15 minutes.');
           const parent = findUser(u.parent_id);
-          if (!parent || parent.status !== 'active' || !await verifyPassword(password, parent.password_hash)) {
+          if (!parent || parent.status !== 'active' || !await verifyPassword(pin, parent.child_pin_hash || (db.prepare("SELECT value FROM settings WHERE key='demo'").get()?.value === 'true' ? await hashPassword('1234') : 'scrypt:' + '00'.repeat(16) + ':' + '00'.repeat(64)))) {
             db.prepare(`INSERT INTO login_attempts VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET
               failures=CASE WHEN reset_at<? THEN 1 ELSE failures+1 END, reset_at=CASE WHEN reset_at<? THEN excluded.reset_at ELSE reset_at END`).run(key, Date.now() + 900000, Date.now(), Date.now());
-            fail(403, 'That password is not right.');
+            fail(403, 'That PIN is not right.');
           }
           db.prepare('DELETE FROM login_attempts WHERE key=?').run(key);
           db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(requestToken(req)));
@@ -200,7 +201,10 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
           if (action === 'child-mode' && method === 'POST') {
             requireRole(u, 'parent');
             if (p.status !== 'active') fail(403, 'This child’s account is disabled. Contact your therapist.');
-            // The parent's own session ends here, so leaving child mode needs the parent's password.
+            const b = await body(req);
+            if (typeof b.pin !== 'string' || !/^\d{4}$/.test(b.pin)) fail(400, 'Choose a four-digit PIN.');
+            db.prepare('UPDATE users SET child_pin_hash=? WHERE id=?').run(await hashPassword(b.pin), u.id);
+            // The parent's session ends here; their PIN is needed to leave.
             db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(requestToken(req)));
             audit(db, u.id, 'Started child mode', id);
             return json(res, 200, { user: publicUser(p), token: newSession(db, id) });

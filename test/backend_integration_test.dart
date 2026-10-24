@@ -171,7 +171,7 @@ void main() {
     final patient = (await phone.users.listByRole(
       UserRole.patient,
     )).singleWhere((child) => child.parentId == parentUser.id);
-    final child = await phone.auth.startChildMode(patient.id);
+    final child = await phone.auth.startChildMode(patient.id, '1234');
     expect(child.id, patient.id);
     expect(child.email, isEmpty);
     expect((await phone.auth.restoreSession())?.id, patient.id);
@@ -199,9 +199,9 @@ void main() {
     ).save(recording, wavPath: wav.path);
     await wav.delete();
 
-    expect(await phone.auth.endChildMode('not the password'), isNull);
+    expect(await phone.auth.endChildMode('9999'), isNull);
     expect((await phone.auth.restoreSession())?.id, patient.id);
-    expect((await phone.auth.endChildMode(demoPassword))?.id, parentUser.id);
+    expect((await phone.auth.endChildMode('1234'))?.id, parentUser.id);
     expect((await phone.auth.restoreSession())?.id, parentUser.id);
 
     // The therapist now sees the child's records and can play the audio.

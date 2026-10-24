@@ -14,12 +14,12 @@ abstract interface class AuthRepository {
   });
 
   /// Hands the device to the signed-in parent's child [childId]. The
-  /// parent's own session ends, so only their password brings it back.
-  Future<User> startChildMode(String childId);
+  /// parent's own session ends, so only their PIN brings it back.
+  Future<User> startChildMode(String childId, String pin);
 
-  /// Returns the parent to their own account, or null when [password] is
+  /// Returns the parent to their own account, or null when [pin] is
   /// not the parent's.
-  Future<User?> endChildMode(String password);
+  Future<User?> endChildMode(String pin);
 
   Future<void> signOut();
 

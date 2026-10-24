@@ -273,3 +273,5 @@ consent is now `CONNECTED-DEMO-3`, including voice-analysis disclosures. Consent
 signed under an earlier version still counts, and optional analysis is
 only invoked when the parent agrees to it. Approved wording and guardian identity
 verification remain deployment requirements.
+
+Child mode uses a four-digit PIN chosen by the parent each time they start it. Already-open demo sessions without a PIN use `1234`. Account sign-in still uses the account password.
