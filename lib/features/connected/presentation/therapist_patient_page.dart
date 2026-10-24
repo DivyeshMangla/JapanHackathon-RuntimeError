@@ -13,6 +13,8 @@ import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/action_page.dart';
 import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/skeleton.dart';
+import '../../useful_words/presentation/therapist_words_page.dart';
+import '../../useful_words/presentation/word_strings.dart';
 import '../data/connected_service.dart';
 import '../domain/connected_models.dart';
 import 'connected_actions.dart';
@@ -220,6 +222,18 @@ class _TherapistPatientPageState extends State<TherapistPatientPage>
             icon: LucideIcons.circleAlert,
           )
         else ...[
+          SecondaryButton(
+            label: WordStrings.title,
+            icon: LucideIcons.messageCircle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => TherapistWordsPage(
+                  repository: service.wordsFor(widget.patientId),
+                  childName: record.summary.name,
+                ),
+              ),
+            ),
+          ),
           if (_notice != null)
             InfoNotice(_notice!, icon: LucideIcons.circleCheck),
           ConsentSection(

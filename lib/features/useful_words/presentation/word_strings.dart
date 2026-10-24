@@ -1,0 +1,75 @@
+abstract final class WordStrings {
+  static const title = 'Say a Useful Word';
+  static const guidance = 'Listen if you like. Try the word when you’re ready.';
+  static const scope =
+      'Therapist-guided speech practice. This is not a validated standalone treatment and does not guarantee speech improvement.';
+  static const empty = 'Your therapist has not assigned a word yet.';
+  static const waiting =
+      'Your therapist needs to set up your speech practice first.';
+  static const listen = 'Listen';
+  static const record = 'Record';
+  static const stopRecording = 'Stop recording';
+  static const recording =
+      'Recording is on. Tap Stop recording when you’re ready.';
+  static const replay = 'Play my recording';
+  static const delete = 'Delete recording';
+  static const again = 'Record again';
+  static const send = 'Send to therapist';
+  static const skip = 'Skip';
+  static const next = 'Next word';
+  static const uploading = 'Uploading…';
+  static const delivered = 'Delivered to your therapist';
+  static const failed =
+      'Upload failed. Retry, or delete this attempt and record again.';
+  static const retry = 'Retry';
+  static const back = 'Back';
+  static const done = 'You can finish here. Thank you for trying.';
+  static const stopPlayback = 'Stop playing';
+  static const error = 'Something did not work. Please try again.';
+  static const micDenied =
+      'Microphone access is needed only to record. You can allow it in device settings, or skip.';
+  static const interrupted =
+      'Recording stopped because the app left the foreground. You can listen to your attempt or delete it.';
+  static const ai = 'AI suggestion—may be inaccurate.';
+  static const noTranscript = 'Could not transcribe.';
+  static const transcribing =
+      'Transcript pending. Original recording is delivered.';
+  static const mock =
+      'Mock integration: speech recognition is not configured. Audio delivery works independently.';
+  static const feedback = 'Therapist feedback';
+  static const playFeedback = 'Listen to feedback';
+  static const therapist = 'Words and recordings';
+  static const birth = 'Child’s date of birth (YYYY-MM-DD)';
+  static const eligibility =
+      'I confirm this child is under 17, uses speech, and has therapist-selected speech practice goals.';
+  static const enroll = 'Set up child practice';
+  static const guardianTitle = 'Guardian consent';
+  static const guardianNotice =
+      'Prototype consent—requires approved wording and identity verification before use with real children. A guardian must complete this setup once. Each attempt goes directly to the assigned therapist without an approval step.';
+  static const guardianName = 'Guardian’s full name';
+  static const relationship = 'Relationship to child';
+  static const guardianAgree =
+      'I am authorized to consent for this child. I agree to recording, encrypted storage and direct sharing of original audio with the assigned therapist. Automated transcription may suggest text separately. I can contact the therapist to withdraw consent.';
+  static const consent = 'Give guardian consent';
+  static const assign = 'Assign a word';
+  static const word = 'Useful word';
+  static const picture = 'Choose picture (PNG or JPEG)';
+  static const example = 'Example recording';
+  static const chooseExample = 'Choose example WAV';
+  static const assignHint =
+      'Choose a clear picture and record or choose your own example. No timer or repetition target is assigned.';
+  static const required = 'Please complete this field.';
+  static const save = 'Save';
+  static const reviewed = 'Reviewed';
+  static const markReviewed = 'Mark attempt as reviewed';
+  static const review = 'Save feedback and review status';
+  static const original = 'Play original recording';
+  static const noAttempts = 'No recordings have been delivered yet.';
+  static const feedbackHint = 'Written feedback (optional)';
+  static const voiceFeedback = 'Record feedback (optional)';
+  static const saved = 'Saved';
+  static const selected = 'File selected';
+  static const tooLarge =
+      'Please choose a picture up to 1.5 MB or a WAV recording up to 12 MB.';
+  static const continuePractice = 'Continue';
+}
