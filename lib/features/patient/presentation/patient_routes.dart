@@ -8,9 +8,6 @@ import '../../../core/utils/l10n.dart';
 import '../../auth/presentation/signed_in_gate.dart';
 import '../../education/presentation/learn_screen.dart';
 import '../../education/presentation/learn_topic_screen.dart';
-import '../../questionnaires/presentation/feedback_screen.dart';
-import '../../questionnaires/presentation/self_report_screen.dart';
-import '../../questionnaires/presentation/usability_screen.dart';
 import 'exercise_detail_screen.dart';
 import 'patient_home_screen.dart';
 import 'patient_profile_screen.dart';
@@ -62,20 +59,6 @@ final patientRoutes = StatefulShellRoute.indexedStack(
                   ),
                 ),
               ],
-            ),
-            GoRoute(
-              path: 'questionnaires/self-report/:week',
-              builder: (context, state) => SelfReportScreen(
-                week: int.tryParse(state.pathParameters['week']!) ?? 0,
-              ),
-            ),
-            GoRoute(
-              path: 'questionnaires/usability',
-              builder: (context, state) => const UsabilityScreen(),
-            ),
-            GoRoute(
-              path: 'questionnaires/feedback',
-              builder: (context, state) => const FeedbackScreen(),
             ),
           ],
         ),

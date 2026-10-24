@@ -89,5 +89,5 @@ abstract interface class VoiceDiaryRepository {
 
   Future<void> save(VoiceUseEntry entry);
 
-  Future<void> delete(String id);
+  Future<void> delete({required String patientId, required String id});
 }

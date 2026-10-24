@@ -16,10 +16,12 @@ import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../../shared/widgets/stat_tile.dart';
 import '../../exercises/domain/patient_activity.dart';
+import '../../exercises/presentation/controllers/exercise_controllers.dart';
 import '../domain/participant_summary.dart';
 import 'controllers/caseload_controllers.dart';
 import 'participant_card.dart';
-import 'study_card.dart';
+import 'participant_links_card.dart';
+import 'voice_diary_list.dart';
 
 class ParticipantDetailScreen extends ConsumerWidget {
   const ParticipantDetailScreen({super.key, required this.patientId});
@@ -41,7 +43,8 @@ class ParticipantDetailScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.lg),
                   StatusCard(participant: participant),
                   const SizedBox(height: AppSpacing.md),
-                  StudyCard(patientId: participant.patient.id),
+                  ParticipantLinksCard(patientId: participant.patient.id),
+                  _VoiceDiarySection(patientId: participant.patient.id),
                   const SizedBox(height: AppSpacing.md),
                   _ParticipantStats(participant: participant),
                   const SizedBox(height: AppSpacing.md),
@@ -56,6 +59,28 @@ class ParticipantDetailScreen extends ConsumerWidget {
                   _Assignments(participant: participant),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+class _VoiceDiarySection extends ConsumerWidget {
+  const _VoiceDiarySection({required this.patientId});
+
+  final String patientId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entries = ref.watch(voiceDiaryProvider(patientId)).value;
+    if (entries == null || entries.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SectionLabel(context.l10n.voiceDiaryTitle),
+          VoiceDiaryList(entries: entries),
+        ],
       ),
     );
   }

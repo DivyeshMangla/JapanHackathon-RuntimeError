@@ -11,7 +11,6 @@ import '../../auth/presentation/signed_in_gate.dart';
 import 'exercise_editor_screen.dart';
 import 'exercise_library_screen.dart';
 import 'people_screen.dart';
-import 'study_outcomes_screen.dart';
 import 'study_overview_screen.dart';
 import 'study_settings_screen.dart';
 import 'user_form_screen.dart';
@@ -47,12 +46,6 @@ final adminRoutes = StatefulShellRoute.indexedStack(
         GoRoute(
           path: AppRoutes.admin,
           builder: (context, state) => const StudyOverviewScreen(),
-          routes: [
-            GoRoute(
-              path: 'outcomes',
-              builder: (context, state) => const StudyOutcomesScreen(),
-            ),
-          ],
         ),
       ],
     ),

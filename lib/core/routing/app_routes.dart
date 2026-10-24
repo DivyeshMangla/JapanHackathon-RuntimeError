@@ -22,10 +22,6 @@ abstract final class AppRoutes {
   static const patientLearn = '/patient/learn';
   static String patientLearnTopic(EducationTopic topic) =>
       '$patientLearn/${topic.name}';
-  static String patientSelfReport(int week) =>
-      '/patient/questionnaires/self-report/$week';
-  static const patientUsability = '/patient/questionnaires/usability';
-  static const patientFeedback = '/patient/questionnaires/feedback';
 
   static const therapist = '/therapist';
   static const therapistParticipants = '/therapist/participants';
@@ -38,16 +34,9 @@ abstract final class AppRoutes {
   static const therapistRecordings = '/therapist/recordings';
   static String therapistRecordingsFor(String patientId) =>
       '$therapistRecordings?patient=$patientId';
-  static String therapistStudyRecord(String id) =>
-      '${therapistParticipant(id)}/record';
-  static String therapistAssessment(String id) =>
-      '${therapistParticipant(id)}/assessment';
-  static String therapistMonitoringForm(String id, int week) =>
-      '${therapistAssessment(id)}/monitoring?week=$week';
   static String therapistUsage(String id) =>
       '${therapistParticipant(id)}/usage';
   static const admin = '/admin';
-  static const adminOutcomes = '/admin/outcomes';
   static const adminPeople = '/admin/people';
   static String adminNewUser(UserRole role) =>
       '$adminPeople/new?role=${role.name}';

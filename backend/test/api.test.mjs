@@ -23,7 +23,8 @@ async function fixture(t) {
     const data=response.headers.get('content-type')?.startsWith('application/json')?await response.json():await response.arrayBuffer();return {status:response.status,data,headers:response.headers};
   };
   const login=async account=>{const r=await call('/auth/login','POST',{email:account.email,password,client:'mobile'});assert.equal(r.status,200);return r.data.token;};
-  return {...app,dir,base,add,call,login};
+  const addExercise=(id,approved=true)=>app.db.prepare('INSERT INTO exercise_library VALUES (?,?,?)').run(id,JSON.stringify({id,title:`Exercise ${id}`,summary:'Synthetic exercise',approvedAt:approved?now():null,archived:false}),now());
+  return {...app,dir,base,add,addExercise,call,login};
 }
 
 test('authentication, pending approval, role escalation, session revocation and CSRF',async t=>{
@@ -50,6 +51,7 @@ test('patient assignment isolation, consent gating, plans, idempotent progress, 
   const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),patient=f.add('patient'),otherPatient=f.add('patient');
   const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),pt=await f.login(patient),op=await f.login(otherPatient);
   const patientPath=`/patients/${patient.id}`;
+  for(const id of ['humming','breathing','reading']) f.addExercise(id);
   assert.equal((await f.call(patientPath,'GET',undefined,tt)).status,403);
   assert.equal((await f.call(`${patientPath}/assignment`,'PUT',{therapistId:patient.id},at)).status,400);
   assert.equal((await f.call(`${patientPath}/assignment`,'PUT',{therapistId:therapist.id},at)).status,200);
@@ -132,4 +134,91 @@ test('administrator-created therapists start approved, self-registered ones wait
   const registered = await f.call('/auth/register', 'POST', { ...details, email: 'registered@test.example' });
   assert.equal(registered.status, 201);
   assert.equal(registered.data.user.status, 'pending');
+});
+
+test('exercise library, assignments, completions and voice samples follow role and assignment rules',async t=>{
+  const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),patient=f.add('patient'),stranger=f.add('patient');
+  f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,patient.id);
+  const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),pt=await f.login(patient),st=await f.login(stranger);
+  const exercise={id:'ex-one',title:'First exercise',summary:'Synthetic',approvedAt:now(),archived:false};
+  assert.equal((await f.call('/library/ex-one','PUT',exercise,tt)).status,403);
+  assert.equal((await f.call('/library/ex-one','PUT',exercise,at)).status,200);
+  assert.equal((await f.call('/library/ex-pending','PUT',{...exercise,id:'ex-pending',approvedAt:null},at)).status,200);
+  assert.equal((await f.call('/library','GET',undefined,pt)).data.exercises.length,2);
+  assert.equal((await f.call('/library/ex-one','PUT',{...exercise,id:'other'},at)).status,400);
+
+  const base=`/patients/${patient.id}`;
+  const assignment={id:'sched-1',patientId:patient.id,exerciseId:'ex-one',weekdays:[1,2,3]};
+  assert.equal((await f.call(`${base}/assignments/sched-1`,'PUT',assignment,pt)).status,403);
+  assert.equal((await f.call(`${base}/assignments/sched-1`,'PUT',assignment,ot)).status,403);
+  assert.equal((await f.call(`${base}/assignments/sched-1`,'PUT',{...assignment,exerciseId:'ex-pending'},tt)).status,400);
+  assert.equal((await f.call(`${base}/assignments/sched-1`,'PUT',assignment,tt)).status,200);
+  assert.equal((await f.call(`${base}/assignments`,'GET',undefined,pt)).data.assignments.length,1);
+  assert.equal((await f.call(`${base}/assignments`,'GET',undefined,st)).status,403);
+  assert.equal((await f.call('/assignments','GET',undefined,tt)).status,403);
+  assert.equal((await f.call('/assignments','GET',undefined,at)).data.assignments.length,1);
+
+  const done={exerciseId:'ex-one',day:'2026-05-04',completedAt:'2026-05-04T09:00:00.000Z'};
+  assert.equal((await f.call(`${base}/completions/c1`,'PUT',done,tt)).status,403);
+  assert.equal((await f.call(`${base}/completions/c1`,'PUT',done,pt)).status,200);
+  assert.equal((await f.call(`${base}/completions/c1`,'PUT',done,pt)).status,200);
+  assert.equal((await f.call(`${base}/completions/c2`,'PUT',{...done,exerciseId:'missing'},pt)).status,400);
+  const listed=await f.call(`${base}/completions?from=2026-05-01&to=2026-05-31`,'GET',undefined,tt);
+  assert.deepEqual(listed.data.completions.map(c=>c.id),['c1']);
+  assert.equal((await f.call(`${base}/completions?from=2026-06-01&to=2026-06-30`,'GET',undefined,tt)).data.completions.length,0);
+  assert.equal((await f.call(`${base}/completions/c1`,'DELETE',undefined,pt)).status,200);
+  assert.equal((await f.call(`${base}/completions`,'GET',undefined,pt)).data.completions.length,0);
+
+  const wav=Buffer.concat([Buffer.from('RIFF'),Buffer.alloc(4),Buffer.from('WAVE'),Buffer.alloc(40)]).toString('base64');
+  const meta={id:'rec-1',patientId:patient.id,kind:'practice',filePath:'/device/path.wav.vpa'};
+  assert.equal((await f.call(`${base}/samples/rec-1`,'PUT',{meta,audio:Buffer.from('not audio').toString('base64')},pt)).status,400);
+  assert.equal((await f.call(`${base}/samples/rec-1`,'PUT',{meta,audio:wav},pt)).status,201);
+  assert.equal((await f.call(`${base}/samples/rec-1`,'PUT',{meta,audio:wav},pt)).status,200);
+  const samples=await f.call(`${base}/samples`,'GET',undefined,tt);
+  assert.equal(samples.data.samples[0].filePath,'');
+  assert.equal((await f.call('/samples/rec-1/audio','GET',undefined,st)).status,403);
+  assert.equal((await f.call('/samples/rec-1/audio','GET',undefined,ot)).status,403);
+  const audio=await f.call('/samples/rec-1/audio','GET',undefined,tt);
+  assert.equal(audio.status,200);assert.equal(audio.data.byteLength,wav.length*3/4-(wav.endsWith('==')?2:wav.endsWith('=')?1:0));
+  assert.ok(f.db.prepare("SELECT COUNT(*) AS n FROM audit WHERE action='Played recording'").get().n>=1);
+  assert.equal((await f.call('/samples','GET',undefined,at)).data.samples.length,1);
+});
+
+test('patients get sequential participant codes and administrators can assign a therapist at creation',async t=>{
+  const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist');
+  const at=await f.login(admin);
+  const made=await f.call('/users','POST',{role:'patient',name:'New Patient',email:'new.patient@test.example',password,therapistId:therapist.id},at);
+  assert.equal(made.status,201);assert.match(made.data.user.participant_code,/^P\d{3}$/);assert.equal(made.data.user.therapist_id,therapist.id);
+  const second=await f.call('/users','POST',{role:'patient',name:'Second Patient',email:'second.patient@test.example',password},at);
+  assert.notEqual(second.data.user.participant_code,made.data.user.participant_code);
+  assert.equal((await f.call('/users','POST',{role:'patient',name:'Bad',email:'bad.assign@test.example',password,therapistId:made.data.user.id},at)).status,400);
+});
+
+test('diary entries, usage events and study settings follow role rules',async t=>{
+  const f=await fixture(t);const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),patient=f.add('patient'),stranger=f.add('patient');
+  f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,patient.id);
+  const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),pt=await f.login(patient),st=await f.login(stranger);
+  const base=`/patients/${patient.id}`;
+  const entry={id:'d1',patientId:patient.id,day:'2026-05-04T00:00:00.000',fatigue:3};
+  assert.equal((await f.call(`${base}/diary/d1`,'PUT',entry,tt)).status,403);
+  assert.equal((await f.call(`${base}/diary/d1`,'PUT',{...entry,patientId:stranger.id},pt)).status,400);
+  assert.equal((await f.call(`${base}/diary/d1`,'PUT',entry,pt)).status,200);
+  assert.equal((await f.call(`${base}/diary`,'GET',undefined,tt)).data.entries.length,1);
+  assert.equal((await f.call(`${base}/diary`,'GET',undefined,ot)).status,403);
+  assert.equal((await f.call('/diary','GET',undefined,at)).data.entries.length,1);
+  assert.equal((await f.call(`${base}/diary/d1`,'DELETE',undefined,pt)).status,200);
+  assert.equal((await f.call(`${base}/diary`,'GET',undefined,tt)).data.entries.length,0);
+
+  const event={patientId:patient.id,at:'2026-05-04T09:00:00.000Z',action:'signIn',detail:''};
+  assert.equal((await f.call(`${base}/usage`,'POST',event,tt)).status,403);
+  assert.equal((await f.call(`${base}/usage`,'POST',{...event,at:'not a time'},pt)).status,400);
+  assert.equal((await f.call(`${base}/usage`,'POST',event,pt)).status,201);
+  assert.equal((await f.call(`${base}/usage`,'GET',undefined,tt)).data.events.length,1);
+  assert.equal((await f.call(`${base}/usage`,'GET',undefined,st)).status,403);
+  assert.equal((await f.call('/usage','GET',undefined,at)).data.events.length,1);
+
+  assert.equal((await f.call('/study-settings','GET',undefined,pt)).data.settings,null);
+  assert.equal((await f.call('/study-settings','PUT',{adherenceThreshold:0.7},tt)).status,403);
+  assert.equal((await f.call('/study-settings','PUT',{adherenceThreshold:0.7},at)).status,200);
+  assert.equal((await f.call('/study-settings','GET',undefined,tt)).data.settings.adherenceThreshold,0.7);
 });

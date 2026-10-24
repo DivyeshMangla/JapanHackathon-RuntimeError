@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:melo/core/utils/l10n.dart';
-import 'package:melo/features/demo_data/data/synthetic_voice.dart';
+import 'support/synthetic_voice.dart';
 
 void main() {
   setUpAll(() => initializeDateFormatting('en'));

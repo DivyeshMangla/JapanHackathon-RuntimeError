@@ -46,7 +46,6 @@ final _recordings = List.generate(
     kind: RecordingKind.practice,
     task: RecordingTask.readingPassage,
     type: RecordingType.homePractice,
-    filePath: 'sample-$i.wav',
     durationSec: 10,
     createdAt: DateTime(2026, 10, i + 1),
   ),

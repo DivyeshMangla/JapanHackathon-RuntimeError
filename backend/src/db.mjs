@@ -19,7 +19,20 @@ export function openDatabase(dataDir = process.env.DATA_DIR || resolve(root, 'da
   const db = new DatabaseSync(file);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;');
   db.exec(readFileSync(resolve(root, 'migrations/001_initial.sql'), 'utf8'));
+  db.exec(readFileSync(resolve(root, 'migrations/002_care.sql'), 'utf8'));
+  // SQLite has no ADD COLUMN IF NOT EXISTS, so the column is added once here.
+  if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'participant_code')) {
+    db.exec('ALTER TABLE users ADD COLUMN participant_code TEXT');
+    for (const { id } of db.prepare("SELECT id FROM users WHERE role='patient' ORDER BY created_at, rowid").all()) {
+      db.prepare('UPDATE users SET participant_code=? WHERE id=?').run(nextParticipantCode(db), id);
+    }
+  }
   return db;
+}
+export function nextParticipantCode(db) {
+  const highest = db.prepare("SELECT participant_code FROM users WHERE participant_code IS NOT NULL").all()
+    .map(r => Number(r.participant_code.slice(1))).filter(Number.isInteger).reduce((a, b) => Math.max(a, b), 0);
+  return `P${String(highest + 1).padStart(3, '0')}`;
 }
 export const now = () => new Date().toISOString();
 export function publicUser(user) {
@@ -30,13 +43,5 @@ export function publicUser(user) {
 export function audit(db, actor, action, target = null, detail = '') {
   db.prepare('INSERT INTO audit VALUES (?, ?, ?, ?, ?, ?)').run(randomUUID(), actor, action, target, detail, now());
 }
-export const exercises = [
-  { id: 'humming', name: 'Gentle humming', description: 'Follow the humming technique demonstrated by your therapist.' },
-  { id: 'straw', name: 'Straw phonation', description: 'Use the straw technique prescribed by your therapist.' },
-  { id: 'breathing', name: 'Relaxed breathing', description: 'Practice the relaxed breathing pattern demonstrated in your session.' },
-  { id: 'glides', name: 'Pitch glides', description: 'Follow your therapist’s comfortable pitch range.' },
-  { id: 'resonance', name: 'Resonant voice', description: 'Practice your therapist’s resonant voice sequence.' },
-  { id: 'reading', name: 'Reading practice', description: 'Read the passage selected by your therapist.' },
-];
 export const consentVersion = 'CONNECTED-DEMO-1';
 export const consentText = 'Prototype consent: I understand that this demonstration stores my profile, practice progress and voice recordings on the connected service and shares them with my assigned therapist. This placeholder must be replaced with approved study information before participant recruitment.';

@@ -3,7 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { openDatabase, root, now, publicUser, audit, exercises, consentVersion, consentText } from './db.mjs';
+import { openDatabase, root, now, publicUser, audit, nextParticipantCode, consentVersion, consentText } from './db.mjs';
+import { careRoutes } from './care-routes.mjs';
 import { hashPassword, verifyPassword, newSession, authenticate, requestToken, tokenHash } from './auth.mjs';
 
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -27,6 +28,7 @@ function json(res, status, value) { res.writeHead(status, { 'Content-Type': 'app
 
 export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'data'), secureCookies = process.env.NODE_ENV === 'production', origin = process.env.PUBLIC_ORIGIN } = {}) {
   const db = openDatabase(dataDir);
+  const libraryExercises = () => db.prepare('SELECT body FROM exercise_library ORDER BY id').all().map(r => JSON.parse(r.body));
   const findUser = id => db.prepare('SELECT * FROM users WHERE id=?').get(id);
   const requireRole = (u, ...roles) => { if (!roles.includes(u.role)) fail(403, 'You do not have access to this action.'); };
   const accessPatient = (u, id) => {
@@ -58,7 +60,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
       const allowedOrigin = origin || `http://${req.headers.host}`;
       if (req.headers.origin && req.headers.origin !== allowedOrigin) fail(403, 'Cross-origin requests are not allowed.');
       if (path === '/api/health') return json(res, 200, { status: 'ok' });
-      if (path === '/api/config') return json(res, 200, { demo: db.prepare("SELECT value FROM settings WHERE key='demo'").get()?.value === 'true', consentVersion, consentText, exercises });
+      if (path === '/api/config') return json(res, 200, { demo: db.prepare("SELECT value FROM settings WHERE key='demo'").get()?.value === 'true', consentVersion, consentText, exercises: libraryExercises().map(e => ({ id: e.id, name: e.title, description: e.summary })) });
       if (path === '/api/auth/login' && method === 'POST') {
         const b = await body(req); const email = text(b.email, 'Email').toLowerCase(); const password = text(b.password, 'Password', 128);
         const key = `${req.socket.remoteAddress}:${email}`;
@@ -181,7 +183,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
             if (!consent || consent.status !== 'approved') fail(409, 'Approve consent before prescribing a plan.');
             if (!db.prepare('SELECT patient_id FROM clinical_forms WHERE patient_id=?').get(id)) fail(409, 'Save clinical forms before prescribing a plan.');
             if (p.status !== 'active') fail(409, 'Patient account is disabled.');
-            if (!Array.isArray(b.exercises) || b.exercises.length < 1 || b.exercises.length > 6 || new Set(b.exercises).size !== b.exercises.length || !b.exercises.every(e => exercises.some(x => x.id === e))) fail(400, 'Choose one to six different exercises from the library.');
+            if (!Array.isArray(b.exercises) || b.exercises.length < 1 || b.exercises.length > 6 || new Set(b.exercises).size !== b.exercises.length || !b.exercises.every(e => libraryExercises().some(x => x.id === e))) fail(400, 'Choose one to six different exercises from the library.');
             const planId = randomUUID();
             db.prepare('INSERT INTO plans VALUES (?,?,?,?,?,?,?,?,?)').run(planId,id,u.id,consent.id,text(b.title,'Plan title'),JSON.stringify(b.exercises),integer(b.sessionsPerDay,'Sessions per day',1,5),typeof b.notes === 'string' ? b.notes.slice(0,2000) : '',now());
             audit(db,u.id,'Prescribed plan',id,p.name); return json(res,201,{plan:unpackPlan(planFor(id))});
@@ -224,6 +226,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
           if(recordingMatch[2]==='review' && method==='POST') { requireRole(u,'therapist'); const b=await body(req); db.prepare('UPDATE recordings SET review_note=?,reviewed_by=? WHERE id=?').run(text(b.note,'Review note',2000),u.id,r.id); audit(db,u.id,'Reviewed recording',r.patient_id); return json(res,200,{ok:true}); }
         }
         if(path==='/api/audit' && method==='GET') { requireRole(u,'admin'); return json(res,200,{events:db.prepare('SELECT a.*,u.name AS actor_name FROM audit a LEFT JOIN users u ON u.id=a.actor_id ORDER BY a.created_at DESC,a.rowid DESC LIMIT 200').all()}); }
+        if (await careRoutes({ db, u, res, dataDir, path, method, req, body, json, fail, text, findUser, accessPatient, requireRole })) return;
         fail(404,'API endpoint not found.');
       }
       if(method!=='GET') fail(405,'Method not allowed.');
@@ -244,8 +247,13 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
     // A therapist who registers themselves waits for approval; one an
     // administrator creates is approved by that act.
     const status=b.role==='therapist' && !actor ? 'pending' : 'active';
-    try { db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,clinic,registration,created_at) VALUES (?,?,?,?,?,?,?,?,?)').run(id,name,email,hash,b.role,status,clinic,registration,now()); }
+    try { db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,clinic,registration,created_at,participant_code) VALUES (?,?,?,?,?,?,?,?,?,?)').run(id,name,email,hash,b.role,status,clinic,registration,now(),b.role==='patient'?nextParticipantCode(db):null); }
     catch(error) { if(error.code?.includes('SQLITE') && String(error).includes('UNIQUE')) fail(409,'An account with this email already exists.'); throw error; }
+    if(b.role==='patient' && b.therapistId) {
+      const therapist=findUser(b.therapistId);
+      if(!therapist || therapist.role!=='therapist' || therapist.status!=='active') fail(400,'Choose an approved, active therapist.');
+      db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,id);
+    }
     audit(db,actor,'Created account',id,`${name} · ${b.role}`); return publicUser(findUser(id));
   }
   return {server,db};

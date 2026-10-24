@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'recording.dart';
 
 abstract interface class RecordingRepository {
@@ -7,5 +9,9 @@ abstract interface class RecordingRepository {
   /// Every recording, for export and storage migration.
   Future<List<Recording>> all();
 
-  Future<void> save(Recording recording);
+  /// Stores [recording] together with the WAV file at [wavPath].
+  Future<void> save(Recording recording, {required String wavPath});
+
+  /// The recorded WAV audio.
+  Future<Uint8List> audio(String recordingId);
 }

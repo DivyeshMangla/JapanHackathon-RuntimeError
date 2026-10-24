@@ -6,35 +6,37 @@ import 'package:just_audio/just_audio.dart';
 import '../../../audit/domain/access_log.dart';
 import '../../../audit/presentation/controllers/access_log_controllers.dart';
 import '../../data/recording_repository_providers.dart';
-import '../../data/recording_vault.dart';
 import '../../domain/recording.dart';
 
-/// Something the player can play: a saved recording (encrypted, and logged
-/// when played) or the unsaved draft being reviewed.
+/// Something the player can play: a saved recording (fetched from the care
+/// service, and logged when played) or the unsaved draft being reviewed.
 class PlaybackSource {
   const PlaybackSource._({
     required this.key,
-    required this.path,
-    required this.encrypted,
+    this.draftPath,
+    this.recordingId,
     this.auditTarget,
   });
 
   factory PlaybackSource.recording(Recording recording, {String? label}) =>
       PlaybackSource._(
         key: recording.id,
-        path: recording.filePath,
-        encrypted: RecordingVault.isEncrypted(recording.filePath),
+        recordingId: recording.id,
         auditTarget:
             '${label ?? recording.patientId} ${recording.kind.name} '
             '${recording.task.name} (${recording.id})',
       );
 
   factory PlaybackSource.draft(String path) =>
-      PlaybackSource._(key: 'draft:$path', path: path, encrypted: false);
+      PlaybackSource._(key: 'draft:$path', draftPath: path);
 
   final String key;
-  final String path;
-  final bool encrypted;
+
+  /// The local WAV of an unsaved draft.
+  final String? draftPath;
+
+  /// The saved recording to fetch.
+  final String? recordingId;
 
   /// Written to the access log on first play; null for drafts.
   final String? auditTarget;
@@ -59,9 +61,9 @@ class PlaybackState {
 }
 
 /// One shared player for the whole app, so starting one recording stops any
-/// other. Encrypted recordings are decrypted to a temporary file only while
-/// loaded; the copy is deleted as soon as another source loads or playback
-/// is released.
+/// other. Saved recordings are fetched to a temporary file only while loaded;
+/// the copy is deleted as soon as another source loads or playback is
+/// released.
 final playbackProvider = NotifierProvider<PlaybackController, PlaybackState>(
   PlaybackController.new,
 );
@@ -129,10 +131,16 @@ class PlaybackController extends Notifier<PlaybackState> {
   Future<void> _load(PlaybackSource source) async {
     await _player.stop();
     await _deleteTemporary();
-    var path = source.path;
-    if (source.encrypted) {
-      path = await ref.read(recordingVaultProvider).decryptForPlayback(path);
+    final recordingId = source.recordingId;
+    String path;
+    if (recordingId != null) {
+      final wav = await ref
+          .read(recordingRepositoryProvider)
+          .audio(recordingId);
+      path = await ref.read(playbackFilesProvider).write(recordingId, wav);
       _temporaryPath = path;
+    } else {
+      path = source.draftPath!;
     }
     await _player.setFilePath(path);
     state = PlaybackState(key: source.key);
@@ -149,7 +157,7 @@ class PlaybackController extends Notifier<PlaybackState> {
     final path = _temporaryPath;
     if (path == null) return;
     _temporaryPath = null;
-    await ref.read(recordingVaultProvider).deleteTemporary(path);
+    await ref.read(playbackFilesProvider).delete(path);
   }
 
   Future<void> _rewind() async {

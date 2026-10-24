@@ -7,19 +7,12 @@ import '../../features/education/domain/education_topic.dart';
 import '../../features/exercises/domain/exercise.dart';
 import '../../features/exercises/domain/exercise_demo.dart';
 import '../../features/exercises/domain/voice_use_entry.dart';
-import '../../features/questionnaires/domain/questionnaire.dart';
-import '../../features/questionnaires/domain/study_tasks.dart';
 import '../../features/recordings/domain/recording.dart';
-import '../../features/study/domain/assessment_checklist.dart';
-import '../../features/study/domain/monitoring_entry.dart';
-import '../../features/study/domain/participant_record.dart';
 import '../../features/study/domain/participant_status.dart';
-import '../../features/study/domain/study_period.dart';
 import '../../features/usage/domain/usage_event.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../errors/app_failure.dart';
 import 'dates.dart';
-import 'formatting.dart';
 
 export '../../l10n/generated/app_localizations.dart';
 
@@ -161,6 +154,13 @@ extension FailureText on AppLocalizations {
     ReminderFailure() => failureReminder,
     ExportFailure() => exportFailed,
     SensorFailure() => failureSensor,
+    NetworkFailure(:final problem, :final serverMessage) => switch (problem) {
+      NetworkProblem.offline => failureOffline,
+      NetworkProblem.timeout => failureTimeout,
+      NetworkProblem.badResponse => failureBadResponse,
+      NetworkProblem.sessionEnded => failureSessionEnded,
+      NetworkProblem.rejected => serverMessage ?? failureRejected,
+    },
     InvalidInputFailure(:final problem) => switch (problem) {
       InputProblem.emailTaken => emailTaken,
       InputProblem.therapistRequired => chooseTherapist,
@@ -230,56 +230,6 @@ extension EducationText on AppLocalizations {
     _ => null,
   };
 
-  String taskTitle(StudyTask task) => switch (task.kind) {
-    StudyTaskKind.baselineSelfReport => taskBaselineReport,
-    StudyTaskKind.weeklySelfReport => taskWeeklyReport(task.week),
-    StudyTaskKind.usability => taskUsability,
-    StudyTaskKind.feedback => taskFeedback,
-  };
-
-  String taskDuration(StudyTaskKind kind) => switch (kind) {
-    StudyTaskKind.baselineSelfReport ||
-    StudyTaskKind.weeklySelfReport => taskOneMinute,
-    StudyTaskKind.usability => taskTwoMinutes,
-    StudyTaskKind.feedback => taskFiveMinutes,
-  };
-
-  String barrierLabel(PracticeBarrier barrier) => switch (barrier) {
-    PracticeBarrier.none => barrierNone,
-    PracticeBarrier.forgot => barrierForgot,
-    PracticeBarrier.noTime => barrierNoTime,
-    PracticeBarrier.voiceDiscomfort => barrierDiscomfort,
-    PracticeBarrier.unsureHow => barrierUnsure,
-    PracticeBarrier.feltBetter => barrierFeltBetter,
-    PracticeBarrier.other => barrierOther,
-  };
-
-  /// The ten System Usability Scale statements, in order.
-  List<String> get susItems => [
-    sus1,
-    sus2,
-    sus3,
-    sus4,
-    sus5,
-    sus6,
-    sus7,
-    sus8,
-    sus9,
-    sus10,
-  ];
-
-  String satisfactionStatement(SatisfactionItem item) => switch (item) {
-    SatisfactionItem.remindersHelpful => feedbackReminders,
-    SatisfactionItem.scheduleClear => feedbackSchedule,
-    SatisfactionItem.instructionsClear => feedbackInstructions,
-    SatisfactionItem.checklistEasy => feedbackChecklist,
-    SatisfactionItem.progressMotivating => feedbackProgress,
-    SatisfactionItem.recordingEasy => feedbackRecording,
-    SatisfactionItem.privacyComfortable => feedbackPrivacy,
-    SatisfactionItem.overallSatisfied => feedbackOverall,
-    SatisfactionItem.wouldContinue => feedbackContinue,
-  };
-
   String speakingTimeLabel(SpeakingTime time) => switch (time) {
     SpeakingTime.underOneHour => speakingUnderOne,
     SpeakingTime.oneToTwoHours => speakingOneToTwo,
@@ -296,87 +246,10 @@ extension EducationText on AppLocalizations {
     VoiceSituation.singing => situationSinging,
     VoiceSituation.other => situationOther,
   };
-
-  /// Label for a 1-5 agreement answer.
-  String agreement(int value) => switch (value) {
-    1 => agreeStronglyDisagree,
-    2 => agreeDisagree,
-    3 => agreeNeutral,
-    4 => agreeAgree,
-    _ => agreeStronglyAgree,
-  };
 }
 
-/// Staff-facing text for the study record, monitoring and usage log.
-extension StudyRecordText on AppLocalizations {
-  String genderLabel(Gender gender) => switch (gender) {
-    Gender.female => genderFemale,
-    Gender.male => genderMale,
-    Gender.other => genderOther,
-    Gender.preferNotToSay => genderUndisclosed,
-  };
-
-  String educationLabel(EducationLevel level) => switch (level) {
-    EducationLevel.noFormal => educationNone,
-    EducationLevel.primary => educationPrimary,
-    EducationLevel.secondary => educationSecondary,
-    EducationLevel.higherSecondary => educationHigherSecondary,
-    EducationLevel.graduate => educationGraduate,
-    EducationLevel.postgraduate => educationPostgraduate,
-  };
-
-  String voiceUseLabel(VoiceUseLevel level) => switch (level) {
-    VoiceUseLevel.eliteVocal => voiceUseElite,
-    VoiceUseLevel.professionalVocal => voiceUseProfessional,
-    VoiceUseLevel.nonVocalProfessional => voiceUseNonVocalProfessional,
-    VoiceUseLevel.nonVocalNonProfessional => voiceUseNonVocal,
-  };
-
-  String smokingLabel(SmokingStatus status) => switch (status) {
-    SmokingStatus.never => smokingNever,
-    SmokingStatus.former => smokingFormer,
-    SmokingStatus.current => smokingCurrent,
-  };
-
-  String ratingLabel(MonitoringRating rating) => switch (rating) {
-    MonitoringRating.fully => ratingFully,
-    MonitoringRating.mostly => ratingMostly,
-    MonitoringRating.partly => ratingPartly,
-    MonitoringRating.notAtAll => ratingNotAtAll,
-  };
-
-  String baselineItemLabel(BaselineItem item) => switch (item) {
-    BaselineItem.consent => baselineConsent,
-    BaselineItem.demographics => baselineDemographics,
-    BaselineItem.clinical => baselineClinical,
-    BaselineItem.baselineAdherence => baselineAdherence,
-    BaselineItem.orientation => baselineOrientation,
-    BaselineItem.baselineRecording => baselineRecording,
-  };
-
-  String followUpItemLabel(FollowUpItem item) => switch (item) {
-    FollowUpItem.adherence => followUpAdherence,
-    FollowUpItem.compliance => followUpCompliance,
-    FollowUpItem.usability => followUpUsability,
-    FollowUpItem.feedback => followUpFeedback,
-    FollowUpItem.postRecording => followUpRecording,
-  };
-
-  /// Where the participant is in the study as of [now].
-  String studyPhase(
-    ParticipantRecord record,
-    StudyPeriod period,
-    DateTime now,
-  ) {
-    final withdrawal = record.withdrawnOn;
-    if (withdrawal != null) return withdrawnOn(formatFullDate(withdrawal));
-    if (!period.hasStarted(now)) {
-      return phaseNotStarted(formatFullDate(period.start));
-    }
-    if (period.hasEnded(now)) return phaseEnded(formatFullDate(period.end));
-    return phaseWeek(period.weekOf(now)!, period.weeks);
-  }
-
+/// Staff-facing text for the usage log.
+extension UsageLogText on AppLocalizations {
   String usageLabel(UsageAction action) => switch (action) {
     UsageAction.signIn => usageSignIn,
     UsageAction.signOut => usageSignOut,
@@ -385,7 +258,6 @@ extension StudyRecordText on AppLocalizations {
     UsageAction.sessionMarked => usageSessionMarked,
     UsageAction.sessionUndone => usageSessionUndone,
     UsageAction.recordingSaved => usageRecordingSaved,
-    UsageAction.questionnaireSubmitted => usageQuestionnaireSubmitted,
     UsageAction.remindersChanged => usageRemindersChanged,
   };
 }

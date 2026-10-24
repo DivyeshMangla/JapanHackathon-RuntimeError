@@ -8,6 +8,4 @@ abstract interface class AuthRepository {
 
   /// The user whose session survived the last app launch, if any.
   Future<User?> restoreSession();
-
-  Future<void> setPassword({required String userId, required String password});
 }

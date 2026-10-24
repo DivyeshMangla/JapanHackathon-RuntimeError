@@ -17,7 +17,6 @@ import '../../../shared/widgets/seal_mark.dart';
 import '../../../shared/widgets/stat_tile.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../../exercises/presentation/controllers/exercise_controllers.dart';
-import '../../questionnaires/presentation/study_tasks_card.dart';
 import '../../recordings/presentation/controllers/recording_controllers.dart';
 import '../../reminders/domain/reminder.dart';
 import '../../reminders/presentation/controllers/reminder_controllers.dart';
@@ -48,7 +47,6 @@ class PatientHomeScreen extends ConsumerWidget {
                     due: activity.todayAdherence.due,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  StudyTasksCard(patientId: user.id),
                   if (probe != null && probe.isDueOn(now)) ...[
                     _ProbeDueCard(baseline: probe.isBaseline),
                     const SizedBox(height: AppSpacing.md),

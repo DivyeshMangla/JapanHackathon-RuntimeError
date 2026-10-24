@@ -3,7 +3,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/errors/app_failure.dart';
 import '../../../../core/utils/dates.dart';
-import '../../../study/presentation/controllers/study_controllers.dart';
 import '../../../usage/domain/usage_event.dart';
 import '../../../usage/presentation/controllers/usage_controllers.dart';
 import '../../data/exercise_repository_providers.dart';
@@ -123,7 +122,7 @@ class CompletionActions {
     }
     await _ref
         .read(completionRepositoryProvider)
-        .delete(item.completions.last.id);
+        .delete(patientId: patientId, id: item.completions.last.id);
     _invalidate(patientId);
     await _ref
         .read(usageLoggerProvider)
@@ -137,13 +136,12 @@ class CompletionActions {
       patientId,
     )).where((e) => e.day == today).lastOrNull;
     if (latest == null) return;
-    await repository.delete(latest.id);
+    await repository.delete(patientId: patientId, id: latest.id);
     _ref.invalidate(voiceDiaryProvider(patientId));
   }
 
-  void _invalidate(String patientId) => _ref
-    ..invalidate(patientActivityProvider(patientId))
-    ..invalidate(interventionOutcomeProvider(patientId));
+  void _invalidate(String patientId) =>
+      _ref.invalidate(patientActivityProvider(patientId));
 }
 
 final scheduleActionsProvider = Provider<ScheduleActions>(ScheduleActions.new);
@@ -183,9 +181,7 @@ class ScheduleActions {
             assignedBy: therapistId,
           ),
         );
-    _ref
-      ..invalidate(patientActivityProvider(patientId))
-      ..invalidate(interventionOutcomeProvider(patientId));
+    _ref.invalidate(patientActivityProvider(patientId));
   }
 
   Future<void> revise(
@@ -220,10 +216,8 @@ class ScheduleActions {
       await repository.save(schedule);
     }
     for (final id in change.delete) {
-      await repository.delete(id);
+      await repository.delete(patientId: patientId, id: id);
     }
-    _ref
-      ..invalidate(patientActivityProvider(patientId))
-      ..invalidate(interventionOutcomeProvider(patientId));
+    _ref.invalidate(patientActivityProvider(patientId));
   }
 }

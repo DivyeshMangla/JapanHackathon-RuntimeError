@@ -41,6 +41,21 @@ final class ExportFailure extends AppFailure {
   const ExportFailure([super.cause]);
 }
 
+enum NetworkProblem { offline, timeout, badResponse, sessionEnded, rejected }
+
+/// The care service could not be reached or refused a request. Only
+/// [NetworkProblem.rejected] carries the server's own explanation, because
+/// the server owns those rules.
+final class NetworkFailure extends AppFailure {
+  const NetworkFailure(this.problem, {this.status = 0, this.serverMessage});
+
+  final NetworkProblem problem;
+
+  /// HTTP status, or 0 when no response arrived.
+  final int status;
+  final String? serverMessage;
+}
+
 enum InputProblem {
   emailTaken,
   therapistRequired,

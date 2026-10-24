@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../core/routing/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
@@ -45,8 +43,6 @@ class StudyOverviewScreen extends ConsumerWidget {
             const _OverviewHeader(),
             const SizedBox(height: AppSpacing.xl),
             _HeadlineStats(overview: overview, thresholdLabel: thresholdLabel),
-            const SizedBox(height: AppSpacing.md),
-            const _OutcomesLink(),
             const SizedBox(height: AppSpacing.xl),
             SectionLabel(l10n.statusMatrix),
             _StatusMatrix(counts: overview.statusCounts),
@@ -133,45 +129,6 @@ class _HeadlineStats extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Feasibility headline and the way into the full outcome measures.
-class _OutcomesLink extends ConsumerWidget {
-  const _OutcomesLink();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final text = Theme.of(context).textTheme;
-    final outcomes = ref.watch(studyOutcomesProvider).value;
-    return InkCard(
-      onTap: () => context.go(AppRoutes.adminOutcomes),
-      child: Row(
-        children: [
-          const Icon(LucideIcons.chartNoAxesCombined, color: AppColors.seal),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.outcomesTitle, style: text.titleMedium),
-                Text(
-                  outcomes == null
-                      ? l10n.outcomesLinkBody
-                      : l10n.outcomesLinkSummary(
-                          formatPercent(outcomes.retention.rate),
-                          formatPercent(outcomes.usageCompletion.rate),
-                        ),
-                  style: text.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          const Icon(LucideIcons.chevronRight, color: AppColors.wash),
-        ],
-      ),
     );
   }
 }

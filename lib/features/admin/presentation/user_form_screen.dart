@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/errors/app_failure.dart';
-import '../../../core/security/password_hasher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/l10n.dart';
@@ -13,7 +12,6 @@ import '../../../shared/widgets/choice_pills.dart';
 import '../../../shared/widgets/labeled_text_field.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../auth/domain/user.dart';
-import '../../study/presentation/consent_fields.dart';
 import 'controllers/admin_controllers.dart';
 
 /// Creates a patient or therapist account.
@@ -32,10 +30,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   String? _therapistId;
-  bool _infoSheet = false;
-  DateTime? _consentOn;
   InvalidInputFailure? _problem;
-  bool _attempted = false;
   bool _saving = false;
 
   bool get _isPatient => widget.role == UserRole.patient;
@@ -50,11 +45,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
 
   Future<void> _submit() async {
     final fieldsValid = _form.currentState!.validate();
-    final consentGiven = !_isPatient || (_infoSheet && _consentOn != null);
-    if (!fieldsValid || !consentGiven) {
-      setState(() => _attempted = true);
-      return;
-    }
+    if (!fieldsValid) return;
     setState(() {
       _saving = true;
       _problem = null;
@@ -68,8 +59,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
             email: _email.text,
             password: _password.text,
             therapistId: _therapistId,
-            infoSheetProvided: _infoSheet,
-            consentSignedOn: _consentOn,
           );
       if (!mounted) return;
       final l10n = context.l10n;
@@ -117,15 +106,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
               _TherapistPicker(
                 selected: _therapistId,
                 onSelected: (id) => setState(() => _therapistId = id),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SectionLabel(l10n.consentSection),
-              ConsentFields(
-                infoSheet: _infoSheet,
-                consentOn: _consentOn,
-                showMissing: _attempted,
-                onInfoSheet: (v) => setState(() => _infoSheet = v),
-                onConsentOn: (d) => setState(() => _consentOn = d),
               ),
             ],
             if (problem != null) ...[
@@ -190,10 +170,9 @@ class _AccountFields extends StatelessWidget {
           obscureText: true,
           validator: (v) {
             final value = v ?? '';
-            if (value.length < 8) return l10n.passwordTooShort;
-            if (!PasswordHasher.isWithinLimit(value)) {
-              return l10n.passwordTooLong;
-            }
+            if (value.length < 10) return l10n.passwordTooShort;
+            if (value.length > 128) return l10n.passwordTooLong;
+            if (value != value.trim()) return l10n.passwordSpaces;
             return null;
           },
         ),

@@ -45,16 +45,21 @@ This is a production-grade Flutter app handling confidential patient data (store
 
 # Melo
 
-A Flutter prototype that helps voice therapy patients follow their home exercise program and lets therapists monitor adherence. Everything runs on the device: no cloud services, no remote backend.
+A Flutter prototype that helps therapy patients follow their home exercise program and lets therapists monitor adherence. The role-based app (patient, therapist, admin) stores its records on the care service in `backend/` (Node, SQLite, see `backend/README.md`); only reminders and this phone's access log stay on the device.
 
 ## Running the app
 
 Requires Flutter 3.38 (stable) or newer, plus an Android device or emulator (API 24+) or an iOS device or simulator.
 
+Start the care service first (Node 24 or newer), then run the app on the `connected` flavor, which is the one that may use the network (its debug build also allows plain HTTP to the emulator host):
+
 ```bash
+npm run demo
 flutter pub get
-flutter run
+flutter run --flavor connected
 ```
+
+The app reaches the service at `http://10.0.2.2:8787` (the host machine from an Android emulator). Pass `--dart-define=API_BASE_URL=https://...` for another address; release builds require HTTPS. The `study` and `setupcheck` release builds remove the INTERNET permission and cannot reach the service.
 
 Checks that must pass before work is considered done:
 
@@ -63,31 +68,19 @@ flutter analyze
 flutter test
 ```
 
-The first launch creates the encryption key, opens the encrypted boxes and seeds demo data. It takes a few seconds while the demo passwords are hashed.
+The first launch creates the device encryption key and opens the encrypted boxes.
 
 If Android Studio is open on this project, do not also build from the terminal. Two Gradle builds in the same `build/` folder delete each other's files and fail with "file does not exist" errors. A full debug APK holds every CPU architecture (about 160 MB); `flutter run` or `flutter build apk --debug --split-per-abi` produces a single-architecture build of about 75 MB, which matters on emulators with little free storage.
 
-### Seeded accounts
+### Accounts
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Research admin | admin@melo.local | AdminDemo2026 |
-| Therapist | a.ortiz@melo.local | TherapistDemo2026 |
-| Therapist | s.park@melo.local | TherapistDemo2026 |
-| Patient P001 (Ortiz) | p001@melo.local | PatientDemo2026 |
-| Patient P002 (Ortiz) | p002@melo.local | PatientDemo2026 |
-| Patient P003 (Ortiz) | p003@melo.local | PatientDemo2026 |
-| Patient P004 (Park) | p004@melo.local | PatientDemo2026 |
-| Patient P005 (Park) | p005@melo.local | PatientDemo2026 |
-| Patient P006 (Park, intervention finished) | p006@melo.local | PatientDemo2026 |
-
-To reset the demo data, uninstall the app or clear its storage.
+Accounts come from the backend demo seed (`npm run demo`, see `backend/README.md`): `admin@melo.test`, therapists such as `meera@melo.test`, and patients such as `patient@melo.test`, all with the password `VoiceDemo!2026`. The demo has no exercises: sign in as the administrator, add and approve them in the Library tab, then sign in as a therapist to assign them.
 
 ## Folder structure
 
 ```
 lib/
-  main.dart                 opens storage, seeds, migrates, starts the app
+  main.dart                 opens device storage, points the app at the care service, starts it
   app.dart                  MaterialApp.router, theme, localization, grain
   core/
     errors/                 typed failures shown to the user
@@ -112,13 +105,13 @@ test/                       unit tests
 assets/fonts/               bundled, script-subset font files (OFL)
 ```
 
-Features: `auth`, `exercises`, `recordings`, `reminders`, `settings`, `study` (status matrix, study record, monitoring forms, intervention outcomes, feasibility and statistics), `questionnaires` (self-reports, usability, satisfaction feedback), `education` (Learn topics), `usage` (application usage log), `audit` (access log), `patient`, `therapist`, `admin`, `demo_data` (first-launch seeder), `capture_quality` (signal analysis, noise removal, take quality, sensors; no screens), `diagnostics` (debug-only sensor check screen), `setup` (offline device onboarding: role choice, therapist PIN and keys, patient join, consent signing, signed plan transfer), `connected` (the connected-care flavor: account sign-in and registration, therapist PIN lock, consent, plans, practice and recording sync).
+Features: `auth`, `exercises`, `recordings`, `reminders`, `settings`, `study` (study period and status matrix only), `education` (Learn topics), `usage` (application usage log), `audit` (access log), `patient`, `therapist`, `admin`, `capture_quality` (signal analysis, noise removal, take quality, sensors; no screens), `diagnostics` (debug-only sensor check screen), `setup` (offline device onboarding: role choice, therapist PIN and keys, patient join, consent signing, signed plan transfer), `connected` (the connected-care flavor: account sign-in and registration, therapist PIN lock, consent, plans, practice and recording sync).
 
 ## Architecture decisions
 
-- **Repository interfaces.** UI and controllers depend only on interfaces in `domain/` (for example `UserRepository`, `AuthRepository`). The Hive classes in `data/` are wired up in Riverpod providers, so a self-hosted server implementation can be swapped in by changing one provider.
+- **Repository interfaces.** UI and controllers depend only on interfaces in `domain/` (for example `UserRepository`, `AuthRepository`). The `Backend*` classes in `data/` talk to the care service through `BackendClient` (`core/network`), and are wired up in Riverpod providers, so another implementation can be swapped in by changing one provider. Every transport or server problem becomes a `NetworkFailure`.
 - **Riverpod without code generation.** Plain `Provider`, `NotifierProvider` and `AsyncNotifierProvider` keep the build free of `build_runner`.
-- **Storage is opened before `runApp`.** `main()` opens the database, overrides `localDatabaseProvider` in a `ProviderContainer`, runs the seeder, then hands the container to `UncontrolledProviderScope`.
+- **Startup.** `main()` opens the device database, overrides `localDatabaseProvider` and `backendClientProvider` (address from `--dart-define=API_BASE_URL`, HTTPS required in release builds) in a `ProviderContainer`, then hands the container to `UncontrolledProviderScope`. The session token is kept in `flutter_secure_storage`, so a restart restores the session.
 - **Routing.** `routerProvider` builds a single `GoRouter` whose `refreshListenable` follows `authControllerProvider`. `redirectFor` is a pure function (unit tested) that holds on the splash route while the session is restoring, sends signed-out users to `/login`, and keeps each role inside its own route tree (`/patient`, `/therapist`, `/admin`).
 - **Role areas are tab shells.** Each role's routes live in its feature (`patient/presentation/patient_routes.dart`) as a `StatefulShellRoute.indexedStack`, so every tab keeps its own navigation stack. The shell is wrapped in `SignedInGate`, which renders nothing in the frames between sign-out and the redirect, so screens can read `currentUserProvider` without null checks.
 - **Shared activity provider.** `patientActivityProvider(patientId)` loads a patient's schedules, the exercise library and 56 days of completions, and derives daily adherence once. Patient screens use it now; therapist screens will reuse it. Mutations go through small action classes (`CompletionActions`, `ReminderActions`) that write via the repository and then invalidate the affected provider.
@@ -132,15 +125,11 @@ Features: `auth`, `exercises`, `recordings`, `reminders`, `settings`, `study` (s
 - **Sensor check screen.** `/sensor-check` is reachable from the login screen in debug and profile builds only (`!kReleaseMode`) and is allowed while signed out. It uses its own oscilloscope palette (`DiagnosticColors`, `AppTheme.diagnostics`), kept apart from the design.md tokens. The microphone streams PCM to memory only. `sensors_plus` (gyroscope and accelerometer, also used by the take check) and `proximity_sensor` were added for it.
 - **Typed failures.** `core/errors/app_failure.dart` defines a sealed `AppFailure` hierarchy (`StorageFailure`, `RecordingFailure`, `PlaybackFailure`, `ReminderFailure`, `ExportFailure`, `InvalidInputFailure`, `SensorFailure`). Every repository method and platform service (vault, recorder, reminder scheduler, export) runs inside `guard`/`guardStorage`, which logs the underlying error and rethrows it as a typed failure. Screens never see raw exceptions: write actions go through `runWithFailureMessage` (a snackbar with a localized message), `AsyncView` names the failure on load errors, and the recording session reports failures through its state. Reminder sync and startup migration log failures instead of blocking sign-in or launch.
 - **Logging.** `AppLogger` (`core/logging`) is the only logging entry point and writes to the platform log via `dart:developer`. It never sends anything off the device. Callers log failure types and technical details, never patient names, emails or audio. `print` is banned by lint.
-- **Protocol coverage.** The study protocol's baseline assessment, intervention, follow-up, outcome measures and data collection instruments map to the app as follows. Information sheet and written consent: recorded when the admin enrols a patient (required) and editable in the study record. Demographic and Clinical Information Form, orientation date and intervention start: the therapist's study record screen. Baseline adherence assessment: the patient's week-0 self-report. Application Usage Log: `usage`. Adherence and Compliance Monitoring Form: one therapist form per study week. Participant self-report: a weekly questionnaire. Usability Feedback Questionnaire: the System Usability Scale. Feedback: structured satisfaction items plus three open questions for thematic analysis. Educational support and orientation: the Learn topics. The Participant Information Sheet and Written Consent Form themselves stay on paper; the Learn topic "About this study" is a plain-language summary, not a replacement.
-- **Intervention outcomes.** `InterventionOutcome` (`study/domain`) scores the participant's own study period (`StudyPeriod`: `studyWeeks` weeks from the study record's intervention start), finished days only. Adherence is the protocol formula: completed sessions over prescribed sessions. Compliance ("follows recommended frequency and schedule") is the share of prescribed days on which the full daily dose was completed on that day. Each study week shows the four sources the protocol names side by side: application log, practice recordings, participant self-report and therapist monitoring form. The 14-day window in the existing therapist and patient views is unchanged.
-- **Questionnaire timing.** `StudyTasks` decides what is due: the baseline self-report until submitted; each week's self-report from the last day of that week for seven days; usability and feedback from the last intervention day on. A withdrawn participant is asked for nothing and no more probes.
-- **Feasibility and statistics.** `StudyOutcomes` computes recruitment rate (enrolled over the admin-entered number of eligible people approached), retention rate (enrolled participants not withdrawn) and app usage completion (practice marked in every study week, over participants whose intervention has ended, withdrawals counting as not completing). `statistics.dart` gives mean, sample SD, median and percentages, and both paired tests from the analysis plan: paired t-test (Student's t via the regularized incomplete beta) and Wilcoxon signed-rank (exact without ties up to n = 25, otherwise normal approximation with tie and continuity corrections). Both are unit tested against SciPy. The app reports both and leaves the choice to the analyst. In-app, they compare self-reported practice at baseline and in the final week.
 - **Exercise library.** The library ships empty. The speech-therapy catalogue was removed when the app moved to autism therapy; exercises are added through the admin library editor, and demo accounts start with no assignments or completion history.
 - **Clinician-chosen material.** Twelve entries depend on what the clinician picks (syllables, words, water depth, a care plan, effort limits). They are flagged `needsInstructions`, and an assignment cannot be saved without per-patient instructions, which the patient sees as "Your therapist's instructions". Program cautions (vocal strength and closure) and the water-straw safety note show to therapists when assigning and to patients with the exercise.
 - **Voice-use monitoring.** The hygiene exercise "Voice-use monitoring" is a `voiceDiary` exercise: ticking its session opens a diary form (speaking time, fatigue 0 to 10, situations), and saving it marks the session. Therapists see the entries on the assessment screen; they are exported as a CSV.
 - **Usage logging never blocks.** `UsageLogger` records patient actions only (sign-in, sign-out, exercise and Learn views, sessions marked and undone, recordings saved, questionnaires submitted, reminder changes). A failed write is logged and the patient's action still succeeds.
-- **Setup flow.** `main.dart` currently starts `SetupApp`, the offline two-phone onboarding described in README_SETUP.md, instead of the legacy app. `SetupService` owns every setup mutation. Its signed records stay as maps inside the service, because their exact JSON is what the signatures cover, and widgets read immutable models only (`TherapistProfile`, `SetupPatient`, `ConsentSummary`, `ConsentItem`, `ParticipantForms` in `setup/domain`). Every refusal is a `SetupFailure` with a `SetupFailureReason` (`core/errors/setup_failure.dart`), which the pages map to a localized message through `setupFailureMessageKey`; any other error is logged and shown as a generic package failure. Setup strings live in `features/setup/l10n/setup_{en,hi,pa}.arb`, loaded by `SetupStrings`, and a test checks every failure reason has a message in all three.
+- **Setup flow.** The offline two-phone onboarding (`features/setup`, README_SETUP.md) and the connected-care flavor (`lib/main_connected.dart`) are separate entry points that are no longer the default. `main.dart` starts the role-based app on the care service. `SetupService` owns every setup mutation. Its signed records stay as maps inside the service, because their exact JSON is what the signatures cover, and widgets read immutable models only (`TherapistProfile`, `SetupPatient`, `ConsentSummary`, `ConsentItem`, `ParticipantForms` in `setup/domain`). Every refusal is a `SetupFailure` with a `SetupFailureReason` (`core/errors/setup_failure.dart`), which the pages map to a localized message through `setupFailureMessageKey`; any other error is logged and shown as a generic package failure. Setup strings live in `features/setup/l10n/setup_{en,hi,pa}.arb`, loaded by `SetupStrings`, and a test checks every failure reason has a message in all three.
 - **Connected care (opt-in flavor).** `lib/main_connected.dart` with `--flavor connected` talks to the Node service in `backend/` (API, SQLite, uploads) that also serves the admin dashboard in `admin/`; see `docs/CONNECTED_WORKSPACE.md` and `backend/README.md`. It is the one place the app sends patient data off the device, by design and only in that flavor: the study and setupcheck release builds still remove the INTERNET permission. `ConnectedService` (`connected/data`) keeps the session token in secure storage, caches the last records in an encrypted Hive box per API origin and account, and queues practice and recordings in an outbox that uploads in order with server-side idempotent ids. Screens read the typed models in `connected/domain`; every failure is a `ConnectedFailure` (`core/errors/connected_failure.dart`) mapped to a localized message, except a rejected request, which shows the server's own explanation. Connected strings live in `app_en.arb` with the `connected` prefix.
 - **Failed sign-in does not touch auth state.** `AuthController.signIn` returns `false` and leaves state unchanged, so the router does not react to a bad password.
 
@@ -153,26 +142,19 @@ Features: `auth`, `exercises`, `recordings`, `reminders`, `settings`, `study` (s
 - `Recording`: id, patientId, kind (practice or probe), task, type (baseline, follow-up, home practice), trial, probeSessionId, filePath (encrypted file), durationSec, createdAt, analysisStatus (always `pending`).
 - `StudySettings`: adherenceThreshold (default 0.8), probeIntervalDays (default 7), studyWeeks (default 4).
 - `AccessLogEntry`: at, userId, userEmail, action (playback or export), target.
-- `ParticipantRecord` (one per patient): interventionStart, infoSheetProvided, consentSignedOn, demographics (age, gender, education, occupation, voice-use level, primary language), clinical (diagnosis, symptom months, smoking, laryngoscopy date, therapy start, in-clinic sessions per week, other conditions), orientationOn, withdrawnOn, withdrawalReason. Patients from before records existed get an undocumented record starting on their account date.
-- `AdherenceSelfReport`: week (0 = baseline), submittedAt, daysPractised (0 to 7 in the previous week), main barrier, note.
-- `UsabilityResponse`: the ten SUS answers (1 to 5) and the derived 0 to 100 score. `SatisfactionResponse`: nine 1 to 5 ratings plus liked most, difficulties and suggestions.
-- `MonitoringEntry`: week, therapist, practice, schedule and technique ratings (fully, mostly, partly, not at all), barriers, notes.
 - `UsageEvent`: at, patientId, action, detail (an id or name, never typed text).
 - `VoiceUseEntry`: day, loggedAt, speaking time band, vocal fatigue (0 to 10), situations that increased effort, note. One entry completes one session of a voice-diary exercise; undoing the session removes the entry.
 - Reminder times: minutes after midnight per user, shown as `ReminderTime`.
 
 Storage approach:
 
-- **Hive Community Edition** (`hive_ce`), the maintained fork of Hive with the same API. Models are immutable classes with hand-written, typed `toMap`/`fromMap`. This is the project's chosen equivalent of freezed/json_serializable: maps exist only inside `data/` repositories at the Hive boundary and never reach controllers or widgets, and the build stays free of `build_runner`.
-- **Encryption.** Every box is opened with `HiveAesCipher` (AES-256). The 32-byte key is generated on first launch with `Hive.generateSecureKey()` and kept only in `flutter_secure_storage` (Android Keystore, iOS Keychain).
-- **Boxes.** `users` (profiles keyed by id), `credentials` (bcrypt hashes keyed by user id, kept apart from profile data so the domain `User` never carries a hash), `meta` (active session user id, seed version), `exercises`, `schedules` (every version), `completions`, `recordings` (metadata only), `reminders`, `access_log` (append-only, auto-increment keys), `participants` (study records keyed by patient id), `questionnaires` (self-reports, usability and feedback keyed by response id, tagged by type inside the repository), `monitoring`, `usage_log` (append-only, auto-increment keys), `voice_diary`. Study settings, including the number of people approached, live in `meta`.
-- **Passwords.** bcrypt on a background isolate. Plaintext is never stored. Passwords over 72 bytes are rejected because bcrypt ignores the excess. Release and profile builds use cost 10. Debug builds use cost 6, because unoptimized debug Dart took about 14 seconds per cost-10 hash on an emulator. Each hash records its own cost, so accounts created by either kind of build still sign in.
-- **Recordings.** Captured with the `record` package as WAV, 44.1 kHz, mono, with auto gain, echo cancellation and noise suppression off so the signal stays unprocessed for later analysis. Files live in `<application support>/recordings/`, which is app-private and never the gallery or media store. A take is captured to `draft.wav`; keeping it encrypts it to `<participant code>_<type>_<task>_t<trial>_<yyyyMMddTHHmmss>.wav.vpa` and deletes the draft, so the draft under review is the only plaintext audio. Takes stop by themselves after 3 minutes.
-- **Audio encryption.** `RecordingVault` encrypts each file with AES-256-GCM (`cryptography` package, pure Dart, run on an isolate). Layout: magic `VPA1`, 12-byte random nonce, ciphertext, 16-byte tag; the magic is also the associated data. The key is separate from the Hive key and kept only in `flutter_secure_storage`. Playback decrypts to `<temp>/playback/` and the copy is deleted when another recording loads or playback is released; leftover copies are cleared at every launch. Installs from before encryption are migrated at launch (`encryptLegacyRecordings`), which is safe to rerun.
+- **Where data lives.** Users, the exercise library, assignments, completions, voice diary entries, the usage log, study settings and voice samples are stored by the care service (`backend/src/care-routes.mjs`, tables in `backend/migrations/002_care.sql`). Bodies are stored as the app's own models send them, and the server checks who may write them: only an administrator edits the library and settings, only the assigned therapist (or an administrator) assigns exercises and only for approved exercises, only the patient writes completions, diary entries, usage events and recordings. Patients get sequential participant codes (P001) from the server.
+- **Device storage.** Hive Community Edition (`hive_ce`) holds reminder times and this phone's access log, every box opened with `HiveAesCipher` (AES-256) with a 32-byte key kept only in `flutter_secure_storage`. Models are immutable classes with hand-written, typed `toMap`/`fromMap`; maps exist only at the data boundary (Hive and the JSON in `Backend*` repositories) and never reach controllers or widgets.
+- **Passwords.** The care service hashes passwords with salted scrypt. Passwords are 10 to 128 characters without leading or trailing spaces. Disabling an account or changing a password ends its sessions.
+- **Recordings.** Captured with the `record` package as WAV, 44.1 kHz, mono, with auto gain, echo cancellation and noise suppression off so the signal stays unprocessed for later analysis. A take is captured to `draft.wav` in app-private storage; keeping it uploads the WAV to the care service and deletes the draft, so the draft under review is the only recording file the phone holds. Takes stop by themselves after 3 minutes. A failed upload returns to review so the take is not lost. Playback fetches the audio, writes a temporary copy that is deleted when another recording loads or playback is released, and clears leftovers at every launch. Each play is audited by the server.
 - **Probes.** Probe recordings follow the fixed protocol from research doc section 14 (`ProbeProtocol`): sustained /a/ x3, maximum /a/ x3, /s/ x2, /z/ x2, /a/ /i/ /u/, pitch glide x2, reading passage, 30 s spontaneous speech, 17 takes in all, each with a 0.5 s lead-in cue. The first probe is the baseline; later ones are follow-ups due every `probeIntervalDays` until `studyWeeks` ends, counted from the study record's intervention start. If a late probe would push the next one past the end, the post-intervention probe is due on the follow-up day instead, so it is never skipped. Softest and loudest /a/ are omitted because they need a calibrated microphone. Practice recordings are free-choice.
-- **Exports.** CSV exports (demographic and clinical information with consent and status, outcome measures per participant with per-week columns, completions, assignment versions with dosage, targets and instructions, voice-use diary, recording metadata, self-reports, monitoring forms, usability item answers with SUS score, feedback with open comments, usage log) identify patients only by participant code, contain no audio or file paths, quote delimiters and defuse spreadsheet formulas. The admin picks the save location through the system save dialog; each saved export is logged.
-- **Access log.** Every recording playback (saved recordings, not unsaved drafts) and every saved export appends an entry with user, time and target. The app offers no way to edit or delete entries.
-- **Seeding.** `DemoSeeder` runs in numbered stages tracked by `seed.version` in `meta`, so an existing install picks up new stages without being wiped. Stage 1 writes the accounts. Stage 3 writes 17 demo voice samples: a baseline sustained phonation and baseline reading passage for everyone, plus later home practice and follow-up samples for the more engaged patients. Stage 2 writes 09:00 and 18:30 reminders for each patient. No exercises, assignments or completion history are seeded. Stage 5 writes study records (P005 still lacks orientation), baseline self-reports for everyone, week 1 self-reports and monitoring forms for some patients, a usage history derived from any completions, and P006, who started 29 days before seeding and has finished the intervention with every weekly report and form, so their follow-up questionnaires and post-intervention probe are due. Seeded ids are fixed, so an interrupted stage can safely re-run; usage events are only seeded into an empty log.
+- **Exports.** CSV exports (completions, assignment versions with dosage, targets and instructions, voice-use diary, recording metadata, usage log) identify patients only by participant code, contain no audio or file paths, quote delimiters and defuse spreadsheet formulas. The admin picks the save location through the system save dialog; each saved export is logged.
+- **Access log.** Kept on this phone only; the care service keeps its own audit trail (the admin dashboard lists it). Every recording playback (saved recordings, not unsaved drafts) and every saved export appends an entry with user, time and target. The app offers no way to edit or delete entries.
 - Android sets `allowBackup="false"` so the encrypted boxes are not copied into device backups.
 
 ## Design decisions not covered by design.md
@@ -210,22 +192,15 @@ design.md describes the visual system: a peach and lilac wash fading into a grey
 
 ## Known limitations and stubs
 
-- Seeded voice samples are synthetic: a sustained vowel-like tone at a per-patient pitch, generated on first launch. They exist so playback and filters can be demonstrated. The reading passage and spontaneous speech samples are the same kind of tone, not speech.
 - Voice analysis is a stub. Every recording shows "Analysis pending" and no acoustic measures are computed.
 - Patients can only mark today's exercises. Past days cannot be back-filled.
-- Exercise text comes from the clinical source document, but its default dosage and verification types are the app's placeholders, and three entries have no description yet. Each exercise shows a placeholder where a demonstration video would go.
-- Decrypted copies exist in the app's temp directory while a recording is loaded for playback, and the take under review is plaintext until saved or discarded.
-- Recording encryption uses pure-Dart AES-GCM, which is slower than a native implementation; long takes take a moment to save and to start playing.
+- A temporary plaintext copy exists in the app's temp directory while a recording is loaded for playback, and the take under review is plaintext until saved or discarded. The care service stores audio and records unencrypted at the application level; use an encrypted server volume.
 - Reminders use inexact scheduling (`inexactAllowWhileIdle`) to avoid Android's exact-alarm permission, so they can arrive a few minutes late.
-- There is no password reset or account lockout after repeated failures.
+- There is no password reset or email verification, and the app needs a network connection to the care service: marking a session, saving a recording or signing in fails with a clear message when offline, and nothing is queued.
 - Only Android and iOS are configured. Desktop and web are not targeted.
 - The status matrix cannot yet place anyone in its main rows: it needs probe ratings, and voice analysis is a stub. Compliance is measured as the protocol defines it (frequency and schedule). The research doc's narrower measure, repetitions on target (8.2), is not, because exercise verification is not implemented.
 - Take quality checks cover SNR, clipping, voiced length and phone movement. Phone angle and distance and device metadata from the protocol are not checked, and quality results are not stored with the recording.
 - The movement and noise-type thresholds are provisional and need calibrating on real devices.
-- Assignments created before versioning were migrated with their original start date and the default dosage of one session a day.
 - Only English strings exist. Hindi and Punjabi need translated ARB files and validated translations of any clinical instruments, including the SUS.
-- The SUS items read "app" for "system", the usual substitution. The satisfaction items, self-report questions, education text and demographic and clinical fields are this app's own wording and need the expert panel's review before the pilot.
-- Acoustic voice measures for the pre/post comparison are not computed (voice analysis is a stub), so the in-app paired tests cover self-reported practice only.
-- Open feedback answers and the occupation and diagnosis fields are free text. They are exported as written, so the research team must check them for identifying details.
 - The access log is append-only within the app, but it is not tamper-evident: someone with root access to the device could alter the database.
 

@@ -21,7 +21,6 @@ import 'package:melo/features/exercises/domain/patient_activity.dart';
 import 'package:melo/features/exercises/domain/schedule.dart';
 import 'package:melo/features/exercises/presentation/controllers/exercise_controllers.dart';
 import 'package:melo/features/patient/presentation/patient_routes.dart';
-import 'package:melo/features/questionnaires/presentation/controllers/questionnaire_controllers.dart';
 import 'package:melo/features/recordings/domain/probe_schedule.dart';
 import 'package:melo/features/recordings/presentation/controllers/playback_controller.dart';
 import 'package:melo/features/recordings/presentation/controllers/recording_controllers.dart';
@@ -187,7 +186,6 @@ void main() {
               ),
             ),
             patientActivityProvider.overrideWith((ref, id) async => activity()),
-            studyTasksProvider.overrideWith((ref, id) async => []),
             probeDueProvider.overrideWith(
               (ref, id) async => ProbeDue(
                 nextDue: today.add(const Duration(days: 3)),

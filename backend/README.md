@@ -23,7 +23,7 @@ Other synthetic accounts use the same demo password:
 | Patient assigned to Meera | patient@melo.test |
 | Pending therapist | riya@melo.test |
 
-Demo seeding runs only when the database contains no accounts. It does not replace
+The demo seed creates accounts, consents and clinical forms only; the exercise library starts empty and is filled by an administrator through `PUT /library/:id`. Demo seeding runs only when the database contains no accounts. It does not replace
 an existing workspace. `npm run dev` starts the service without seeding. Stop it
 with Ctrl+C. Default binding is loopback only.
 
@@ -78,6 +78,16 @@ status. Send JSON with `Content-Type: application/json`.
 | GET `/auth/me` | Current active account |
 | POST `/auth/logout` | Revoke current session |
 | POST `/auth/password` | Verify current password and replace it; revoke all sessions |
+| GET `/library` | Exercise library (all roles) |
+| PUT `/library/:id` | Administrator saves an exercise |
+| GET `/directory` | Names of the caller and, for a patient, their therapist |
+| GET/PUT/DELETE `/patients/:id/assignments[/:aid]` | Read (anyone with access); write by the assigned therapist or an administrator, approved exercises only |
+| GET/PUT/DELETE `/patients/:id/completions[/:cid]` | Read with `from`/`to` days; write by the patient only |
+| GET/PUT `/patients/:id/samples[/:rid]`, GET `/samples/:id/audio` | Voice samples; upload by the patient, each playback audited |
+| GET/PUT/DELETE `/patients/:id/diary[/:eid]` | Voice-use diary; write by the patient only |
+| GET/POST `/patients/:id/usage` | Usage log; append by the patient only |
+| GET/PUT `/study-settings` | Read by anyone signed in; write by an administrator |
+| GET `/assignments`, `/completions`, `/samples`, `/diary`, `/usage` | Administrator exports across all patients |
 | GET `/overview`, `/users`, `/audit` | Administrator dashboard data |
 | POST `/users` | Administrator creates a patient or an approved therapist |
 | PATCH `/users/:id` | Administrator approves/enables/disables account |

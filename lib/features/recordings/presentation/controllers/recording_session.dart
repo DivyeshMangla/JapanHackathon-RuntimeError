@@ -320,16 +320,6 @@ class RecordingSession extends Notifier<RecordingSessionState> {
 
     await ref.read(playbackProvider.notifier).release();
     final createdAt = DateTime.now();
-    final path = await ref
-        .read(recordingFilesProvider)
-        .keep(
-          draft,
-          participantCode: patient.participantCode ?? patient.id,
-          type: state.type,
-          task: state.task,
-          createdAt: createdAt,
-          trial: state.trial,
-        );
     await ref
         .read(recordingRepositoryProvider)
         .save(
@@ -339,13 +329,14 @@ class RecordingSession extends Notifier<RecordingSessionState> {
             kind: state.kind,
             task: state.task,
             type: state.type,
-            filePath: path,
             durationSec: state.elapsedSec,
             createdAt: createdAt,
             trial: state.trial,
             probeSessionId: state.probeSessionId,
           ),
+          wavPath: draft,
         );
+    await ref.read(recordingFilesProvider).discard(draft);
     ref
       ..invalidate(patientRecordingsProvider(patient.id))
       ..invalidate(probeDueProvider(patient.id));

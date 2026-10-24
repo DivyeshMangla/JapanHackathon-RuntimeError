@@ -1,25 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/storage/local_database.dart';
+import '../../../core/network/backend_client.dart';
 import '../domain/exercise_repositories.dart';
 import '../domain/voice_use_entry.dart';
-import 'hive_exercise_repositories.dart';
-import 'hive_voice_diary_repository.dart';
+import 'backend_exercise_repositories.dart';
 
 final exerciseRepositoryProvider = Provider<ExerciseRepository>(
-  (ref) => HiveExerciseRepository(ref.watch(localDatabaseProvider).exercises),
+  (ref) => BackendExerciseRepository(ref.watch(backendClientProvider)),
 );
 
 final scheduleRepositoryProvider = Provider<ScheduleRepository>(
-  (ref) => HiveScheduleRepository(ref.watch(localDatabaseProvider).schedules),
+  (ref) => BackendScheduleRepository(ref.watch(backendClientProvider)),
 );
 
 final completionRepositoryProvider = Provider<CompletionRepository>(
-  (ref) =>
-      HiveCompletionRepository(ref.watch(localDatabaseProvider).completions),
+  (ref) => BackendCompletionRepository(ref.watch(backendClientProvider)),
 );
 
 final voiceDiaryRepositoryProvider = Provider<VoiceDiaryRepository>(
-  (ref) =>
-      HiveVoiceDiaryRepository(ref.watch(localDatabaseProvider).voiceDiary),
+  (ref) => BackendVoiceDiaryRepository(ref.watch(backendClientProvider)),
 );
