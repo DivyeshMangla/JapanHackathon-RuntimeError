@@ -44,9 +44,9 @@
     }
   },
   "homeToday": "Today",
-  "exercisesTitle": "Today's games",
-  "exercisesNoneTitle": "No games today",
-  "exercisesNoneBody": "Your therapist has not picked any games for today. Come back tomorrow!",
+  "exercisesTitle": "Today's activities",
+  "exercisesNoneTitle": "No activities today",
+  "exercisesNoneBody": "Your therapist has not picked any activities for today. Come back tomorrow!",
   "exerciseDosage": "{minutes} min  ·  {reps} reps  ·  {sessions, plural, =1{once a day} other{{sessions} times a day}}",
   "@exerciseDosage": {
     "placeholders": {
@@ -714,6 +714,13 @@
   "failureSessionEnded": "Your session has ended. Sign in again.",
   "failureRejected": "The care service did not accept this request.",
   "sensorCheckOpen": "Sensor check (debug)",
+  "demoSignInTitle": "Demo sign-in (debug)",
+  "demoSignInChild": "Child: Ananya",
+  "demoSignInParent": "Parent",
+  "demoSignInTherapist": "Therapist: Meera",
+  "demoSignInAdmin": "Administrator",
+  "demoSignInWorking": "Signing in",
+  "demoSignInFailed": "The demo accounts were not found. Start the care service with npm run demo.",
   "sensorCheckTitle": "Sensor check",
   "sensorCheckNote": "Developer tool. Audio is analysed in memory and nothing on this screen is saved. Noise removal is for display only; saved recordings are never processed.",
   "micDenied": "Microphone access is turned off. Allow it in your phone settings to use this check.",
@@ -1088,7 +1095,7 @@
   "practiceUpNext": "Up next",
   "practiceReady": "Ready when you are",
   "practiceComplete": "Practice complete",
-  "practiceStart": "Start exercise",
+  "practiceStart": "Start activity",
   "practiceMarkDone": "Mark done",
   "practiceMarkSession": "Mark session {number}",
   "@practiceMarkSession": {
@@ -1135,7 +1142,7 @@
       }
     }
   },
-  "practiceAllDone": "All your scheduled sessions are done for today.",
+  "practiceAllDone": "Your practice is done for today. Well done!",
   "practiceOpenNamed": "Open {exercise}",
   "@practiceOpenNamed": {
     "placeholders": {
@@ -1236,12 +1243,12 @@
   "motorNotAssessable": "not assessable",
   "back": "Back",
   "navFamily": "Family",
-  "welcomeTagline": "Little steps, every day. Practice games for children, with their parents and therapists.",
+  "welcomeTagline": "Little steps, every day. Guided activities for children, with their parents and therapists.",
   "welcomeQuestion": "Who is using this phone?",
   "welcomeParent": "I'm a parent",
   "welcomeParentHint": "Join your therapist with their code and follow your child's practice.",
   "welcomeChild": "Set up for my child",
-  "welcomeChildHint": "Use your parent code to open your child's practice games on this device.",
+  "welcomeChildHint": "Use your parent code to open your child's practice activities on this device.",
   "welcomeTherapist": "I'm a therapist",
   "welcomeTherapistHint": "Sign in to see the children you look after.",
   "loginCreateParent": "Create a parent account",
@@ -1252,7 +1259,7 @@
   "signUpPasswordHint": "At least 10 characters",
   "signUpHaveAccount": "I already have an account",
   "childSetupTitle": "Set up for my child",
-  "childSetupIntro": "Enter the parent code from your Melo Settings. This device then opens straight to your child's games.",
+  "childSetupIntro": "Enter the parent code from your Melo Settings. This device then opens straight to your child's activities.",
   "childSetupParentCode": "Parent code",
   "childSetupParentCodeHint": "For example PARENT",
   "childSetupName": "Child's first name",
@@ -1276,9 +1283,11 @@
       }
     }
   },
-  "childPrompt": "What shall we play today?",
-  "childGames": "Games",
-  "childGamesNone": "Nothing to play today",
+  "childActivitiesIntro": "Choose an activity. Take it at your own pace.",
+  "childDrawingIntro": "Watch, then draw. Take a break whenever you need.",
+  "childPrompt": "What shall we try today?",
+  "childGames": "Activities",
+  "childGamesNone": "No activities today",
   "childGamesProgress": "{done} of {due} done",
   "@childGamesProgress": {
     "placeholders": {
@@ -1315,7 +1324,7 @@
   },
   "childGrownUps": "Grown-ups: sign out",
   "childSignOutTitle": "Sign out this device?",
-  "childSignOutBody": "Your child's games close on this device. Use your parent code to open them again.",
+  "childSignOutBody": "Your child's activities close on this device. Use your parent code to open them again.",
   "drawingTitle": "Drawing",
   "drawingFor": "Drawing · {name}",
   "@drawingFor": {
@@ -1330,12 +1339,12 @@
   "drawingSent": "Your drawing is on its way to your therapist.",
   "drawingWaitingTitle": "Not yet",
   "drawingNeedsConsent": "Ask your grown-up to sign the consent in their Melo app first.",
-  "drawingNothingYet": "Your therapist has not picked any drawing games yet.",
+  "drawingNothingYet": "Your therapist has not picked any drawing activities yet.",
   "drawingDoneToday": "Photo sent today",
-  "drawingChoose": "Drawing games for this child",
-  "drawingSave": "Save drawing games",
+  "drawingChoose": "Drawing activities for this child",
+  "drawingSave": "Save drawing activities",
   "drawingSaving": "Saving",
-  "drawingPlanSaved": "Drawing games saved",
+  "drawingPlanSaved": "Drawing activities saved",
   "drawingPlanTitle": "Drawing practice for {name}",
   "@drawingPlanTitle": {
     "placeholders": {
@@ -1344,13 +1353,13 @@
       }
     }
   },
-  "drawingTherapistNeedsConsent": "Drawing games can be chosen once the parent has signed consent in their Melo app.",
+  "drawingTherapistNeedsConsent": "Drawing activities can be chosen once the parent has signed consent in their Melo app.",
   "parentHomeHeading": "Your family",
   "parentNoChildrenTitle": "Set up your child's device",
   "parentNoChildrenBody": "On your child's phone or tablet, open Melo, choose Set up for my child and enter your parent code.",
   "parentShowCode": "Show my parent code",
   "parentNothingToday": "Nothing to practise today.",
-  "parentTodayDone": "{done} of {due} games done today",
+  "parentTodayDone": "{done} of {due} activities done today",
   "@parentTodayDone": {
     "placeholders": {
       "done": {

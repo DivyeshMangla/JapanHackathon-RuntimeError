@@ -123,7 +123,7 @@ void main() {
     );
     expect(tester.takeException(), isNull);
     expect(find.text('Hi, Ananya!'), findsOneWidget);
-    for (final tile in ['Games', 'Say a word', 'Drawing']) {
+    for (final tile in ['Activities', 'Say a word', 'Drawing']) {
       expect(find.bySemanticsLabel(RegExp('^$tile')), findsOneWidget);
     }
     expect(find.bySemanticsLabel('Drawing, 0 of 1 done'), findsOneWidget);

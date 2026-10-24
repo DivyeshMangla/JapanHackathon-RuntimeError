@@ -19,6 +19,8 @@ import '../../../shared/widgets/page_list.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../../exercises/domain/exercise.dart';
 import '../../exercises/presentation/controllers/exercise_controllers.dart';
+import 'child_activity_picture.dart';
+import 'child_practice_intro.dart';
 import 'exercise_practice_card.dart';
 import 'practice_day_summary.dart';
 
@@ -32,7 +34,11 @@ class TodayExercisesScreen extends ConsumerWidget {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.exercisesTitle)),
+      backgroundColor: AppColors.paper,
+      appBar: AppBar(
+        backgroundColor: AppColors.paper,
+        title: Text(l10n.exercisesTitle),
+      ),
       body: AsyncView(
         value: activity,
         data: (activity) {
@@ -51,6 +57,12 @@ class TodayExercisesScreen extends ConsumerWidget {
           final next = items.where((item) => !item.isDone).firstOrNull;
           return PageList(
             children: [
+              ChildPracticeIntro(
+                activity: ChildActivity.activities,
+                message: l10n.childActivitiesIntro,
+                color: AppColors.childButter,
+              ),
+              const SizedBox(height: AppSpacing.lg),
               PracticeDaySummary(activity: activity),
               const SizedBox(height: AppSpacing.xl),
               EntryCascade(

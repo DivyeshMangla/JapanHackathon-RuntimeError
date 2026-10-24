@@ -16,6 +16,7 @@ import '../../../shared/widgets/page_list.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../../exercises/presentation/controllers/exercise_controllers.dart';
 import '../../motor/presentation/controllers/motor_controllers.dart';
+import 'child_activity_picture.dart';
 import 'child_tile.dart';
 
 /// The child's home: a friendly hello, today's stars and three big picture
@@ -38,6 +39,7 @@ class ChildHomeScreen extends ConsumerWidget {
     final drawingsDue = drawing?.exerciseIds.length ?? 0;
 
     return Scaffold(
+      backgroundColor: AppColors.paper,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -54,20 +56,27 @@ class ChildHomeScreen extends ConsumerWidget {
                       const MeloMark(size: AppSizes.childMascot),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.childHello(child.firstName),
-                              style: text.headlineLarge,
-                            ),
-                            Text(
-                              l10n.childPrompt,
-                              style: text.bodyLarge?.copyWith(
-                                color: AppColors.muted,
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.base),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.childHello(child.firstName),
+                                style: text.headlineLarge,
                               ),
-                            ),
-                          ],
+                              Text(
+                                l10n.childPrompt,
+                                style: text.bodyLarge?.copyWith(
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -78,8 +87,9 @@ class ChildHomeScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
                   ],
                   ChildTile(
+                    picture: ChildActivity.activities,
                     icon: LucideIcons.puzzle,
-                    color: AppColors.sunshine,
+                    color: AppColors.childButter,
                     title: l10n.childGames,
                     subtitle: due == 0
                         ? l10n.childGamesNone
@@ -89,16 +99,18 @@ class ChildHomeScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   ChildTile(
+                    picture: ChildActivity.words,
                     icon: LucideIcons.messageCircle,
-                    color: AppColors.teal,
+                    color: AppColors.childMint,
                     title: l10n.childWords,
                     subtitle: l10n.childWordsHint,
                     onTap: () => context.push(AppRoutes.patientWords),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   ChildTile(
+                    picture: ChildActivity.drawing,
                     icon: LucideIcons.pencil,
-                    color: AppColors.blossom,
+                    color: AppColors.childRose,
                     title: l10n.childDrawing,
                     subtitle: drawingsDue == 0
                         ? l10n.childDrawingHint
@@ -142,7 +154,7 @@ class _StarRow extends StatelessWidget {
           children: [
             for (var i = 0; i < due; i++)
               Icon(
-                LucideIcons.star,
+                i < done ? Icons.star_rounded : Icons.star_outline_rounded,
                 size: AppSizes.minTouchTarget,
                 color: i < done ? AppColors.sunshine : AppColors.hairline,
               ),

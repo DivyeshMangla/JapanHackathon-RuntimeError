@@ -12,6 +12,8 @@ import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
+import '../../patient/presentation/child_activity_picture.dart';
+import '../../patient/presentation/child_practice_intro.dart';
 import '../../patient/presentation/child_tile.dart';
 import 'controllers/motor_controllers.dart';
 
@@ -27,9 +29,17 @@ class ChildDrawingScreen extends ConsumerWidget {
     final catalogue = ref.watch(motorExercisesProvider);
     final record = ref.watch(motorRecordProvider(child.id));
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    const colors = [AppColors.blossom, AppColors.sunshine, AppColors.teal];
+    const colors = [
+      AppColors.childRose,
+      AppColors.childButter,
+      AppColors.childMint,
+    ];
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.drawingTitle)),
+      backgroundColor: AppColors.paper,
+      appBar: AppBar(
+        backgroundColor: AppColors.paper,
+        title: Text(l10n.drawingTitle),
+      ),
       body: AsyncView(
         value: catalogue,
         data: (catalogue) => AsyncView(
@@ -61,10 +71,15 @@ class ChildDrawingScreen extends ConsumerWidget {
             final done = record.doneOn(today);
             return PageList(
               children: [
-                Text(l10n.motorDailyGuidance),
+                ChildPracticeIntro(
+                  activity: ChildActivity.drawing,
+                  message: l10n.childDrawingIntro,
+                  color: AppColors.childRose,
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 for (final (index, exercise) in planned.indexed) ...[
                   ChildTile(
+                    picture: ChildActivity.drawing,
                     icon: LucideIcons.pencil,
                     color: colors[index % colors.length],
                     title: exercise.name,
@@ -78,6 +93,10 @@ class ChildDrawingScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                 ],
+                Text(
+                  l10n.motorDailyGuidance,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             );
           },

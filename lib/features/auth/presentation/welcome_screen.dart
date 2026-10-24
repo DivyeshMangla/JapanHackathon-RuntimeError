@@ -11,6 +11,7 @@ import '../../../shared/widgets/entry_cascade.dart';
 import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/melo_mark.dart';
 import '../../../shared/widgets/page_list.dart';
+import 'demo_sign_in_panel.dart';
 
 /// The first page on a phone nobody is signed in to: whoever holds it picks
 /// how they use Melo, and each choice leads to its own way in.
@@ -64,8 +65,10 @@ class WelcomeScreen extends StatelessWidget {
                   description: l10n.welcomeTherapistHint,
                   onTap: () => context.push(AppRoutes.login),
                 ),
-                // A developer tool; release builds never show it.
+                // Developer tools; release builds never show them.
                 if (!kReleaseMode) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  const DemoSignInPanel(),
                   const SizedBox(height: AppSpacing.md),
                   Center(
                     child: TextButton.icon(

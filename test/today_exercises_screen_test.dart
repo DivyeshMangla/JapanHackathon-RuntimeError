@@ -116,7 +116,7 @@ void main() {
     await _pump(tester);
 
     expect(find.text('Up next'), findsOneWidget);
-    expect(find.text('Start exercise'), findsOneWidget);
+    expect(find.text('Start activity'), findsOneWidget);
     expect(find.text('Lip trills'), findsOneWidget);
     expect(find.text('2/5'), findsOneWidget);
   });

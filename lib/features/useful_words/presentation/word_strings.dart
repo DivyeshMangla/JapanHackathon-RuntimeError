@@ -1,5 +1,5 @@
 abstract final class WordStrings {
-  static const title = 'Say a Useful Word';
+  static const title = 'Say a word';
   static const guidance = 'Listen if you like. Try the word when you’re ready.';
   static const scope =
       'Therapist-guided speech practice. This is not a validated standalone treatment and does not guarantee speech improvement.';
@@ -15,7 +15,7 @@ abstract final class WordStrings {
   static const delete = 'Delete recording';
   static const again = 'Record again';
   static const send = 'Send to therapist';
-  static const skip = 'Skip';
+  static const skip = 'Try another word';
   static const next = 'Next word';
   static const uploading = 'Uploading…';
   static const delivered = 'Delivered to your therapist';

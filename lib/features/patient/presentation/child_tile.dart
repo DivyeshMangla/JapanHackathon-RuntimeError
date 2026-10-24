@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
+import 'child_activity_picture.dart';
 
 /// A big, bright picture button for the child: one icon, one word, and a
 /// tick once it is done for today.
@@ -15,6 +16,7 @@ class ChildTile extends StatelessWidget {
     required this.onTap,
     this.subtitle,
     this.done = false,
+    this.picture,
   });
 
   final IconData icon;
@@ -22,6 +24,7 @@ class ChildTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final bool done;
+  final ChildActivity? picture;
   final VoidCallback onTap;
 
   @override
@@ -47,15 +50,17 @@ class ChildTile extends StatelessWidget {
                   Container(
                     width: AppSizes.childTileIcon,
                     height: AppSizes.childTileIcon,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.surface,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      done ? LucideIcons.check : icon,
-                      size: AppSizes.childTileIcon / 2,
-                      color: AppColors.ink,
-                    ),
+                    child: picture != null
+                        ? ChildActivityPicture(activity: picture!)
+                        : Icon(
+                            icon,
+                            size: AppSizes.childTileIcon / 2,
+                            color: AppColors.ink,
+                          ),
                   ),
                   const SizedBox(width: AppSpacing.lg),
                   Expanded(
@@ -65,11 +70,25 @@ class ChildTile extends StatelessWidget {
                         Text(title, style: text.headlineMedium),
                         if (subtitle != null) ...[
                           const SizedBox(height: AppSpacing.xs),
-                          Text(subtitle!, style: text.bodyLarge),
+                          Text(
+                            subtitle!,
+                            style: text.bodyLarge?.copyWith(
+                              color: AppColors.muted,
+                            ),
+                          ),
                         ],
                       ],
                     ),
                   ),
+                  if (done) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    const CircleAvatar(
+                      backgroundColor: AppColors.surface,
+                      foregroundColor: AppColors.ink,
+                      radius: AppSpacing.md,
+                      child: Icon(LucideIcons.check, size: AppSpacing.lg),
+                    ),
+                  ],
                 ],
               ),
             ),
