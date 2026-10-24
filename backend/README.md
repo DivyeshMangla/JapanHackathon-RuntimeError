@@ -214,6 +214,20 @@ npm run demo
 
 If Ollama is already running, do not start a second server. The defaults are
 `MOTOR_ML_URL=http://127.0.0.1:11434/api/chat` and `MOTOR_ML_MODEL=gemma3:4b`.
+For Docker Compose deployments, after setting `PUBLIC_ORIGIN` and
+`USEFUL_WORDS_KEY`, run these commands from the repository root:
+
+```bash
+docker compose up -d
+docker compose logs -f ollama-model-init
+```
+
+The Ollama container shares the backend's network namespace, so the loopback
+model URL works without exposing port 11434. Model downloads persist in the
+`ollama-models` volume. The model-init service automatically downloads
+`gemma3:4b` and exits successfully when ready. Once the download finishes, retry unavailable analyses
+from the therapist view.
+
 The backend uses Ollama's image chat and structured JSON output APIs; no API key
 or hosted AI service is used. Model download/runtime memory requirements depend
 on the chosen model. This repository does not bundle model weights. No clinically

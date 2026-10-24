@@ -10,5 +10,33 @@ services:
       - melo-data:/data
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    # Share loopback with the backend; the model API stays off the public tunnel.
+    network_mode: "service:melo-backend"
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  ollama-model-init:
+    image: ollama/ollama:latest
+    network_mode: "service:melo-backend"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+    entrypoint: ["/bin/ollama"]
+    command: ["pull", "gemma3:4b"]
+    restart: on-failure
+
 volumes:
   melo-data:
+  ollama-models:
