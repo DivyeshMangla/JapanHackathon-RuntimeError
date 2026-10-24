@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 108 108">
+  <title>Melo</title>
+  <rect width="108" height="108" fill="#FFFBF4"/>
+  <g transform="translate(23 23) scale(0.62)"><path transform="translate(36.6 9.2) rotate(86)" d="M-7.4,0 A7.4,7.4 0 0 1 0,-7.4 C10.17,-7.4 18.53,-3.11 22.6,0 C18.53,3.11 10.17,7.4 0,7.4 A7.4,7.4 0 0 1 -7.4,0Z" fill="#FFC95C"/><path transform="translate(61.5 17.4) rotate(122)" d="M-7.4,0 A7.4,7.4 0 0 1 0,-7.4 C9.72,-7.4 17.71,-3.11 21.6,0 C17.71,3.11 9.72,7.4 0,7.4 A7.4,7.4 0 0 1 -7.4,0Z" fill="#4FB8A4"/><path transform="translate(78.8 39.2) rotate(165)" d="M-7.7,0 A7.7,7.7 0 0 1 0,-7.7 C7.88,-7.7 14.35,-3.23 17.5,0 C14.35,3.23 7.88,7.7 0,7.7 A7.7,7.7 0 0 1 -7.7,0Z" fill="#A98BD6"/><circle cx="42.1" cy="69.4" r="23" fill="none" stroke="#34408F" stroke-width="11"/><circle cx="34.3" cy="66.1" r="2.6" fill="#34408F"/><circle cx="49.9" cy="66.1" r="2.6" fill="#34408F"/><path d="M35.6,76.1 Q42.1,82.4 48.6,76.1" fill="none" stroke="#34408F" stroke-width="3.4" stroke-linecap="round"/></g>
+</svg>

@@ -1,0 +1,93 @@
+name: melo
+description: "Home practice and adherence monitoring for voice therapy."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  bcrypt: ^1.2.0
+  cryptography: ^2.9.0
+  file_picker: ^13.1.0
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^22.3.1
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.3.2
+  flutter_secure_storage: ^11.2.0
+  flutter_timezone: ^5.1.1
+  flutter_tts: ^4.2.5
+  go_router: ^17.5.0
+  hive_ce: ^2.20.2
+  hive_ce_flutter: ^2.3.4
+  intl: ^0.20.2
+  just_audio: ^0.10.6
+  local_auth: ^3.0.2
+  lucide_icons_flutter: ^3.1.22
+  mobile_scanner: ^7.4.2
+  path_provider: ^2.1.6
+  proximity_sensor: ^1.4.0
+  qr_flutter: ^4.1.0
+  record: ^6.2.1
+  sensors_plus: ^7.1.1
+  share_plus: ^13.3.1
+  timezone: ^0.11.1
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  integration_test:
+    sdk: flutter
+
+flutter:
+  # Plain `flutter run` must build a flavor; without one it installs a stale app-debug.apk.
+  default-flavor: study
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/audio/cues/
+    - assets/branding/melo-logo.png
+    - lib/features/setup/l10n/
+
+  fonts:
+    - family: NunitoSans
+      fonts:
+        - asset: assets/fonts/NunitoSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NunitoSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NunitoSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NunitoSans-Bold.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
+    - family: NotoSansDevanagari
+      fonts:
+        - asset: assets/fonts/NotoSansDevanagari-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansDevanagari-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansDevanagari-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSansDevanagari-Bold.ttf
+          weight: 700
+    - family: NotoSansGurmukhi
+      fonts:
+        - asset: assets/fonts/NotoSansGurmukhi-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansGurmukhi-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansGurmukhi-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSansGurmukhi-Bold.ttf
+          weight: 700

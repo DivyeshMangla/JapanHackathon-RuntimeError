@@ -1,0 +1,6 @@
+*
+!backend/
+!admin/
+backend/data/
+backend/test/
+**/node_modules/

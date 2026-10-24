@@ -1,0 +1,9 @@
+{
+  "name": "melo-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix backend start",
+    "demo": "npm --prefix backend run demo",
+    "test:backend": "npm --prefix backend test"
+  }
+}

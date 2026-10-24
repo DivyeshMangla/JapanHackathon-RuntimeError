@@ -1,0 +1,16 @@
+# Melo
+
+Prototype Flutter app for voice therapy home practice and adherence monitoring.
+
+The repository now also includes a connected care backend and admin dashboard.
+Run `npm run demo` (Node.js 24+) and open http://127.0.0.1:8787 to explore the
+synthetic admin workspace. See [Connected workspace](docs/CONNECTED_WORKSPACE.md)
+for the connected Android build, project boundaries and workflows, and
+[Backend](backend/README.md) for API and storage details.
+
+The default Android entry point runs the offline launch, login and consent/setup
+workflow. See [README_SETUP.md](README_SETUP.md) for build commands, device roles,
+security design and two-phone testing. Run with `flutter run --flavor study`.
+The seeded demo logins described in [CLAUDE.md](CLAUDE.md) belong to the retained
+legacy screens and are not used by this workflow. [design.md](design.md) describes
+the visual system, which the setup screens share with the rest of the app.

@@ -1,0 +1,13 @@
+{
+  "name": "melo-backend",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "demo": "node src/seed.mjs && node src/server.mjs",
+    "seed": "node src/seed.mjs",
+    "admin": "node src/create-admin.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}

@@ -1,0 +1,2084 @@
+{
+  "@@locale": "en",
+  "learnReadGuide": "Read guide",
+  "homePracticeHeading": "Make time\nfor your voice.",
+  "appTitle": "Melo",
+  "signOut": "Sign out",
+  "play": "Play",
+  "pause": "Pause",
+  "errorTitle": "Something went wrong",
+  "errorMessage": "This information could not be loaded. Close and reopen the app to try again.",
+  "loginHeadlineLead": "Your voice,",
+  "loginHeadlineEmphasis": "one session at a time.",
+  "loginIntro": "Sign in with the account your therapist set up for you.",
+  "loginHelp": "Can't sign in? Ask your therapist or the study team.",
+  "loginEmail": "Email",
+  "loginEmailHint": "name@example.org",
+  "loginPassword": "Password",
+  "loginShowPassword": "Show password",
+  "loginHidePassword": "Hide password",
+  "loginSubmit": "Sign in",
+  "loginSubmitting": "Signing in",
+  "loginMissingFields": "Enter your email and password.",
+  "loginFailed": "That email and password do not match an account.",
+  "navHome": "Home",
+  "navExercises": "Exercises",
+  "navRecord": "Record",
+  "navProfile": "Profile",
+  "greetingMorning": "Good morning,\n{name}",
+  "@greetingMorning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "greetingAfternoon": "Good afternoon,\n{name}",
+  "@greetingAfternoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "greetingEvening": "Good evening,\n{name}",
+  "@greetingEvening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTodayTitle": "Today's sessions",
+  "homeOfDue": " of {due}",
+  "@homeOfDue": {
+    "placeholders": {
+      "due": {
+        "type": "int"
+      }
+    }
+  },
+  "homeNothingToday": "Nothing is scheduled today. Rest your voice.",
+  "homeAllDone": "All of today's sessions are done.",
+  "homeLeftToday": "{count, plural, =1{1 session left today.} other{{count} sessions left today.}}",
+  "@homeLeftToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeStart": "Start exercises",
+  "homeContinue": "Continue exercises",
+  "homeStreak": "Streak",
+  "homeStreakDays": "{count, plural, =1{day in a row} other{days in a row}}",
+  "@homeStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeNextReminder": "Next reminder",
+  "homeNoReminder": "None",
+  "homeSetReminder": "Tap to set a time",
+  "homeToday": "Today",
+  "homeTomorrow": "Tomorrow",
+  "homeRecordTitle": "Record a voice sample",
+  "homeRecordSubtitle": "Practice recording or voice check",
+  "homeBaselineDue": "Baseline voice check due",
+  "homeProbeDue": "Voice check due",
+  "homeProbeBody": "A short set of standard recordings your therapist uses to follow your progress.",
+  "homeProbeStart": "Start voice check",
+  "exercisesTitle": "Today's exercises",
+  "exercisesNoneTitle": "Nothing scheduled today",
+  "exercisesNoneBody": "Your therapist has not set any exercises for today.",
+  "exercisesSeeProgress": "See your progress",
+  "exerciseDosage": "{minutes} min  ·  {reps} reps  ·  {sessions, plural, =1{once a day} other{{sessions} times a day}}",
+  "@exerciseDosage": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "int"
+      },
+      "sessions": {
+        "type": "int"
+      }
+    }
+  },
+  "detailNotFoundTitle": "Exercise not found",
+  "detailNotFoundBody": "It may have been removed from the library.",
+  "detailVideoTitle": "Demonstration video",
+  "detailVideoBody": "Not included in this prototype",
+  "demoTitle": "Guided demo",
+  "demoRepetition": "Rep {current} of {total}",
+  "@demoRepetition": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "demoCountdown": "{seconds}s",
+  "@demoCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "demoReady": "Ready when you are",
+  "demoReadyHint": "Lie or sit comfortably with one hand on your chest and one on your belly, then follow the figure at its pace.",
+  "demoFinished": "All repetitions done",
+  "demoFinishedHint": "Mark the session done below, or go again.",
+  "demoStart": "Start",
+  "demoPause": "Pause",
+  "demoResume": "Resume",
+  "demoAgain": "Start again",
+  "demoRestart": "Restart from the first repetition",
+  "demoCueBreatheIn": "Breathe in",
+  "demoCueBreatheInHint": "Through your nose. Let the hand on your belly rise while the hand on your chest stays still.",
+  "demoCueBreatheOut": "Breathe out",
+  "demoCueBreatheOutHint": "Slowly and gently. Let your belly fall without pushing the air out.",
+  "demoVoiceMute": "Mute voice cues",
+  "demoVoiceUnmute": "Turn on voice cues",
+  "demoBreathingFigure": "Animated figure lying on a mat with knees bent, one hand on the chest and one on the belly. The belly hand rises and falls while the chest hand stays still.",
+  "detailSteps": "Steps",
+  "detailTargets": "Your targets",
+  "targetDuration": "Hold for {seconds} seconds",
+  "@targetDuration": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "targetPitch": "Stay near {hz} Hz",
+  "@targetPitch": {
+    "placeholders": {
+      "hz": {
+        "type": "String"
+      }
+    }
+  },
+  "targetTolerance": "Within {cents} cents of the note",
+  "@targetTolerance": {
+    "placeholders": {
+      "cents": {
+        "type": "String"
+      }
+    }
+  },
+  "targetRange": "Cover {semitones} semitones",
+  "@targetRange": {
+    "placeholders": {
+      "semitones": {
+        "type": "String"
+      }
+    }
+  },
+  "detailSessionsToday": "{done} of {due} sessions done today",
+  "@detailSessionsToday": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "due": {
+        "type": "int"
+      }
+    }
+  },
+  "detailMarkSession": "Mark session done",
+  "detailUndoSession": "Undo last session",
+  "recordTitle": "Voice recording",
+  "recordBaselineTitle": "Baseline voice check",
+  "recordProbeTitle": "Voice check",
+  "recordProbeBody": "{count} short recordings, the same for everyone, so your therapist can compare them over time.",
+  "@recordProbeBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recordProbeDueNow": "Due now",
+  "recordProbeNext": "Next one due {date}",
+  "@recordProbeNext": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "recordProbeFinished": "All voice checks for the study are done.",
+  "recordProbeStart": "Start voice check",
+  "recordPracticeTitle": "Practice recording",
+  "recordPracticeBody": "Record any time to hear how your practice sounds.",
+  "recordStart": "Start recording",
+  "recordTip": "Find a quiet room and hold the phone 10 to 15 cm from your mouth, slightly to one side.",
+  "recordStop": "Stop",
+  "recordAutoStop": "Recording stops by itself after {minutes} minutes.",
+  "@recordAutoStop": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "recordWait": "Wait",
+  "recordGo": "Go",
+  "recordTakeOf": "Take {index} of {total}",
+  "@recordTakeOf": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "recordTrialOf": "Try {trial} of {of}",
+  "@recordTrialOf": {
+    "placeholders": {
+      "trial": {
+        "type": "int"
+      },
+      "of": {
+        "type": "int"
+      }
+    }
+  },
+  "recordBegin": "Record this take",
+  "recordListenBack": "Listen back",
+  "recordReviewBody": "Check the take before you save it. Saved recordings are shared with your therapist.",
+  "recordSave": "Save recording",
+  "recordSaveNext": "Save and continue",
+  "recordSaving": "Saving",
+  "recordAgain": "Record again",
+  "recordDiscard": "Discard",
+  "recordFinishLater": "Finish later",
+  "recordSaved": "Recording saved",
+  "recordMicOff": "Microphone access is turned off. Allow it for Melo in your phone settings, then try again.",
+  "recordCompleteTitle": "Voice check complete",
+  "recordCompleteBody": "Thank you. Your therapist can now listen to these recordings.",
+  "recordDone": "Done",
+  "recordInputLevel": "Input level",
+  "readingPassage": "Every morning the baker on our street opens the shop before the sun is up. She lights the oven, weighs the flour, and sets a row of bowls along the counter. By the time the first buses pass, the windows are fogged with warm air and the smell of bread has reached the corner. People who walk by often slow down, and a few of them cannot help stepping inside.",
+  "kindPractice": "Practice",
+  "kindProbe": "Voice check",
+  "typeBaseline": "Baseline",
+  "typeFollowUp": "Follow-up",
+  "typeHomePractice": "Home practice",
+  "recordingTake": "{task}, take {trial}",
+  "@recordingTake": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "trial": {
+        "type": "int"
+      }
+    }
+  },
+  "taskSustainedPhonation": "Sustained phonation",
+  "taskSustainedPhonationHow": "Take a comfortable breath and hold an \"ah\" at an easy pitch and loudness for as long as you comfortably can.",
+  "taskReadingPassage": "Reading passage",
+  "taskReadingPassageHow": "Read the passage below aloud at your usual pace and loudness.",
+  "taskSpontaneousSpeech": "Spontaneous speech",
+  "taskSpontaneousSpeechHow": "Talk for about 30 seconds about what you did yesterday.",
+  "taskSustainedA": "Sustained \"ah\"",
+  "taskSustainedAHow": "Say \"ah\" at a comfortable pitch and loudness for about 5 seconds.",
+  "taskMaximumA": "Longest \"ah\"",
+  "taskMaximumAHow": "Take a deep breath and hold \"ah\" for as long as you can.",
+  "taskSustainedS": "Long \"sss\"",
+  "taskSustainedSHow": "Take a breath and hold a long \"sss\" for as long as you can.",
+  "taskSustainedZ": "Long \"zzz\"",
+  "taskSustainedZHow": "Take a breath and hold a long \"zzz\" for as long as you can.",
+  "taskVowelA": "Vowel \"ah\"",
+  "taskVowelAHow": "Say \"ah\" steadily for about 3 seconds.",
+  "taskVowelI": "Vowel \"ee\"",
+  "taskVowelIHow": "Say \"ee\" steadily for about 3 seconds.",
+  "taskVowelU": "Vowel \"oo\"",
+  "taskVowelUHow": "Say \"oo\" steadily for about 3 seconds.",
+  "taskPitchGlide": "Pitch glide",
+  "taskPitchGlideHow": "On \"ee\", slide smoothly from your lowest note to your highest and back down.",
+  "progressLast14": "Last 14 days",
+  "progressRateCaption": "of prescribed sessions done",
+  "progressStreak": "Streak",
+  "progressDays": "days",
+  "progressRecordings": "Recordings",
+  "progressNoRecordingsTitle": "No recordings yet",
+  "progressNoRecordingsBody": "Saved voice samples will appear here.",
+  "progressMakeRecording": "Make a recording",
+  "rangeDaily": "Daily, 14 days",
+  "rangeWeekly": "Weekly, 8 weeks",
+  "showTable": "Show as table",
+  "hideTable": "Hide table",
+  "weekOf": "Week of {date}",
+  "@weekOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "restDay": "Rest day",
+  "chartNothing": "Nothing scheduled",
+  "chartDone": "{done} of {due} sessions  ·  {percent}",
+  "@chartDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "due": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "chartSemantics": "Completion chart. {period}: {detail}",
+  "@chartSemantics": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "profileTitle": "Profile",
+  "profileProgress": "Your progress",
+  "profileHistory": "Practice history",
+  "profileRecentRecordings": "Recent recordings",
+  "profileViewAll": "View all",
+  "profileAccount": "Account details",
+  "profileEditReminder": "Edit reminder",
+  "profileParticipantCode": "Participant code",
+  "profileTherapist": "Therapist",
+  "profileReminders": "Daily reminders",
+  "profileNoReminders": "No reminders set. Add a time and Melo will nudge you each day.",
+  "profileAddReminder": "Add reminder time",
+  "profileRemoveReminder": "Remove reminder",
+  "profileRemindAt": "Remind me at",
+  "profileNotificationsOff": "Saved, but notifications are turned off for Melo. Allow them in your phone settings to get reminders.",
+  "cancel": "Cancel",
+  "save": "Save",
+  "saving": "Saving",
+  "filterAll": "All",
+  "exampleHint": "e.g. {value}",
+  "@exampleHint": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidNumber": "Enter a number, or leave this empty.",
+  "fieldRequired": "Required.",
+  "wholeNumberRequired": "Enter a whole number from 1.",
+  "everyDay": "Every day",
+  "weekdaysOnly": "Weekdays",
+  "navOverview": "Overview",
+  "navParticipants": "Participants",
+  "navVoiceSamples": "Voice samples",
+  "navPeople": "People",
+  "navLibrary": "Library",
+  "navSettings": "Settings",
+  "statusOnTrack": "On track",
+  "statusOnTrackAction": "Continue plan",
+  "statusPlateau": "Plateau",
+  "statusPlateauAction": "Review exercise selection or dosage",
+  "statusAdherenceProblem": "Adherence problem",
+  "statusAdherenceProblemAction": "Address practice barriers",
+  "statusNeedsReview": "Needs review",
+  "statusNeedsReviewAction": "Clinical check",
+  "statusImproving": "Improving despite low practice",
+  "statusImprovingAction": "Note for interpretation; may reflect in-clinic therapy",
+  "statusAwaitingProbe": "Awaiting probe analysis",
+  "statusAwaitingProbeAction": "No probe rating yet; voice analysis is not implemented",
+  "exerciseStatusPending": "Pending approval",
+  "exerciseStatusApproved": "Approved",
+  "exerciseStatusArchived": "Archived",
+  "verifySustained": "Sustained tone",
+  "verifyGlide": "Pitch glide",
+  "verifyNotes": "Sustained notes",
+  "verifyLoudness": "Loudness band",
+  "verifyChecklist": "Checklist only",
+  "analysisPending": "Analysis pending",
+  "accessPlayback": "Played recording",
+  "accessExport": "Exported data",
+  "caseload": "Caseload",
+  "participantsCount": "{count, plural, =1{participant} other{participants}}",
+  "@participantsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "caseloadAdherence": "Caseload adherence",
+  "prescribedSessionsWindow": "of prescribed sessions, last {days} days",
+  "@prescribedSessionsWindow": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "needsAttention": "Needs attention",
+  "allOnTrack": "Everyone on your caseload is on track.",
+  "flagRule": "Flagged when under {percent} of prescribed sessions are done over the last {days} days. A research admin sets this threshold.",
+  "@flagRule": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "latestRecordings": "Latest recordings",
+  "noRecordingsYet": "No recordings yet.",
+  "allVoiceSamples": "All voice samples",
+  "lowAdherence": "Low adherence",
+  "windowDays": "{days} days",
+  "@windowDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "lastExerciseNone": "No exercises done recently",
+  "lastExerciseToday": "Last exercise today",
+  "lastExerciseYesterday": "Last exercise yesterday",
+  "lastExerciseDaysAgo": "Last exercise {days} days ago",
+  "@lastExerciseDaysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "participantsTitle": "Participants",
+  "searchLabel": "Search",
+  "searchHint": "Name or participant code",
+  "noParticipantsTitle": "No participants yet",
+  "noParticipantsBody": "A research admin assigns participants to you.",
+  "noMatchesTitle": "No matches",
+  "noMatchesBody": "Nobody on your caseload matches \"{query}\".",
+  "@noMatchesBody": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "participantNotFoundTitle": "Participant not found",
+  "participantNotFoundBody": "This person is not on your caseload.",
+  "backToParticipants": "Back to participants",
+  "enrolledOn": "Enrolled {date}",
+  "@enrolledOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "statusTitle": "Status",
+  "samplesTitle": "Samples",
+  "probesComplete": "Probes complete",
+  "nextProbeOn": "Next probe {date}",
+  "@nextProbeOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "adherenceOverTime": "Adherence over time",
+  "assignedExercises": "Assigned exercises",
+  "noAssignments": "No exercises assigned yet.",
+  "assignExercise": "Assign exercise",
+  "assignmentSummary": "{weekdays}  ·  {sessions, plural, =1{once a day} other{{sessions} times a day}}  ·  {reps} reps",
+  "@assignmentSummary": {
+    "placeholders": {
+      "weekdays": {
+        "type": "String"
+      },
+      "sessions": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "adherenceTitle": "Adherence",
+  "last7Days": "Last 7 days",
+  "byExerciseWindow": "By exercise, last {days} days",
+  "@byExerciseWindow": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "exerciseSessions": "{weekdays}  ·  {done} of {due} sessions",
+  "@exerciseSessions": {
+    "placeholders": {
+      "weekdays": {
+        "type": "String"
+      },
+      "done": {
+        "type": "int"
+      },
+      "due": {
+        "type": "int"
+      }
+    }
+  },
+  "filterParticipant": "Participant",
+  "filterKind": "Kind",
+  "filterTask": "Task",
+  "filterType": "Type",
+  "recordingCount": "{shown} of {total} recordings",
+  "@recordingCount": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "noMatchingRecordingsTitle": "No matching recordings",
+  "noMatchingRecordingsBody": "Try a different participant, task or type.",
+  "editAssignmentTitle": "Edit assignment",
+  "allApprovedAssigned": "Every approved exercise is already assigned to this participant. New exercises need admin approval first.",
+  "daysSection": "Days",
+  "dosageSection": "Dosage",
+  "sessionsPerDayField": "Sessions per day",
+  "repsPerSessionField": "Repetitions per session",
+  "targetsSection": "Targets: {type}",
+  "@targetsSection": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "assignAction": "Assign",
+  "saveChanges": "Save changes",
+  "endAssignment": "End assignment",
+  "endAssignmentTitle": "End this assignment?",
+  "endAssignmentBody": "{exercise} will no longer be due from today. Past adherence for it is kept.",
+  "@endAssignmentBody": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      }
+    }
+  },
+  "changesFromToday": "Changes apply from today. Earlier days keep the dosage that was in force at the time.",
+  "targetDurationField": "Target duration (seconds)",
+  "targetPitchField": "Target pitch (Hz)",
+  "targetToleranceField": "Tolerance (cents)",
+  "targetRangeField": "Range to cover (semitones)",
+  "loudnessUnavailable": "Loudness bands need a calibrated microphone, so no target is set in this prototype.",
+  "checklistNoTarget": "Checklist exercises have no measurable target.",
+  "decrease": "Fewer",
+  "increase": "More",
+  "studyOverviewEyebrow": "Study overview",
+  "studyName": "Melo pilot",
+  "enrolled": "Enrolled",
+  "therapistCount": "{count, plural, =1{1 therapist} other{{count} therapists}}",
+  "@therapistCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overallAdherence": "Overall adherence",
+  "overallAdherenceCaption": "of prescribed sessions, last {days} days. {count} below {percent}.",
+  "@overallAdherenceCaption": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "statusMatrix": "Status matrix",
+  "statusMatrixNote": "Status combines adherence (high at or above {percent}) with the latest probe rating. Voice analysis is not implemented, so no probe has a rating and every participant is awaiting probe analysis.",
+  "@statusMatrixNote": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "participantsSection": "Participants",
+  "noEnrolledTitle": "No one enrolled yet",
+  "noEnrolledBody": "Add patients from the People tab.",
+  "peopleTitle": "People",
+  "patientsFilter": "Patients",
+  "therapistsFilter": "Therapists",
+  "addPatient": "Add patient",
+  "addTherapist": "Add therapist",
+  "noTherapistAssigned": "No therapist assigned",
+  "therapistNamed": "Therapist: {name}",
+  "@therapistNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reassign": "Reassign",
+  "assignPatientTo": "Assign {code} to",
+  "@assignPatientTo": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "patientCount": "{count, plural, =1{patient} other{patients}}",
+  "@patientCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noPeopleTitle": "No one here yet",
+  "noPeopleBody": "Accounts you create appear here.",
+  "fullName": "Full name",
+  "nameRequired": "Enter a name.",
+  "emailInvalid": "Enter a valid email address.",
+  "temporaryPassword": "Temporary password",
+  "passwordTooShort": "Use at least 8 characters.",
+  "passwordTooLong": "That password is too long.",
+  "therapistSection": "Therapist",
+  "participantCodeNote": "The next free participant code is assigned automatically. Only the code appears in exports and file names.",
+  "createAccount": "Create account",
+  "creatingAccount": "Creating",
+  "createdPatient": "Created {code} for {name}",
+  "@createdPatient": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "createdUser": "Created {name}",
+  "@createdUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "emailTaken": "An account with that email exists.",
+  "chooseTherapist": "Choose a therapist for the patient.",
+  "libraryTitle": "Exercise library",
+  "filterAllCount": "All ({count})",
+  "@filterAllCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusCount": "{status} ({count})",
+  "@statusCount": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newExercise": "New exercise",
+  "noExercisesTitle": "No exercises",
+  "noExercisesBody": "Nothing in the library matches this filter.",
+  "exerciseTitle": "Exercise",
+  "approvedOnBy": "Approved {date} by {name}",
+  "@approvedOnBy": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldName": "Name",
+  "fieldProgram": "Program",
+  "programHint": "e.g. Vocal Function Exercises",
+  "fieldSummary": "Summary",
+  "fieldSteps": "Steps, one per line",
+  "fieldMinutes": "Minutes",
+  "fieldReps": "Reps",
+  "fieldPerDay": "Per day",
+  "verificationSection": "Verification type",
+  "defaultDurationField": "Default duration (seconds)",
+  "defaultPitchField": "Default pitch (Hz)",
+  "defaultToleranceField": "Default tolerance (cents)",
+  "defaultRangeField": "Default range (semitones)",
+  "evidenceField": "Evidence source",
+  "evidenceHint": "Reference key, e.g. research doc 18.2",
+  "approvalWithdrawnNote": "Saving changes withdraws approval. Current assignments keep working, but the exercise cannot be assigned again until it is re-approved.",
+  "approveForAssignment": "Approve for assignment",
+  "archive": "Archive",
+  "restore": "Restore",
+  "savedPendingApproval": "Saved. {title} is pending approval.",
+  "@savedPendingApproval": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "exerciseApprovedToast": "{title} approved",
+  "@exerciseApprovedToast": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "exerciseArchivedToast": "{title} archived",
+  "@exerciseArchivedToast": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "exerciseRestoredToast": "{title} restored",
+  "@exerciseRestoredToast": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTitle": "Settings",
+  "adherenceThresholdSection": "Adherence threshold",
+  "adherenceThresholdHelp": "Patients below this share of prescribed sessions over 14 days are flagged, and count as low adherence in the status matrix. The research protocol suggests 80% until the expert panel confirms it.",
+  "probeScheduleSection": "Probe schedule",
+  "probeEvery": "After the baseline, one probe every",
+  "probeWeekly": "Week",
+  "probeFortnightly": "Two weeks",
+  "studyLength": "Study length",
+  "studyWeeksOption": "{count} weeks",
+  "@studyWeeksOption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "probeScheduleHelp": "The default follows the research protocol: baseline, weekly, and a final probe at week 4.",
+  "saveSettings": "Save settings",
+  "settingsSaved": "Settings saved",
+  "exportSection": "Export data",
+  "exportHelp": "CSV files that identify participants by code only, with no names, emails or audio. Free-text answers are included as written. Each export is recorded in the access log.",
+  "exportCompletions": "Completions",
+  "exportAssignments": "Assignments",
+  "exportRecordings": "Recording metadata",
+  "exportSaveTitle": "Save {file}",
+  "@exportSaveTitle": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "exportSaved": "Saved {file}",
+  "@exportSaved": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFailed": "The export could not be saved.",
+  "auditSection": "Audit",
+  "accessLogTitle": "Access log",
+  "accessLogEmptyTitle": "Nothing logged yet",
+  "accessLogEmptyBody": "Recording playback and data exports appear here as they happen.",
+  "accessLogShowing": "Showing the latest {count} entries. Entries cannot be edited or removed in the app.",
+  "@accessLogShowing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderNotificationTitle": "Time for your voice exercises",
+  "reminderNotificationBody": "Open Melo to see what is on today.",
+  "reminderChannelName": "Practice reminders",
+  "reminderChannelDescription": "Daily reminders to do your voice exercises",
+  "failureStorage": "Your information could not be read or saved. Please try again.",
+  "failureRecording": "The recording could not be saved. Please try again.",
+  "failurePlayback": "This recording could not be played.",
+  "failureReminder": "Reminders could not be scheduled. Check notification settings and try again.",
+  "exerciseNotApproved": "This exercise needs approval before it can be assigned.",
+  "failureSensor": "A sensor could not be started on this device.",
+  "sensorCheckOpen": "Sensor check (debug)",
+  "sensorCheckTitle": "Sensor check",
+  "sensorCheckNote": "Developer tool. Audio is analysed in memory and nothing on this screen is saved. Noise removal is for display only; saved recordings are never processed.",
+  "micDenied": "Microphone access is turned off. Allow it in your phone settings to use this check.",
+  "waveformTitle": "Mic, 1.5 s",
+  "waveRaw": "Raw input",
+  "waveSemantics": "Live waveform showing raw input and the denoised signal",
+  "levelTitle": "Level, 10 s",
+  "levelInput": "Input level",
+  "levelFloor": "Noise floor",
+  "levelSemantics": "Input level over time compared with the noise floor",
+  "noiseFloorLabel": "Noise floor",
+  "snrLabel": "Signal to noise",
+  "snrWaiting": "Make a sound",
+  "snrGood": "Good for analysis ({value} dB or more)",
+  "snrFair": "Usable, but quieter room advised",
+  "snrPoor": "Too noisy for voice measures (under {value} dB)",
+  "clippingLabel": "Clipping",
+  "clippingOk": "Within limit (under 0.1%)",
+  "clippingHigh": "Too loud, move the phone back",
+  "phonationLabel": "Held sound",
+  "phonationLongest": "Longest {seconds} s",
+  "@phonationLongest": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "decibels": "{value} dB",
+  "@decibels": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "decibelsFs": "{value} dBFS",
+  "@decibelsFs": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "seconds": "{value} s",
+  "@seconds": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "motionSection": "Motion",
+  "motionUnavailable": "This device does not report motion sensors.",
+  "motionStill": "Still",
+  "motionMoving": "Moving",
+  "gyroLabel": "Gyroscope",
+  "accelLabel": "Accelerometer",
+  "axisValues": "x {x}  y {y}  z {z}",
+  "@axisValues": {
+    "placeholders": {
+      "x": {
+        "type": "String"
+      },
+      "y": {
+        "type": "String"
+      },
+      "z": {
+        "type": "String"
+      }
+    }
+  },
+  "gyroSeries": "Gyroscope RMS",
+  "gyroThreshold": "Movement threshold",
+  "gyroSemantics": "Phone rotation over time against the movement threshold",
+  "orientationSection": "Orientation",
+  "pitchLabel": "Pitch",
+  "rollLabel": "Roll",
+  "degrees": "{value}°",
+  "@degrees": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "setReference": "Set as reference angle",
+  "referenceNone": "Hold the phone in the recording position and set it as the reference.",
+  "referenceOk": "Within {limit}° of the reference ({value}° off)",
+  "@referenceOk": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "referenceOff": "{value}° away from the reference angle",
+  "@referenceOff": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "proximitySection": "Proximity",
+  "proximityNear": "Near",
+  "proximityFar": "Clear",
+  "proximityUnavailable": "This device has no proximity sensor.",
+  "proximityHint": "Too close to the mouth adds bass and breath noise; keep it 10 to 15 cm away.",
+  "liveLabel": "Live",
+  "offLabel": "Off",
+  "micStarting": "Starting microphone",
+  "unitGyroRms": "RMS, rad/s",
+  "unitAccelRms": "RMS, m/s²",
+  "@snrGood": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@snrPoor": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "waveClean": "After noise removal",
+  "voiceDetected": "Voice detected, noise learning paused",
+  "backgroundOnly": "Background only, learning the noise",
+  "levelVoiceThreshold": "Voice threshold",
+  "spectrumTitle": "Spectrum",
+  "spectrumInput": "Input",
+  "spectrumNoise": "Learned noise",
+  "spectrumSemantics": "Frequency spectrum of the input, the learned noise and the denoised signal",
+  "spectrumNote": "Log-MMSE noise removal turns each frequency band down by how far it sits above the learned noise, so noise between voice harmonics drops while the voice passes.",
+  "hertz": "{value} Hz",
+  "@hertz": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "noiseTypesTitle": "Noise types",
+  "noiseLearning": "Listening to the background. Stay quiet for a few seconds.",
+  "noiseFoundCount": "{count} found",
+  "@noiseFoundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noiseRumble": "Rumble",
+  "noiseRumbleHint": "Below 100 Hz: traffic, handling, wind",
+  "noiseHum": "Mains hum",
+  "noiseHumHint": "50 or 60 Hz electrical hum",
+  "noiseTone": "Tonal whine",
+  "noiseToneHint": "Steady tone: fan, fridge, electronics",
+  "noiseBroadband": "Broadband hiss",
+  "noiseBroadbandHint": "Even across frequencies: fan, AC, airflow",
+  "noiseFluctuating": "Fluctuating",
+  "noiseFluctuatingHint": "Changing level: TV, voices, traffic",
+  "noiseTransient": "Clicks and knocks",
+  "noiseTransientHint": "Short bursts in the last {seconds} s",
+  "@noiseTransientHint": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "noiseShare": "{percent} of noise",
+  "@noiseShare": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "noisePeak": "{frequency} Hz, +{prominence} dB",
+  "@noisePeak": {
+    "placeholders": {
+      "frequency": {
+        "type": "String"
+      },
+      "prominence": {
+        "type": "String"
+      }
+    }
+  },
+  "noiseBands": "{count} of {total} bands",
+  "@noiseBands": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "noiseSpread": "±{value} dB",
+  "@noiseSpread": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "noneLabel": "None",
+  "foundLabel": "Found",
+  "cleanSnrLabel": "SNR after cleaning",
+  "cleanSnrCaption": "Display only; analysis uses raw audio",
+  "noiseRemovedLabel": "Noise removed",
+  "noiseRemovedCaption": "Background level lowered by",
+  "takeQualityChecking": "Checking the recording",
+  "takeQualityGood": "Good recording",
+  "takeQualityGoodBody": "Clear voice and a quiet background.",
+  "takeQualityAcceptable": "Usable recording",
+  "takeQualityAcceptableBody": "A quieter room would make it clearer next time.",
+  "takeQualityPoor": "This take may not be usable",
+  "takeQualityPoorBody": "Your therapist may not be able to measure it. Recording again is best.",
+  "takeIssueNoVoice": "We could not hear your voice. Check nothing is covering the microphone and speak at your normal level.",
+  "takeIssueNoisy": "There is a lot of background noise. Move somewhere quieter, away from fans, traffic and TV.",
+  "takeIssueClipped": "The sound was too loud and distorted. Hold the phone a little further from your mouth.",
+  "takeIssueMoved": "The phone moved during the take. Rest it on a table or hold it still.",
+  "takeQualitySnr": "Signal to noise {value} dB",
+  "@takeQualitySnr": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "recordKeepAnyway": "Keep anyway",
+  "clearLabel": "Clear",
+  "consentRequired": "Confirm that the information sheet was given and enter the date the consent form was signed.",
+  "learnTitle": "Learn",
+  "learnIntro": "How to use the app, how to practise, and how to look after your voice.",
+  "learnAppTitle": "Using the app",
+  "learnAppSummary": "A short tour of each tab.",
+  "learnApp1": "Home shows today's sessions, your streak, your next reminder and any questionnaire that is due.",
+  "learnApp2": "Exercises lists what your therapist prescribed for today. Open an exercise to read its steps.",
+  "learnApp3": "Tick one box for each session you finish. Mark a session only after you have done it. Your therapist sees the same record.",
+  "learnApp4": "Record is for the voice recordings your therapist asks for: a baseline before you start, follow-ups during the study, and practice takes whenever you like.",
+  "learnApp5": "Progress shows how many of your prescribed sessions you completed, by day or by week.",
+  "learnApp6": "Profile is where you set reminder times and sign out.",
+  "learnApp7": "Short questionnaires appear on Home when they are due. Each takes one to five minutes.",
+  "learnPracticeTitle": "Practising at home",
+  "learnPracticeSummary": "Why regular practice matters and how to fit it in.",
+  "learnPractice1": "Short, regular practice helps more than one long session.",
+  "learnPractice2": "Practise at the times your therapist set. If you have more than one session a day, spread them out.",
+  "learnPractice3": "Keep the sound easy. Exercises should feel comfortable, never forced.",
+  "learnPractice4": "Stop if an exercise hurts or makes your voice worse, and tell your therapist.",
+  "learnPractice5": "If you miss a day, start again the next day. Do not double up to catch up.",
+  "learnPracticeNote": "Your therapist's instructions always come first.",
+  "learnVoiceCareTitle": "Caring for your voice",
+  "learnVoiceCareSummary": "Everyday habits that protect your voice.",
+  "learnVoiceCare1": "Drink water through the day, unless your doctor has told you to limit fluids.",
+  "learnVoiceCare2": "Avoid shouting, screaming and talking over loud noise.",
+  "learnVoiceCare3": "Rest your voice when it feels tired.",
+  "learnVoiceCare4": "Swallow or take a sip of water instead of clearing your throat.",
+  "learnVoiceCare5": "Whispering strains the voice too. Use a soft, easy voice instead.",
+  "learnVoiceCare6": "Avoid smoking and smoky places.",
+  "learnVoiceCare7": "Limit caffeine and alcohol, which can dry your throat.",
+  "learnVoiceCareNote": "This is general advice. Where your therapist's advice differs, follow theirs.",
+  "learnStudyTitle": "About this study",
+  "learnStudySummary": "What the study is and what happens to your data.",
+  "learnStudy1": "This study looks at whether an app helps people keep up their voice exercises at home for four weeks, alongside their usual voice therapy.",
+  "learnStudy2": "The app keeps a record of the sessions you mark as done, when you use the app, your voice recordings and your questionnaire answers.",
+  "learnStudy3": "Everything is stored encrypted on this phone. The app sends nothing over the internet.",
+  "learnStudy4": "Your therapist and the research team see your records. Data used for analysis carries your participant code, never your name.",
+  "learnStudy5": "Taking part is voluntary. You can stop at any time without it affecting your care. Tell your therapist if you want to withdraw.",
+  "learnStudy6": "Your therapist gave you the full Participant Information Sheet. Ask them if anything is unclear.",
+  "taskBaselineReport": "Your practice before starting",
+  "taskWeeklyReport": "Your practice in week {week}",
+  "@taskWeeklyReport": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "taskUsability": "How easy is the app to use?",
+  "taskFeedback": "Your feedback on the app",
+  "taskOneMinute": "About 1 minute",
+  "taskTwoMinutes": "About 2 minutes",
+  "taskFiveMinutes": "About 5 minutes",
+  "barrierNone": "Nothing, I practised as planned",
+  "barrierForgot": "I forgot",
+  "barrierNoTime": "Not enough time",
+  "barrierDiscomfort": "My voice or throat felt uncomfortable",
+  "barrierUnsure": "I was unsure how to do the exercises",
+  "barrierFeltBetter": "My voice felt better, so I stopped",
+  "barrierOther": "Something else",
+  "sus1": "I think that I would like to use this app frequently.",
+  "sus2": "I found the app unnecessarily complex.",
+  "sus3": "I thought the app was easy to use.",
+  "sus4": "I think that I would need the support of a technical person to be able to use this app.",
+  "sus5": "I found the various functions in this app were well integrated.",
+  "sus6": "I thought there was too much inconsistency in this app.",
+  "sus7": "I would imagine that most people would learn to use this app very quickly.",
+  "sus8": "I found the app very cumbersome to use.",
+  "sus9": "I felt very confident using the app.",
+  "sus10": "I needed to learn a lot of things before I could get going with this app.",
+  "feedbackReminders": "The reminders helped me remember to practise.",
+  "feedbackSchedule": "My daily practice schedule was clear.",
+  "feedbackInstructions": "The exercise instructions were easy to understand.",
+  "feedbackChecklist": "Marking sessions as done was easy.",
+  "feedbackProgress": "Seeing my progress encouraged me to keep practising.",
+  "feedbackRecording": "Recording my voice was easy.",
+  "feedbackPrivacy": "I was comfortable with how the app stores my recordings.",
+  "feedbackOverall": "Overall, I am satisfied with the app.",
+  "feedbackContinue": "I would like to keep using the app after the study.",
+  "agreeStronglyDisagree": "Strongly disagree",
+  "agreeDisagree": "Disagree",
+  "agreeNeutral": "Neither agree nor disagree",
+  "agreeAgree": "Agree",
+  "agreeStronglyAgree": "Strongly agree",
+  "genderFemale": "Female",
+  "genderMale": "Male",
+  "genderOther": "Another gender",
+  "genderUndisclosed": "Prefer not to say",
+  "educationNone": "No formal education",
+  "educationPrimary": "Primary",
+  "educationSecondary": "Secondary",
+  "educationHigherSecondary": "Higher secondary",
+  "educationGraduate": "Graduate",
+  "educationPostgraduate": "Postgraduate",
+  "voiceUseElite": "Elite vocal performer",
+  "voiceUseProfessional": "Professional voice user",
+  "voiceUseNonVocalProfessional": "Non-vocal professional",
+  "voiceUseNonVocal": "Non-vocal, non-professional",
+  "smokingNever": "Never smoked",
+  "smokingFormer": "Former smoker",
+  "smokingCurrent": "Current smoker",
+  "ratingFully": "Fully",
+  "ratingMostly": "Mostly",
+  "ratingPartly": "Partly",
+  "ratingNotAtAll": "Not at all",
+  "usageSignIn": "Signed in",
+  "usageSignOut": "Signed out",
+  "usageExerciseOpened": "Opened exercise instructions",
+  "usageEducationOpened": "Read a Learn topic",
+  "usageSessionMarked": "Marked a session done",
+  "usageSessionUndone": "Undid a session",
+  "usageRecordingSaved": "Saved a recording",
+  "usageQuestionnaireSubmitted": "Submitted a questionnaire",
+  "usageRemindersChanged": "Changed reminders",
+  "chooseDate": "Choose a date",
+  "likertAnchors": "1 = strongly disagree, 5 = strongly agree",
+  "answerRequired": "Answer this question.",
+  "questionsUnanswered": "{count, plural, =1{1 question still needs an answer.} other{{count} questions still need an answer.}}",
+  "@questionsUnanswered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitAnswers": "Submit answers",
+  "submitting": "Submitting",
+  "questionnaireThanks": "Thank you. Your answers are saved.",
+  "dayCount": "{count, plural, =0{No days} =1{1 day} other{{count} days}}",
+  "@dayCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selfReportBaselineIntro": "Before you start using the app, tell us about your home practice so far. There are no right or wrong answers.",
+  "selfReportWeeklyIntro": "Think about the last 7 days, including any practice you did not mark in the app. Honest answers help your therapist support you.",
+  "selfReportDaysQuestion": "In the last 7 days, on how many days did you do the voice exercises your therapist gave you?",
+  "selfReportBarrierQuestion": "What most often got in the way of your practice?",
+  "selfReportNoteLabel": "Anything else you want to tell your therapist (optional)",
+  "usabilityIntro": "Rate each statement about the app. Go with your first reaction and answer every one.",
+  "feedbackIntro": "Your views will help improve the app. Rate each statement, then add any comments in your own words.",
+  "feedbackOpenSection": "In your own words (optional)",
+  "feedbackLikedLabel": "What did you like most about the app?",
+  "feedbackDifficultLabel": "What was difficult or frustrating?",
+  "feedbackSuggestLabel": "What would you change or add?",
+  "homeTasksTitle": "Questionnaires due",
+  "homeTasksBody": "Your answers are part of the study. They stay on this phone.",
+  "homeLearnSubtitle": "Using the app, practising at home and caring for your voice",
+  "profileLearnLink": "Guides and study information",
+  "learnNotFoundTitle": "Topic not found",
+  "learnNotFoundBody": "This guide is not available. Go back to Learn to see every topic.",
+  "studySection": "Study",
+  "studyRates": "Adherence {adherence} · Compliance {compliance}",
+  "@studyRates": {
+    "placeholders": {
+      "adherence": {
+        "type": "String"
+      },
+      "compliance": {
+        "type": "String"
+      }
+    }
+  },
+  "assessmentProgress": "Baseline {baselineDone} of {baselineTotal} done · Follow-up {followUpDone} of {followUpTotal} done",
+  "@assessmentProgress": {
+    "placeholders": {
+      "baselineDone": {
+        "type": "int"
+      },
+      "baselineTotal": {
+        "type": "int"
+      },
+      "followUpDone": {
+        "type": "int"
+      },
+      "followUpTotal": {
+        "type": "int"
+      }
+    }
+  },
+  "studyRecordTitle": "Study record",
+  "studyRecordSaved": "Study record saved.",
+  "studyRecordIncomplete": "Some required answers are missing. They are marked above.",
+  "saveStudyRecord": "Save study record",
+  "consentSection": "Consent",
+  "infoSheetProvided": "Participant Information Sheet given and explained",
+  "infoSheetRequired": "Confirm the information sheet was given.",
+  "consentSignedLabel": "Written consent form signed on",
+  "dateRequired": "Choose a date.",
+  "chooseOne": "Choose one.",
+  "interventionSection": "Intervention",
+  "interventionStartLabel": "First day of app use",
+  "interventionStartHelp": "The study weeks, weekly questionnaires and probe recordings are counted from this day.",
+  "orientationLabel": "Orientation to the app given on",
+  "demographicsSection": "Demographic information",
+  "ageLabel": "Age in years",
+  "ageInvalid": "Enter an age between 1 and 120.",
+  "genderTitle": "Gender",
+  "educationTitle": "Highest education",
+  "occupationLabel": "Occupation",
+  "voiceUseTitle": "Voice use",
+  "languageLabel": "Primary language",
+  "clinicalSection": "Clinical details",
+  "diagnosisLabel": "Diagnosis",
+  "diagnosisHint": "As recorded after laryngeal examination",
+  "symptomMonthsLabel": "Duration of voice problem in months",
+  "monthsInvalid": "Enter a whole number of months.",
+  "smokingTitle": "Smoking",
+  "laryngoscopyLabel": "Laryngeal examination on (optional)",
+  "therapyStartLabel": "Voice therapy started on (optional)",
+  "clinicSessionsLabel": "In-clinic therapy sessions per week (optional)",
+  "sessionsInvalid": "Enter a whole number from 0 to 14.",
+  "otherConditionsLabel": "Other relevant conditions (optional)",
+  "otherConditionsHint": "For example reflux, asthma or hearing loss",
+  "withdrawalSection": "Withdrawal",
+  "withdrawalHelp": "Record withdrawal if the participant leaves the study. Their data so far is kept, and the app stops asking them for questionnaires.",
+  "recordWithdrawal": "Record withdrawal",
+  "withdrawalReasonLabel": "Reason given",
+  "withdrawnOn": "Withdrawn on {date}",
+  "@withdrawnOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "phaseNotStarted": "Starts using the app on {date}",
+  "@phaseNotStarted": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "phaseEnded": "Intervention ended on {date}",
+  "@phaseEnded": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "phaseWeek": "Week {week} of {weeks}",
+  "@phaseWeek": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      },
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "assessmentTitle": "Assessment and monitoring",
+  "baselineSection": "Baseline assessment",
+  "baselineConsent": "Information sheet and written consent",
+  "baselineDemographics": "Demographic information",
+  "baselineClinical": "Clinical details",
+  "baselineAdherence": "Baseline adherence self-report",
+  "baselineOrientation": "Orientation to the app",
+  "baselineRecording": "Baseline voice recording",
+  "baselineReportSummary": "Before the app: practised on {days} of 7 days. Main barrier: {barrier}.",
+  "@baselineReportSummary": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "barrier": {
+        "type": "String"
+      }
+    }
+  },
+  "editStudyRecord": "Edit study record",
+  "studyAdherence": "Adherence",
+  "studyCompliance": "Compliance",
+  "sessionsOf": "{done} of {due} sessions",
+  "@sessionsOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "due": {
+        "type": "int"
+      }
+    }
+  },
+  "daysOf": "{done} of {total} days at full dose",
+  "@daysOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "outcomeDefinitions": "Adherence is completed sessions divided by prescribed sessions. Compliance is the share of prescribed days on which every prescribed session was done that day. Both count finished days of the intervention only.",
+  "weekLabel": "Week {week}",
+  "@weekLabel": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "sourceAppLog": "App log",
+  "sourceFullDose": "Full-dose days",
+  "sourceRecordings": "Practice recordings",
+  "sourceSelfReport": "Self-report",
+  "sourceTherapist": "Therapist",
+  "notScoredYet": "Not scored yet",
+  "notSubmitted": "Not submitted",
+  "sessionsOfPercent": "{done} of {due} sessions ({percent})",
+  "@sessionsOfPercent": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "due": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "daysOfPercent": "{done} of {total} days ({percent})",
+  "@daysOfPercent": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "selfReportValue": "{days} of 7 days. {barrier}",
+  "@selfReportValue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "barrier": {
+        "type": "String"
+      }
+    }
+  },
+  "selfReportNoteShort": "Participant note",
+  "selfReportMissing": "No self-report for this week yet.",
+  "monitoringSummary": "Practice: {practice}. Schedule: {schedule}. Technique: {technique}.",
+  "@monitoringSummary": {
+    "placeholders": {
+      "practice": {
+        "type": "String"
+      },
+      "schedule": {
+        "type": "String"
+      },
+      "technique": {
+        "type": "String"
+      }
+    }
+  },
+  "addMonitoringForm": "Add monitoring form",
+  "addAnotherMonitoringForm": "Add another monitoring form",
+  "checklistDone": "Done",
+  "checklistToDo": "To do",
+  "followUpSection": "Follow-up assessment",
+  "followUpAdherence": "Adherence over the intervention",
+  "followUpCompliance": "Compliance over the intervention",
+  "followUpUsability": "Usability questionnaire",
+  "followUpFeedback": "Satisfaction feedback",
+  "followUpRecording": "Post-intervention voice recording",
+  "followUpNotSubmitted": "The participant has not submitted the follow-up questionnaires yet. They open on the last day of the intervention.",
+  "susScoreLabel": "System Usability Scale score (0 to 100)",
+  "satisfactionLabel": "Satisfaction",
+  "meanOutOfFive": "{value} of 5",
+  "@meanOutOfFive": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "monitoringFormTitle": "Monitoring form",
+  "monitoringReference": "For reference this week",
+  "monitoringPracticeQuestion": "Did the participant complete the prescribed exercises?",
+  "monitoringScheduleQuestion": "Did they keep to the recommended frequency and schedule?",
+  "monitoringTechniqueQuestion": "Were the exercises done as instructed when reviewed?",
+  "monitoringBarriersLabel": "Barriers discussed (optional)",
+  "monitoringNotesLabel": "Notes (optional)",
+  "saveMonitoringForm": "Save monitoring form",
+  "monitoringSaved": "Monitoring form saved.",
+  "usageLogTitle": "Usage log",
+  "usageEmptyTitle": "No app use recorded",
+  "usageEmptyBody": "Sign-ins, exercise views, completed sessions, recordings and questionnaires appear here as the participant uses the app.",
+  "usageActiveDays": "Days with app use",
+  "usageLastUsed": "Last used",
+  "usageEventsSection": "{count, plural, =1{1 event} other{{count} events}}",
+  "@usageEventsSection": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recruitmentSection": "Recruitment",
+  "approachedLabel": "Eligible people approached",
+  "approachedHelp": "Everyone invited to take part, whether or not they enrolled. The recruitment rate is enrolled participants divided by this number.",
+  "exportParticipants": "Demographic and clinical information",
+  "exportOutcomes": "Outcome measures per participant",
+  "exportSelfReports": "Participant self-reports",
+  "exportMonitoring": "Adherence and compliance monitoring forms",
+  "exportUsability": "Usability questionnaire",
+  "exportFeedback": "Satisfaction feedback and comments",
+  "exportUsageLog": "Application usage log",
+  "outcomesTitle": "Study outcomes",
+  "outcomesIntro": "Calculated from the app's records for every enrolled participant. Export the same data from Settings for analysis.",
+  "outcomesLinkBody": "Adherence, compliance, feasibility, usability and satisfaction",
+  "outcomesLinkSummary": "Retention {retention} · App usage completion {usage}",
+  "@outcomesLinkSummary": {
+    "placeholders": {
+      "retention": {
+        "type": "String"
+      },
+      "usage": {
+        "type": "String"
+      }
+    }
+  },
+  "primaryOutcomes": "Primary outcomes",
+  "secondaryOutcomes": "Secondary outcomes",
+  "feasibilitySection": "Feasibility",
+  "atOrAboveThreshold": "Participants at or above the adherence threshold",
+  "recruitmentRate": "Recruitment rate",
+  "retentionRate": "Retention rate",
+  "usageCompletionRate": "App usage completion",
+  "feasibilityCounts": "{enrolled} enrolled, {completed} completed the intervention, {withdrawn} withdrawn.",
+  "@feasibilityCounts": {
+    "placeholders": {
+      "enrolled": {
+        "type": "int"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "withdrawn": {
+        "type": "int"
+      }
+    }
+  },
+  "feasibilityDefinitions": "Recruitment: enrolled over approached. Retention: enrolled participants who have not withdrawn. App usage completion: participants who marked practice in every study week, out of those whose intervention has ended (withdrawals count as not completing).",
+  "satisfactionScaleLabel": "Satisfaction, mean rating (1 to 5)",
+  "prePostSection": "Self-reported practice, baseline and week 4",
+  "prePostHelp": "Practice days in the previous week as a percentage, for participants with both the baseline and final-week self-report. Use the t-test when the differences look normally distributed, otherwise the Wilcoxon signed-rank test.",
+  "prePostBefore": "Baseline",
+  "prePostAfter": "Final study week",
+  "pairedTTest": "Paired t-test",
+  "wilcoxonTest": "Wilcoxon signed-rank test",
+  "testNotComputable": "Needs at least two pairs with some variation.",
+  "tTestResult": "Mean change {difference} points, t = {t}, df = {df}, p = {p} (two-sided)",
+  "@tTestResult": {
+    "placeholders": {
+      "difference": {
+        "type": "String"
+      },
+      "t": {
+        "type": "String"
+      },
+      "df": {
+        "type": "int"
+      },
+      "p": {
+        "type": "String"
+      }
+    }
+  },
+  "wilcoxonResult": "W+ = {wPlus}, W- = {wMinus}, n = {n}, p = {p} (two-sided, {method})",
+  "@wilcoxonResult": {
+    "placeholders": {
+      "wPlus": {
+        "type": "String"
+      },
+      "wMinus": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "p": {
+        "type": "String"
+      },
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "pExact": "exact",
+  "pApproximate": "normal approximation",
+  "voiceMeasuresNote": "Acoustic voice measures are not computed in the app yet, because voice analysis is a placeholder. Once baseline and post-intervention measures exist, compare them with the same paired tests.",
+  "noDataYet": "No data yet",
+  "notEntered": "Not entered",
+  "meanSd": "Mean {mean} (SD {sd})",
+  "@meanSd": {
+    "placeholders": {
+      "mean": {
+        "type": "String"
+      },
+      "sd": {
+        "type": "String"
+      }
+    }
+  },
+  "medianN": "Median {median}, n = {n}",
+  "@medianN": {
+    "placeholders": {
+      "median": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "proportionValue": "{percent} ({count} of {total})",
+  "@proportionValue": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "verifyVoiceDiary": "Voice-use diary",
+  "voiceDiaryNoTarget": "No targets. The patient completes each session by filling in the voice-use diary: speaking time, vocal fatigue and situations that increased effort.",
+  "cautionTitle": "Caution",
+  "cautionShort": "Caution applies",
+  "therapistInstructions": "Your therapist's instructions",
+  "aboutProgram": "About {program}",
+  "@aboutProgram": {
+    "placeholders": {
+      "program": {
+        "type": "String"
+      }
+    }
+  },
+  "instructionsField": "Instructions for this patient (optional)",
+  "instructionsFieldRequired": "Instructions for this patient",
+  "instructionsHint": "For example the syllables, words, water depth or care plan to use",
+  "instructionsHelp": "Shown to the patient with the exercise.",
+  "instructionsRequired": "This exercise depends on material you choose. Write the patient's instructions.",
+  "fieldProgramNote": "Program note (optional)",
+  "fieldProgramNoteHint": "The program's purpose or how it is used",
+  "fieldCaution": "Caution (optional)",
+  "fieldCautionHint": "A safety note shown to therapists and patients",
+  "fieldNeedsInstructions": "Needs instructions from the therapist",
+  "fieldNeedsInstructionsHelp": "Therapists must write per-patient instructions, such as chosen syllables or water depth, before assigning.",
+  "exportVoiceDiary": "Voice-use diary",
+  "voiceDiaryTitle": "Voice-use diary",
+  "voiceDiaryIntro": "Think about how you used your voice today. Your answers help you and your therapist spot what strains your voice.",
+  "voiceDiarySpeakingQuestion": "About how long did you speak today?",
+  "speakingUnderOne": "Under 1 hour",
+  "speakingOneToTwo": "1 to 2 hours",
+  "speakingTwoToFour": "2 to 4 hours",
+  "speakingFourToSix": "4 to 6 hours",
+  "speakingOverSix": "Over 6 hours",
+  "voiceDiaryFatigueQuestion": "How tired does your voice feel?",
+  "voiceDiaryFatigueAnchors": "0 = not tired at all, 10 = as tired as it could be",
+  "fatigueSemantic": "Vocal fatigue {value} out of 10",
+  "@fatigueSemantic": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "voiceDiarySituationsQuestion": "What made your voice work harder today?",
+  "chooseAllThatApply": "Choose all that apply, or none.",
+  "situationPhone": "Phone calls",
+  "situationNoise": "Noisy places",
+  "situationWork": "Speaking at work",
+  "situationConversation": "Long conversations",
+  "situationSinging": "Singing",
+  "situationOther": "Something else",
+  "voiceDiaryNoteLabel": "Anything else about your voice today (optional)",
+  "voiceDiarySave": "Save diary entry",
+  "voiceDiarySaved": "Diary entry saved. Session marked as done.",
+  "voiceDiaryOpen": "Fill in today's diary",
+  "voiceDiaryNothingDueTitle": "No diary entry due",
+  "voiceDiaryNothingDueBody": "This exercise is not due today, or today's sessions are already done.",
+  "voiceDiarySummary": "Spoke {speakingTime}. Fatigue {fatigue} of 10.",
+  "@voiceDiarySummary": {
+    "placeholders": {
+      "speakingTime": {
+        "type": "String"
+      },
+      "fatigue": {
+        "type": "int"
+      }
+    }
+  },
+  "chooseExercisesHint": "Tick every exercise you want to assign. You set the days and dosage on the next step.",
+  "exercisesSelected": "{count, plural, =1{1 exercise selected} other{{count} exercises selected}}",
+  "@exercisesSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "continueAction": "Continue",
+  "assigning": "Assigning",
+  "configureExercises": "{count, plural, =1{Set the dosage for 1 exercise} other{Set the dosage for {count} exercises}}",
+  "@configureExercises": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "changeSelection": "Change selection",
+  "daysApplyToAll": "These days apply to every exercise below. You can change them per exercise later.",
+  "exercisesAssigned": "{count, plural, =1{1 exercise assigned.} other{{count} exercises assigned.}}",
+  "@exercisesAssigned": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fixFieldsFor": "Check {exercises}",
+  "@fixFieldsFor": {
+    "placeholders": {
+      "exercises": {
+        "type": "String"
+      }
+    }
+  },
+  "practiceUpNext": "Up next",
+  "practiceReady": "Ready when you are",
+  "practiceComplete": "Practice complete",
+  "practiceStart": "Start exercise",
+  "practiceMarkDone": "Mark done",
+  "practiceMarkSession": "Mark session {number}",
+  "@practiceMarkSession": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "practiceLogDiary": "Log voice use",
+  "practiceCompleted": "Completed",
+  "practiceMinutes": "{minutes} min",
+  "@practiceMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "practiceRepetitions": "{reps} reps",
+  "@practiceRepetitions": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "practiceSessionProgress": "{done} of {total} sessions",
+  "@practiceSessionProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "practiceRemainingTime": "About {minutes} min of practice left",
+  "@practiceRemainingTime": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "practiceAllDone": "All your scheduled sessions are done for today.",
+  "practiceOpenNamed": "Open {exercise}",
+  "@practiceOpenNamed": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      }
+    }
+  },
+  "practiceUndoNamed": "Undo session {number} for {exercise}",
+  "@practiceUndoNamed": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "exercise": {
+        "type": "String"
+      }
+    }
+  },
+  "practiceDayStatus": "{date}: {done} of {due} sessions",
+  "@practiceDayStatus": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "done": {
+        "type": "int"
+      },
+      "due": {
+        "type": "int"
+      }
+    }
+  },
+  "practiceDayRest": "{date}: rest day",
+  "@practiceDayRest": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "connectedWorking": "Please wait…",
+  "connectedStartupFailed": "The connected workspace could not be opened. Check the server address and this phone's secure storage, then restart the app.",
+  "connectedSignInTitle": "Welcome back.",
+  "connectedRegisterTitle": "Create your account",
+  "connectedAccessIntro": "Your practice syncs with your care team whenever you are online.",
+  "connectedRolePatient": "Patient",
+  "connectedRoleTherapist": "Therapist",
+  "connectedName": "Full name",
+  "connectedClinic": "Clinic",
+  "connectedRegistrationNumber": "Registration number",
+  "connectedPasswordRule": "Use at least 10 characters.",
+  "connectedFieldRequired": "This field is required.",
+  "connectedEmailInvalid": "Enter a valid email address.",
+  "connectedCreateAccount": "Create account",
+  "connectedHaveAccount": "Already registered? Sign in",
+  "connectedNeedAccount": "New here? Create an account",
+  "connectedTherapistRegistered": "Registration submitted. An administrator must approve it before you can sign in.",
+  "connectedPatientRegistered": "Account created. Sign in to read and sign your consent.",
+  "connectedSetPinTitle": "Protect your patient records",
+  "connectedUnlockTitle": "Unlock your workspace",
+  "connectedPinIntro": "Use a 4 to 6 digit PIN for this account on this phone.",
+  "connectedPin": "PIN",
+  "connectedConfirmPin": "Confirm PIN",
+  "connectedPinLength": "Enter 4 to 6 digits.",
+  "connectedPinMismatch": "The PINs do not match.",
+  "connectedEnableBiometrics": "Unlock with fingerprint or face",
+  "connectedSavePin": "Save PIN",
+  "connectedUnlock": "Unlock",
+  "connectedUnlockBiometrics": "Use biometrics",
+  "connectedBiometricReason": "Unlock your Melo workspace",
+  "connectedForgotPin": "Forgot PIN? Verify your account",
+  "connectedBackToPin": "Back to PIN",
+  "connectedRecoverPassword": "Account password",
+  "connectedRecoverHint": "Needs an internet connection. You then choose a new PIN.",
+  "connectedVerifyAccount": "Verify account",
+  "connectedRefresh": "Refresh and sync",
+  "connectedLock": "Lock",
+  "connectedAccount": "Account",
+  "connectedGreeting": "Hello, {name}",
+  "@connectedGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectedTherapistIntro": "Your patients at a glance.",
+  "connectedPatientIntro": "A little practice makes a meaningful difference.",
+  "connectedOutbox": "{count, plural, =1{1 item is saved on this phone and waiting to sync.} other{{count} items are saved on this phone and waiting to sync.}}",
+  "@connectedOutbox": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connectedSyncNow": "Sync now",
+  "connectedSyncing": "Syncing…",
+  "connectedNoPatientsTitle": "No patients yet",
+  "connectedNoPatientsMessage": "Your administrator assigns patients from the dashboard.",
+  "connectedConsentMissing": "No consent",
+  "connectedConsentPending": "Consent to review",
+  "connectedConsentApproved": "Consent approved",
+  "connectedActiveDays": "{count, plural, =1{1 practice day this week} other{{count} practice days this week}}",
+  "@connectedActiveDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connectedNotLoadedTitle": "Not connected yet",
+  "connectedNotLoadedMessage": "Connect to the internet to load your record.",
+  "connectedRetry": "Retry",
+  "connectedConsentNeededTitle": "Before we begin",
+  "connectedConsentNeededMessage": "Read the study information and sign your consent.",
+  "connectedReadConsent": "Read and sign consent",
+  "connectedNextStepTitle": "Your next step",
+  "connectedWaitingTherapist": "An administrator will assign your therapist.",
+  "connectedWaitingPlan": "Your therapist will review your consent and prepare your plan.",
+  "connectedSessionsPerDay": "{count, plural, =1{1 session a day} other{{count} sessions a day}}",
+  "@connectedSessionsPerDay": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connectedLogPractice": "Log practice",
+  "connectedRecordPractice": "Record practice",
+  "connectedProgressTitle": "Your progress",
+  "connectedProgressSummary": "{sessions} sessions synced, {minutes} minutes of practice",
+  "@connectedProgressSummary": {
+    "placeholders": {
+      "sessions": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "connectedTherapistFeedback": "Therapist feedback",
+  "connectedPracticeSaved": "Practice saved.",
+  "connectedLogPracticeTitle": "How long did you practise?",
+  "connectedMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@connectedMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connectedFewerMinutes": "One minute less",
+  "connectedMoreMinutes": "One minute more",
+  "connectedSavePractice": "Save practice",
+  "connectedConsentTitle": "Your consent",
+  "connectedStudyInformation": "Study information",
+  "connectedConsentUnavailable": "Connect to the internet to load the consent document.",
+  "connectedConsentAdult": "I confirm I am 18 or older.",
+  "connectedConsentParticipation": "I have read the information and agree to take part.",
+  "connectedConsentDataSharing": "I agree to store and share my data with my assigned care team.",
+  "connectedConsentAnalysis": "I agree to anonymised analysis of my data.",
+  "connectedRequired": "Required",
+  "connectedOptional": "Optional",
+  "connectedSignHeading": "Draw your signature",
+  "connectedSignHint": "Tick every required statement before signing.",
+  "connectedSubmitConsent": "Submit consent",
+  "connectedRedraw": "Redraw",
+  "connectedRecordTitle": "Record practice",
+  "connectedRecordIntro": "Follow your therapist's instructions. A take can last up to two minutes.",
+  "connectedStartRecording": "Start recording",
+  "connectedStopAndSave": "Stop and save",
+  "connectedRetrySave": "Try saving again",
+  "connectedSaving": "Saving…",
+  "connectedRecordQueued": "If the server cannot be reached, the recording stays encrypted on this phone and uploads later.",
+  "connectedRecordingNow": "Recording",
+  "connectedPatientTitle": "Patient",
+  "connectedPatientLoadFailed": "This patient could not be loaded.",
+  "connectedConsentSection": "Consent",
+  "connectedNoConsent": "This patient has not submitted consent yet.",
+  "connectedSignedBy": "Signed by {name} on {date}",
+  "@connectedSignedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "connectedConsentVersion": "Version {version}",
+  "@connectedConsentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "connectedAnalysisAgreed": "Agreed to anonymised analysis",
+  "connectedAnalysisDeclined": "Declined anonymised analysis",
+  "connectedSignatureUnavailable": "Signature preview unavailable.",
+  "connectedPaperCopy": "I have collected the paper copy and reviewed this consent.",
+  "connectedApproveConsent": "Approve consent",
+  "connectedAssessmentSection": "Clinical assessment",
+  "connectedAge": "Age in years",
+  "connectedAgeRange": "Enter an age from 18 to 120.",
+  "connectedDemographic": "Demographic information",
+  "connectedClinical": "Clinical assessment notes",
+  "connectedSaveAssessment": "Save assessment",
+  "connectedPlanSection": "Prescribe a plan",
+  "connectedCurrentPlan": "Current plan: {title}",
+  "@connectedCurrentPlan": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "connectedPlanTitle": "Plan title",
+  "connectedPlanTitleDefault": "Your daily voice practice",
+  "connectedPlanExercises": "Exercises",
+  "connectedSessionsPerDayLabel": "Sessions per day",
+  "connectedInstructions": "Instructions",
+  "connectedSavePlan": "Save plan",
+  "connectedPracticeSection": "Practice",
+  "connectedNoPractice": "No practice logged yet.",
+  "connectedPracticeLine": "{exercise}, {minutes} min",
+  "@connectedPracticeLine": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "connectedRecordingsSection": "Recordings",
+  "connectedNoRecordings": "No recordings yet.",
+  "connectedRecordingLine": "{exercise}, {seconds} s",
+  "@connectedRecordingLine": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "connectedStop": "Stop",
+  "connectedAddFeedback": "Add feedback",
+  "connectedFeedbackTitle": "Practice feedback",
+  "connectedFeedbackLabel": "Feedback for the patient",
+  "connectedSaved": "Saved.",
+  "connectedAccountTitle": "Your account",
+  "connectedOutboxKept": "Items waiting to sync stay with this account after you sign out.",
+  "connectedChangePassword": "Change password",
+  "connectedCurrentPassword": "Current password",
+  "connectedNewPassword": "New password",
+  "connectedChangePasswordSubmit": "Change password and sign out",
+  "connectedFailureOffline": "Cannot reach the server. Saved practice will sync when you reconnect.",
+  "connectedFailureTimeout": "The connection timed out. Try again.",
+  "connectedFailureBadResponse": "The server sent an unexpected response.",
+  "connectedFailureSessionEnded": "Your session ended. Sign in again to continue.",
+  "connectedFailureRejected": "The server could not complete this request.",
+  "connectedFailureInvalidServer": "The server address is not valid.",
+  "connectedFailureHttps": "This build needs an HTTPS server address.",
+  "connectedFailureAdmin": "Administrators sign in through the web dashboard.",
+  "connectedFailureWrongPin": "That PIN is not correct.",
+  "connectedFailurePinLocked": "Too many attempts. Try again in {seconds} s.",
+  "@connectedFailurePinLocked": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "connectedFailureBiometricsDisabled": "Biometric unlock is not turned on for this account.",
+  "connectedFailureNoBiometric": "Add a fingerprint or face in the phone's settings first.",
+  "connectedFailureMicrophone": "Allow microphone access to record.",
+  "connectedFailureNoRecording": "Nothing was recorded. Try again.",
+  "connectedFailureRecordingUnavailable": "This recording is not available to your account.",
+  "connectedBack": "Back"
+}
