@@ -32,6 +32,8 @@ extension ConnectedFailureText on AppLocalizations {
         ConnectedFailureReason.noBiometric => connectedFailureNoBiometric,
         ConnectedFailureReason.microphoneDenied => connectedFailureMicrophone,
         ConnectedFailureReason.noRecording => connectedFailureNoRecording,
+        ConnectedFailureReason.photoUnavailable => motorPhotoPickFailed,
+        ConnectedFailureReason.photoTooLarge => motorPhotoLimit,
         ConnectedFailureReason.recordingUnavailable =>
           connectedFailureRecordingUnavailable,
       };

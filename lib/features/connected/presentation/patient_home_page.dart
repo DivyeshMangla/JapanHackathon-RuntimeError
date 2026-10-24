@@ -17,6 +17,7 @@ import '../domain/connected_models.dart';
 import 'connected_actions.dart';
 import 'consent_page.dart';
 import 'home_header_actions.dart';
+import 'motor_sections.dart';
 import 'record_page.dart';
 
 const _defaultPracticeMinutes = 5;
@@ -67,7 +68,10 @@ class _PatientHomePageState extends State<PatientHomePage>
     final l10n = context.l10n;
     final record = service.patientRecord;
     final syncFailure = service.syncFailure;
-    final needsConsent = record != null && record.consent == null;
+    final needsConsent =
+        record != null &&
+        (record.consent == null ||
+            record.consent!.version != service.config.consentVersion);
     return ActionPage(
       title: l10n.connectedGreeting(service.user!.name),
       intro: l10n.connectedPatientIntro,
@@ -117,26 +121,31 @@ class _PatientHomePageState extends State<PatientHomePage>
           )
         else ...[
           _PlanCard(plan: record.plan!),
+          if (record.plan!.exerciseIds.any(
+            (id) => service.config.exercise(id)?.isMotor == true,
+          ))
+            MotorDailySection(service: service, record: record),
           for (final exerciseId in record.plan!.exerciseIds)
-            _ExerciseCard(
-              exerciseId: exerciseId,
-              exercise: service.config.exercise(exerciseId),
-              logLabel: label('log-$exerciseId', l10n.connectedLogPractice),
-              // The dialog comes first, so this is not an action itself;
-              // only the save after it runs as one.
-              onLog: busy
-                  ? null
-                  : () => unawaited(_logPractice(record.plan!, exerciseId)),
-              onRecord: busy
-                  ? null
-                  : () => _open(
-                      RecordPage(
-                        service: service,
-                        planId: record.plan!.id,
-                        exerciseId: exerciseId,
+            if (service.config.exercise(exerciseId)?.isMotor != true)
+              _ExerciseCard(
+                exerciseId: exerciseId,
+                exercise: service.config.exercise(exerciseId),
+                logLabel: label('log-$exerciseId', l10n.connectedLogPractice),
+                // The dialog comes first, so this is not an action itself;
+                // only the save after it runs as one.
+                onLog: busy
+                    ? null
+                    : () => unawaited(_logPractice(record.plan!, exerciseId)),
+                onRecord: busy
+                    ? null
+                    : () => _open(
+                        RecordPage(
+                          service: service,
+                          planId: record.plan!.id,
+                          exerciseId: exerciseId,
+                        ),
                       ),
-                    ),
-            ),
+              ),
           _ProgressCard(record: record),
         ],
       ],

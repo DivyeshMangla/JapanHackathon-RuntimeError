@@ -16,7 +16,7 @@ import '../../../shared/widgets/page_list.dart';
 import '../domain/connected_models.dart';
 
 /// The server's limits, checked here first so mistakes show on the field.
-const _minAge = 18;
+const _minAge = 1;
 const _maxAge = 120;
 const _maxTextLength = 2000;
 const _maxTitleLength = 200;

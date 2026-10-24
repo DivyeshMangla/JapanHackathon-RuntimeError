@@ -23,12 +23,13 @@ if (db.prepare('SELECT COUNT(*) AS n FROM users').get().n) {
       if(i>14) continue;
       const consent=randomUUID();
       const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6o1sAAAAASUVORK5CYII=';
-      db.prepare('INSERT INTO consents VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(consent,patient,consentVersion,names[i],png,JSON.stringify({adult:true,participation:true,dataSharing:true,analysis:i%2===0}),i>12?'pending':'approved',timestamp(24-i),i>12?null:therapist,i>12?null:timestamp(23-i),i>12?0:1);
+      db.prepare('INSERT INTO consents VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(consent,patient,consentVersion,i===0?'Synthetic parent or legal guardian':names[i],png,JSON.stringify({adult:true,participation:true,dataSharing:true,analysis:i%2===0}),i>12?'pending':'approved',timestamp(24-i),i>12?null:therapist,i>12?null:timestamp(23-i),i>12?0:1);
       if(i>12) continue;
-      db.prepare('INSERT INTO clinical_forms VALUES (?,?,?,?,?,?)').run(patient,25+i,'Synthetic demographic record','Synthetic clinical assessment for dashboard demonstration',therapist,timestamp(23-i));
+      db.prepare('INSERT INTO clinical_forms VALUES (?,?,?,?,?,?)').run(patient,i===0?7:25+i,'Synthetic demographic record','Synthetic clinical assessment for dashboard demonstration',therapist,timestamp(23-i));
       const plan=randomUUID();
-      db.prepare('INSERT INTO plans VALUES (?,?,?,?,?,?,?,?,?)').run(plan,patient,therapist,consent,'Your daily voice practice',JSON.stringify(['humming','breathing','reading']),2,'Practice at a comfortable volume. Follow the technique discussed in your appointment.',timestamp(22-i));
+      db.prepare('INSERT INTO plans VALUES (?,?,?,?,?,?,?,?,?)').run(plan,patient,therapist,consent,i===0?'My daily little practice':'Your daily voice practice',JSON.stringify(i===0?['motor-lines','motor-shapes','motor-letter']:['humming','breathing','reading']),i===0?1:2,i===0?'Take your time. Rest whenever your hand feels tired. Ask a grown-up to help photograph just the paper.':'Practice at a comfortable volume. Follow the technique discussed in your appointment.',timestamp(22-i));
       for(let d=13;d>=0;d--) {
+        if(i===0) continue;
         if((d+i)%5===0 || (i===4 && d<5)) continue;
         for(let s=0;s<1+(i+d)%2;s++) db.prepare('INSERT INTO progress VALUES (?,?,?,?,?,?,?)').run(randomUUID(),patient,plan,['humming','breathing','reading'][(i+d+s)%3],5+(i%4),timestamp(d+s/24),timestamp(d+s/24));
       }

@@ -39,6 +39,10 @@ class LibraryExercise {
     required this.id,
     required this.name,
     required this.description,
+    this.isMotor = false,
+    this.minutes = 1,
+    this.steps = const [],
+    this.strokes = const [],
   });
 
   factory LibraryExercise.fromJson(Map<String, dynamic> json) =>
@@ -46,11 +50,25 @@ class LibraryExercise {
         id: json['id'] as String,
         name: json['name'] as String,
         description: json['description'] as String,
+        isMotor: json['kind'] == 'motor',
+        minutes: json['minutes'] as int? ?? 1,
+        steps: List<String>.from(json['steps'] as List? ?? const []),
+        strokes: [
+          for (final stroke in json['strokes'] as List? ?? const [])
+            [
+              for (final point in stroke as List)
+                [for (final value in point as List) (value as num).toDouble()],
+            ],
+        ],
       );
 
   final String id;
   final String name;
   final String description;
+  final bool isMotor;
+  final int minutes;
+  final List<String> steps;
+  final List<List<List<double>>> strokes;
 }
 
 class ConnectedConfig {
@@ -271,6 +289,7 @@ class PatientRecord {
     required this.forms,
     required this.practice,
     required this.recordings,
+    this.motorSubmissions = const [],
   });
 
   factory PatientRecord.fromJson(Map<String, dynamic> json) => PatientRecord(
@@ -288,6 +307,10 @@ class PatientRecord {
       for (final entry in json['progress'] as List? ?? const [])
         PracticeEntry.fromJson(entry as Map<String, dynamic>),
     ],
+    motorSubmissions: [
+      for (final entry in json['motorSubmissions'] as List? ?? const [])
+        MotorSubmission.fromJson(entry as Map<String, dynamic>),
+    ],
     recordings: [
       for (final recording in json['recordings'] as List? ?? const [])
         RecordingSummary.fromJson(recording as Map<String, dynamic>),
@@ -300,6 +323,7 @@ class PatientRecord {
   final ClinicalForms? forms;
   final List<PracticeEntry> practice;
   final List<RecordingSummary> recordings;
+  final List<MotorSubmission> motorSubmissions;
 }
 
 /// A self-registration request. Therapists also give their clinic and
@@ -337,4 +361,60 @@ class OutboxItem {
   final OutboxKind kind;
   final String planId;
   final String exerciseId;
+}
+
+class MotorReport {
+  const MotorReport({
+    required this.observations,
+    required this.suggestion,
+    required this.alignment,
+    required this.formation,
+    required this.spacing,
+    required this.model,
+    required this.imageQuality,
+  });
+  factory MotorReport.fromJson(Map<String, dynamic> json) => MotorReport(
+    observations: json['observations'] as String,
+    suggestion: json['suggestion'] as String,
+    alignment: json['alignment'] as String,
+    formation: json['formation'] as String,
+    spacing: json['spacing'] as String,
+    model: json['model'] as String,
+    imageQuality: json['imageQuality'] as String,
+  );
+  final String observations,
+      suggestion,
+      alignment,
+      formation,
+      spacing,
+      model,
+      imageQuality;
+}
+
+class MotorSubmission {
+  const MotorSubmission({
+    required this.id,
+    required this.exerciseId,
+    required this.practiceDay,
+    required this.status,
+    required this.createdAt,
+    this.report,
+    this.reviewNote,
+  });
+  factory MotorSubmission.fromJson(Map<String, dynamic> json) =>
+      MotorSubmission(
+        id: json['id'] as String,
+        exerciseId: json['exercise_id'] as String,
+        practiceDay: json['practice_day'] as String,
+        status: json['analysis_status'] as String,
+        createdAt: DateTime.parse(json['created_at'] as String),
+        report: json['report'] == null
+            ? null
+            : MotorReport.fromJson(json['report'] as Map<String, dynamic>),
+        reviewNote: json['review_note'] as String?,
+      );
+  final String id, exerciseId, practiceDay, status;
+  final DateTime createdAt;
+  final MotorReport? report;
+  final String? reviewNote;
 }

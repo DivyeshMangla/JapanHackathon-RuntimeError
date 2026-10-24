@@ -1,3 +1,5 @@
+import { createMotorAnalyzer, motorGuidance } from './motor.mjs';
+import { motorApi } from './motor-api.mjs';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
@@ -25,7 +27,7 @@ async function body(req, max = 1024 * 1024) {
 }
 function json(res, status, value) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); }
 
-export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'data'), secureCookies = process.env.NODE_ENV === 'production', origin = process.env.PUBLIC_ORIGIN } = {}) {
+export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = process.env.DATA_DIR || resolve(root, 'data'), secureCookies = process.env.NODE_ENV === 'production', origin = process.env.PUBLIC_ORIGIN } = {}) {
   const db = openDatabase(dataDir);
   const findUser = id => db.prepare('SELECT * FROM users WHERE id=?').get(id);
   const requireRole = (u, ...roles) => { if (!roles.includes(u.role)) fail(403, 'You do not have access to this action.'); };
@@ -47,6 +49,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
     const days = db.prepare("SELECT COUNT(DISTINCT substr(completed_at,1,10)) AS n FROM progress WHERE patient_id=? AND completed_at>=?").get(p.id, firstDay.toISOString()).n;
     return { ...publicUser(p), therapist_name: findUser(p.therapist_id)?.name || null, consent_status: consent?.status || 'missing', has_plan: !!plan, active_days: days, ...activity };
   };
+  const motor = motorApi({db,dataDir,analyze:motorAnalyzer,accessPatient,requireRole,body,text,fail,json});
   const server = createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'same-origin');
@@ -58,7 +61,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
       const allowedOrigin = origin || `http://${req.headers.host}`;
       if (req.headers.origin && req.headers.origin !== allowedOrigin) fail(403, 'Cross-origin requests are not allowed.');
       if (path === '/api/health') return json(res, 200, { status: 'ok' });
-      if (path === '/api/config') return json(res, 200, { demo: db.prepare("SELECT value FROM settings WHERE key='demo'").get()?.value === 'true', consentVersion, consentText, exercises });
+      if (path === '/api/config') return json(res, 200, { demo: db.prepare("SELECT value FROM settings WHERE key='demo'").get()?.value === 'true', consentVersion, consentText, exercises, motorGuidance });
       if (path === '/api/auth/login' && method === 'POST') {
         const b = await body(req); const email = text(b.email, 'Email').toLowerCase(); const password = text(b.password, 'Password', 128);
         const key = `${req.socket.remoteAddress}:${email}`;
@@ -140,10 +143,12 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
           requireRole(u, 'admin', 'therapist'); const rows = u.role === 'admin' ? db.prepare("SELECT * FROM users WHERE role='patient'").all() : db.prepare("SELECT * FROM users WHERE role='patient' AND therapist_id=?").all(u.id);
           return json(res, 200, { patients: rows.map(patientSummary) });
         }
+        if (await motor.handle(req,res,path,u) !== false) return;
         const patientMatch = path.match(/^\/api\/patients\/([^/]+)(?:\/(assignment|consent|approve-consent|forms|plans|progress|recordings))?$/);
         if (patientMatch) {
           const id = patientMatch[1]; const action = patientMatch[2]; const p = accessPatient(u, id);
           if (!action && method === 'GET') return json(res, 200, { patient: patientSummary(p), consent: unpackConsent(consentFor(id)), plan: unpackPlan(planFor(id)),
+            motorSubmissions: motor.summaries(id,u.role),
             forms: u.role === 'patient' ? null : db.prepare('SELECT * FROM clinical_forms WHERE patient_id=?').get(id) || null,
             progress: db.prepare('SELECT * FROM progress WHERE patient_id=? ORDER BY completed_at DESC LIMIT 100').all(id),
             recordings: db.prepare('SELECT id,exercise_id,mime,bytes,duration_seconds,created_at,review_note FROM recordings WHERE patient_id=? ORDER BY created_at DESC LIMIT 100').all(id) });
@@ -156,7 +161,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
           }
           if (action === 'consent' && method === 'POST') {
             requireRole(u, 'patient'); const b = await body(req);
-            if (consentFor(id)) fail(409, 'Consent has already been submitted.');
+            if (consentFor(id)?.version === consentVersion) fail(409, 'Consent has already been submitted.');
             if (b.version !== consentVersion || b.checks?.adult !== true || b.checks?.participation !== true || b.checks?.dataSharing !== true || typeof b.checks?.analysis !== 'boolean') fail(400, 'Complete all required consent items.');
             const signer = text(b.signerName, 'Signer name'); const png = text(b.signaturePng, 'Signature', 700000);
             if (!Buffer.from(png, 'base64').subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) fail(400, 'A PNG signature is required.');
@@ -173,7 +178,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
           if (action === 'forms' && method === 'PUT') {
             requireRole(u, 'therapist'); const b = await body(req);
             if (consentFor(id)?.status !== 'approved') fail(409, 'Approve consent before saving clinical forms.');
-            db.prepare(`INSERT INTO clinical_forms VALUES (?,?,?,?,?,?) ON CONFLICT(patient_id) DO UPDATE SET age=excluded.age,demographic=excluded.demographic,clinical=excluded.clinical,saved_by=excluded.saved_by,updated_at=excluded.updated_at`).run(id,integer(b.age,'Age',18,120),text(b.demographic,'Demographic information',2000),text(b.clinical,'Clinical information',2000),u.id,now());
+            db.prepare(`INSERT INTO clinical_forms VALUES (?,?,?,?,?,?) ON CONFLICT(patient_id) DO UPDATE SET age=excluded.age,demographic=excluded.demographic,clinical=excluded.clinical,saved_by=excluded.saved_by,updated_at=excluded.updated_at`).run(id,integer(b.age,'Age',1,120),text(b.demographic,'Demographic information',2000),text(b.clinical,'Clinical information',2000),u.id,now());
             audit(db,u.id,'Saved clinical forms',id,p.name); return json(res,200,{ok:true});
           }
           if (action === 'plans' && method === 'POST') {
@@ -182,6 +187,8 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
             if (!db.prepare('SELECT patient_id FROM clinical_forms WHERE patient_id=?').get(id)) fail(409, 'Save clinical forms before prescribing a plan.');
             if (p.status !== 'active') fail(409, 'Patient account is disabled.');
             if (!Array.isArray(b.exercises) || b.exercises.length < 1 || b.exercises.length > 6 || new Set(b.exercises).size !== b.exercises.length || !b.exercises.every(e => exercises.some(x => x.id === e))) fail(400, 'Choose one to six different exercises from the library.');
+            if (b.exercises.some(id => id.startsWith('motor-')) && consent.version !== consentVersion) fail(409, 'The adult or guardian must sign the updated consent before motor practice.');
+            if (b.exercises.some(id => id.startsWith('motor-')) && b.sessionsPerDay !== 1) fail(400, 'Motor practice starts with one gentle round per day. Choose one session per day.');
             const planId = randomUUID();
             db.prepare('INSERT INTO plans VALUES (?,?,?,?,?,?,?,?,?)').run(planId,id,u.id,consent.id,text(b.title,'Plan title'),JSON.stringify(b.exercises),integer(b.sessionsPerDay,'Sessions per day',1,5),typeof b.notes === 'string' ? b.notes.slice(0,2000) : '',now());
             audit(db,u.id,'Prescribed plan',id,p.name); return json(res,201,{plan:unpackPlan(planFor(id))});
@@ -248,7 +255,7 @@ export function createApp({ dataDir = process.env.DATA_DIR || resolve(root, 'dat
     catch(error) { if(error.code?.includes('SQLITE') && String(error).includes('UNIQUE')) fail(409,'An account with this email already exists.'); throw error; }
     audit(db,actor,'Created account',id,`${name} · ${b.role}`); return publicUser(findUser(id));
   }
-  return {server,db};
+  return {server,db,motor};
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
   const {server}=createApp(); const port=Number(process.env.PORT || 8787); const host=process.env.HOST || '127.0.0.1';

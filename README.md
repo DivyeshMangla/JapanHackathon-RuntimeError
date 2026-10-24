@@ -14,3 +14,7 @@ security design and two-phone testing. Run with `flutter run --flavor study`.
 The seeded demo logins described in [CLAUDE.md](CLAUDE.md) belong to the retained
 legacy screens and are not used by this workflow. [design.md](design.md) describes
 the visual system, which the setup screens share with the rest of the app.
+
+The connected build also includes children's daily motor/handwriting practice,
+animated writing guides, photo uploads, local vision-model analysis and therapist
+review with the original photo. See [motor practice setup](backend/README.md#childrens-daily-motor-and-handwriting-practice).
