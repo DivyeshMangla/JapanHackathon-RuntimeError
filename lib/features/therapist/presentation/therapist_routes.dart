@@ -6,7 +6,9 @@ import '../../../core/routing/app_routes.dart';
 import '../../../core/routing/role_shell.dart';
 import '../../../core/utils/l10n.dart';
 import '../../auth/presentation/signed_in_gate.dart';
+import '../../motor/presentation/therapist_drawing_screen.dart';
 import '../../usage/presentation/usage_log_screen.dart';
+import '../../useful_words/presentation/word_screens.dart';
 import 'assignment_editor_screen.dart';
 import 'participant_adherence_screen.dart';
 import 'participant_detail_screen.dart';
@@ -72,6 +74,18 @@ final therapistRoutes = StatefulShellRoute.indexedStack(
                 GoRoute(
                   path: 'usage',
                   builder: (context, state) => UsageLogScreen(
+                    patientId: state.pathParameters['patientId']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'words',
+                  builder: (context, state) => TherapistWordsScreen(
+                    patientId: state.pathParameters['patientId']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'drawing',
+                  builder: (context, state) => TherapistDrawingScreen(
                     patientId: state.pathParameters['patientId']!,
                   ),
                 ),

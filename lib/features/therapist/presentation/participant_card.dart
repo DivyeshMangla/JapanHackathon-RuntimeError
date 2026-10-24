@@ -46,6 +46,11 @@ class ParticipantCard extends StatelessWidget {
                       style: AppTypography.participantCode,
                     ),
                     Text(participant.patient.name, style: text.titleMedium),
+                    if (participant.patient.parentName != null)
+                      Text(
+                        l10n.participantParent(participant.patient.parentName!),
+                        style: text.bodySmall,
+                      ),
                     Text(
                       l10n.lastActive(activity.lastCompletedAt),
                       style: text.bodySmall,

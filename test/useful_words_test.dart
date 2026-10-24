@@ -4,8 +4,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:melo/core/errors/connected_failure.dart';
+import 'package:melo/core/errors/app_failure.dart';
 import 'package:melo/core/theme/app_theme.dart';
+import 'package:melo/core/utils/l10n.dart';
 import 'package:melo/features/useful_words/data/word_repository.dart';
 import 'package:melo/features/useful_words/domain/word_audio_device.dart';
 import 'package:melo/features/useful_words/presentation/child_word_page.dart';
@@ -67,7 +68,7 @@ void main() {
         Map<String, dynamic>? data,
       }) async {
         submissions.add(data!);
-        if (fail) throw const ConnectedFailure(ConnectedFailureReason.offline);
+        if (fail) throw const NetworkFailure(NetworkProblem.offline);
         return {'status': 'delivered'};
       }
 
@@ -77,7 +78,7 @@ void main() {
           });
       final first = open();
       final attempt = await first.queue('word', Uint8List.fromList([1, 2, 3]));
-      await expectLater(first.deliver(), throwsA(isA<ConnectedFailure>()));
+      await expectLater(first.deliver(), throwsA(isA<NetworkFailure>()));
       final restarted = open();
       expect(restarted.pending!.id, attempt.id);
       expect(
@@ -174,14 +175,13 @@ void main() {
           if (method == 'POST') {
             submissions.add(data!);
             if (failUpload) {
-              throw const ConnectedFailure(ConnectedFailureReason.offline);
+              throw const NetworkFailure(NetworkProblem.offline);
             }
             return {'status': 'delivered'};
           }
           return {
             'enrollment': true,
             'consent': true,
-            'consentVersion': 'test',
             'mockTranscription': true,
             'attempts': [],
             'words': [
@@ -202,6 +202,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: ChildWordPage(repository: repo, audio: audio),
         ),
       );
@@ -267,7 +269,6 @@ void main() {
         (path, {method = 'GET', data}) async => {
           'enrollment': true,
           'consent': true,
-          'consentVersion': 'test',
           'mockTranscription': true,
           'attempts': [],
           'words': [
@@ -286,6 +287,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: MediaQuery(
             data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
             child: ChildWordPage(repository: repo, audio: audio),

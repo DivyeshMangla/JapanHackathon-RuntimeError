@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../features/audit/domain/access_log.dart';
 import '../../features/capture_quality/domain/take_quality.dart';
-import '../../features/education/domain/education_topic.dart';
 import '../../features/exercises/domain/exercise.dart';
 import '../../features/exercises/domain/exercise_demo.dart';
 import '../../features/exercises/domain/voice_use_entry.dart';
@@ -154,6 +153,10 @@ extension FailureText on AppLocalizations {
     ReminderFailure() => failureReminder,
     ExportFailure() => exportFailed,
     SensorFailure() => failureSensor,
+    MediaFailure(:final problem) => switch (problem) {
+      MediaProblem.unavailable => failureMediaUnavailable,
+      MediaProblem.tooLarge => failureMediaTooLarge,
+    },
     NetworkFailure(:final problem, :final serverMessage) => switch (problem) {
       NetworkProblem.offline => failureOffline,
       NetworkProblem.timeout => failureTimeout,
@@ -171,65 +174,8 @@ extension FailureText on AppLocalizations {
   };
 }
 
-/// Patient-facing education and questionnaire text.
-extension EducationText on AppLocalizations {
-  String topicTitle(EducationTopic topic) => switch (topic) {
-    EducationTopic.usingTheApp => learnAppTitle,
-    EducationTopic.homePractice => learnPracticeTitle,
-    EducationTopic.voiceCare => learnVoiceCareTitle,
-    EducationTopic.aboutStudy => learnStudyTitle,
-  };
-
-  String topicSummary(EducationTopic topic) => switch (topic) {
-    EducationTopic.usingTheApp => learnAppSummary,
-    EducationTopic.homePractice => learnPracticeSummary,
-    EducationTopic.voiceCare => learnVoiceCareSummary,
-    EducationTopic.aboutStudy => learnStudySummary,
-  };
-
-  List<String> topicPoints(EducationTopic topic) => switch (topic) {
-    EducationTopic.usingTheApp => [
-      learnApp1,
-      learnApp2,
-      learnApp3,
-      learnApp4,
-      learnApp5,
-      learnApp6,
-      learnApp7,
-    ],
-    EducationTopic.homePractice => [
-      learnPractice1,
-      learnPractice2,
-      learnPractice3,
-      learnPractice4,
-      learnPractice5,
-    ],
-    EducationTopic.voiceCare => [
-      learnVoiceCare1,
-      learnVoiceCare2,
-      learnVoiceCare3,
-      learnVoiceCare4,
-      learnVoiceCare5,
-      learnVoiceCare6,
-      learnVoiceCare7,
-    ],
-    EducationTopic.aboutStudy => [
-      learnStudy1,
-      learnStudy2,
-      learnStudy3,
-      learnStudy4,
-      learnStudy5,
-      learnStudy6,
-    ],
-  };
-
-  /// Closing note shown under a topic's points, if it has one.
-  String? topicNote(EducationTopic topic) => switch (topic) {
-    EducationTopic.voiceCare => learnVoiceCareNote,
-    EducationTopic.homePractice => learnPracticeNote,
-    _ => null,
-  };
-
+/// Voice-use diary text.
+extension DiaryText on AppLocalizations {
   String speakingTimeLabel(SpeakingTime time) => switch (time) {
     SpeakingTime.underOneHour => speakingUnderOne,
     SpeakingTime.oneToTwoHours => speakingOneToTwo,

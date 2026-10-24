@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { motorExercises } from './motor.mjs';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -19,7 +19,8 @@ export function openDatabase(dataDir = process.env.DATA_DIR || resolve(root, 'da
   }
   const db = new DatabaseSync(file);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;');
-  db.exec(readFileSync(resolve(root, 'migrations/001_initial.sql'), 'utf8'));
+  const initial = readFileSync(resolve(root, 'migrations/001_initial.sql'), 'utf8');
+  db.exec(initial);
   db.exec(readFileSync(resolve(root, 'migrations/003_care.sql'), 'utf8'));
   // SQLite has no ADD COLUMN IF NOT EXISTS, so the column is added once here.
   if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'participant_code')) {
@@ -28,9 +29,41 @@ export function openDatabase(dataDir = process.env.DATA_DIR || resolve(root, 'da
       db.prepare('UPDATE users SET participant_code=? WHERE id=?').run(nextParticipantCode(db), id);
     }
   }
+  if (!db.prepare("SELECT sql FROM sqlite_master WHERE name='users'").get().sql.includes("'parent'")) addFamilyAccounts(db, initial);
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS users_link_code ON users(link_code);
+    CREATE INDEX IF NOT EXISTS users_parent ON users(parent_id);`);
+  for (const { id } of db.prepare("SELECT id FROM users WHERE role IN ('therapist','parent') AND link_code IS NULL").all()) {
+    db.prepare('UPDATE users SET link_code=? WHERE id=?').run(newLinkCode(db), id);
+  }
   db.exec(readFileSync(resolve(root, 'migrations/002_motor.sql'), 'utf8'));
   return db;
 }
+// Databases created before parents had accounts carry a role CHECK that SQLite
+// cannot alter in place, so the users table is rebuilt from the current schema.
+function addFamilyAccounts(db, initial) {
+  const schema = initial.match(/CREATE TABLE IF NOT EXISTS users \([\s\S]*?\n\);/)[0].replace('IF NOT EXISTS users', 'users_next');
+  const columns = 'id,name,email,password_hash,role,status,clinic,registration,therapist_id,created_at,participant_code';
+  db.exec('PRAGMA foreign_keys = OFF');
+  db.exec('BEGIN');
+  try {
+    db.exec(`${schema}
+      INSERT INTO users_next(${columns}) SELECT ${columns} FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_next RENAME TO users;`);
+    db.exec('COMMIT');
+  } catch (error) { db.exec('ROLLBACK'); throw error; }
+  finally { db.exec('PRAGMA foreign_keys = ON'); }
+  db.exec(initial);
+}
+// No 0/O or 1/I/L, so a code read aloud or copied from a screen is unambiguous.
+const codeAlphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export function newLinkCode(db) {
+  for (;;) {
+    const code = Array.from(randomBytes(6), byte => codeAlphabet[byte % codeAlphabet.length]).join('');
+    if (!db.prepare('SELECT 1 FROM users WHERE link_code=?').get(code)) return code;
+  }
+}
+export const normalizeLinkCode = value => typeof value === 'string' ? value.replace(/[\s-]/g, '').toUpperCase() : '';
 export function nextParticipantCode(db) {
   const highest = db.prepare("SELECT participant_code FROM users WHERE participant_code IS NOT NULL").all()
     .map(r => Number(r.participant_code.slice(1))).filter(Number.isInteger).reduce((a, b) => Math.max(a, b), 0);
@@ -40,7 +73,8 @@ export const now = () => new Date().toISOString();
 export function publicUser(user) {
   if (!user) return null;
   const { password_hash, ...safe } = user;
-  return safe;
+  // A child set up from a parent's code has a placeholder address nobody signs in with.
+  return user.role === 'patient' && user.parent_id ? { ...safe, email: null } : safe;
 }
 export function audit(db, actor, action, target = null, detail = '') {
   db.prepare('INSERT INTO audit VALUES (?, ?, ?, ?, ?, ?)').run(randomUUID(), actor, action, target, detail, now());

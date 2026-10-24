@@ -11,6 +11,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/async_view.dart';
+import '../../../shared/widgets/celebration.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/entry_cascade.dart';
 import '../../../shared/widgets/failure_feedback.dart';
@@ -37,12 +38,14 @@ class TodayExercisesScreen extends ConsumerWidget {
         data: (activity) {
           final items = activity.todayItems;
           if (items.isEmpty) {
-            return EmptyState(
-              icon: LucideIcons.calendarCheck,
-              title: l10n.exercisesNoneTitle,
-              message: l10n.exercisesNoneBody,
-              actionLabel: l10n.exercisesSeeProgress,
-              onAction: () => context.go(AppRoutes.patientProfileProgress),
+            return PageList(
+              children: [
+                EmptyState(
+                  icon: LucideIcons.calendarCheck,
+                  title: l10n.exercisesNoneTitle,
+                  message: l10n.exercisesNoneBody,
+                ),
+              ],
             );
           }
           final next = items.where((item) => !item.isDone).firstOrNull;
@@ -81,12 +84,21 @@ class TodayExercisesScreen extends ConsumerWidget {
                             return;
                           }
                           final actions = ref.read(completionActionsProvider);
-                          await runWithFailureMessage(
+                          final saved = await runWithFailureMessage(
                             context,
                             () => done
                                 ? actions.addSession(user.id, item)
                                 : actions.removeSession(user.id, item),
                           );
+                          final finished =
+                              item.sessionsDone + 1 >=
+                              item.schedule.sessionsPerDay;
+                          if (saved && done && finished && context.mounted) {
+                            await showCelebration(
+                              context,
+                              message: l10n.childGameDone(item.exercise.title),
+                            );
+                          }
                         },
                       ),
                     ),

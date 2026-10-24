@@ -39,6 +39,34 @@ class AuthController extends AsyncNotifier<User?> {
     return true;
   }
 
+  Future<void> registerParent({
+    required String name,
+    required String email,
+    required String password,
+    required String therapistCode,
+  }) async {
+    state = AsyncData(
+      await _repository.registerParent(
+        name: name,
+        email: email,
+        password: password,
+        therapistCode: therapistCode,
+      ),
+    );
+  }
+
+  Future<void> setUpChild({
+    required String parentCode,
+    required String childName,
+  }) async {
+    final user = await _repository.setUpChild(
+      parentCode: parentCode,
+      childName: childName,
+    );
+    state = AsyncData(user);
+    await ref.read(usageLoggerProvider).record(UsageAction.signIn, user: user);
+  }
+
   Future<void> signOut() async {
     await ref
         .read(usageLoggerProvider)

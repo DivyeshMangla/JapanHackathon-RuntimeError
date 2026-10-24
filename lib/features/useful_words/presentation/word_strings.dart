@@ -43,14 +43,8 @@ abstract final class WordStrings {
   static const eligibility =
       'I confirm this child is under 17, uses speech, and has therapist-selected speech practice goals.';
   static const enroll = 'Set up child practice';
-  static const guardianTitle = 'Guardian consent';
-  static const guardianNotice =
-      'Prototype consent—requires approved wording and identity verification before use with real children. A guardian must complete this setup once. Each attempt goes directly to the assigned therapist without an approval step.';
-  static const guardianName = 'Guardian’s full name';
-  static const relationship = 'Relationship to child';
-  static const guardianAgree =
-      'I am authorized to consent for this child. I agree to recording, encrypted storage and direct sharing of original audio with the assigned therapist. Automated transcription may suggest text separately. I can contact the therapist to withdraw consent.';
-  static const consent = 'Give guardian consent';
+  static const askParent =
+      'Ask your grown-up to sign the consent in their Melo app first.';
   static const assign = 'Assign a word';
   static const word = 'Useful word';
   static const picture = 'Choose picture (PNG or JPEG)';

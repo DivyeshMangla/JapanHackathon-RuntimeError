@@ -17,13 +17,14 @@ screen, or `admin@melo.test` / `VoiceDemo!2026`.
 
 Other synthetic accounts use the same demo password:
 
-| Role | Email |
+| Role | Sign in |
 | --- | --- |
-| Approved therapist | meera@melo.test |
-| Patient assigned to Meera | patient@melo.test |
+| Approved therapist | meera@melo.test, therapist code `MEERA7` |
+| Parent on Meera's caseload | parent@melo.test, parent code `PARENT` |
+| Child of that parent | no password: parent code `PARENT` and the name `Ananya` |
 | Pending therapist | riya@melo.test |
 
-The demo seed creates accounts, consents and clinical forms only; the exercise library starts empty and is filled by an administrator through `PUT /library/:id`. Demo seeding runs only when the database contains no accounts. It does not replace
+The demo seed creates therapists, six families (a parent and a child each) with signed consent, four approved exercises assigned to every child with two weeks of practice, and a drawing plan for Ananya. Demo seeding runs only when the database contains no accounts. It does not replace
 an existing workspace. `npm run dev` starts the service without seeding. Stop it
 with Ctrl+C. Default binding is loopback only.
 
@@ -32,7 +33,7 @@ with Ctrl+C. Default binding is loopback only.
 Use a separate `DATA_DIR` for a non-demo workspace. Set `ADMIN_EMAIL`,
 `ADMIN_NAME`, and a unique `ADMIN_PASSWORD` of 12–128 characters in your shell
 environment, then run `npm --prefix backend run admin`. The command never prints
-the password. Start with `npm run dev`. Public registration can create patients
+the password. Start with `npm run dev`. Public registration can create parents
 and pending therapists; it cannot create administrators.
 
 ## Storage and access
@@ -59,9 +60,10 @@ and pending therapists; it cannot create administrators.
   an additional IP limit bounds broad guessing. Public registration is limited.
 - JSON mutations and origin checks protect the cookie-based dashboard. The same
   server serves frontend and API; arbitrary cross-origin browser calls are denied.
-- Consent must be submitted by the patient, approved by their assigned therapist
-  with paper-copy confirmation, and followed by clinical forms before a plan can
-  be created. Clinical forms are not included in the patient-facing response.
+- Consent is signed by the child's parent, and that signature approves it.
+  Clinical forms and plans need signed consent. Clinical forms are not
+  included in the child's or parent's response. A parent reads only their own
+  children's records.
 - Progress and recording IDs make successful retries idempotent. Recordings are
   WAV, at most 120 seconds / 12 MB; request bodies are bounded.
 
@@ -73,7 +75,8 @@ status. Send JSON with `Content-Type: application/json`.
 | Method / path | Access / purpose |
 | --- | --- |
 | GET `/health`, `/config` | Health, exercise library, current prototype consent |
-| POST `/auth/register` | Patient or pending therapist signup |
+| POST `/auth/register` | Parent signup with a `therapistCode`, or pending therapist signup |
+| POST `/auth/child` | `{ parentCode, childName }`: signs a device in as that parent's child, creating the child the first time; returns a bearer token |
 | POST `/auth/login` | Email/password; `client: "mobile"` returns a bearer token |
 | GET `/auth/me` | Current active account |
 | POST `/auth/logout` | Revoke current session |
@@ -94,7 +97,7 @@ status. Send JSON with `Content-Type: application/json`.
 | GET `/patients` | Administrator: all; therapist: assigned patients |
 | GET `/patients/:id` | Own patient record / assigned therapist / administrator |
 | PUT `/patients/:id/assignment` | Administrator assigns an active therapist |
-| POST `/patients/:id/consent` | Patient submits version, checks and PNG signature |
+| POST `/patients/:id/consent` | The child's parent signs version, checks and PNG signature |
 | POST `/patients/:id/approve-consent` | Assigned therapist approves consent |
 | PUT `/patients/:id/forms` | Assigned therapist saves age, demographic and clinical forms |
 | POST `/patients/:id/plans` | Assigned therapist prescribes library exercises and dose |
@@ -140,8 +143,8 @@ consent, dosage, capture-quality judgments, or voice analysis. Its paths begin
 - `GET /`: enrollment, assignments and attempts grouped by word/date in the app.
 - `PUT /enrollment`: assigned therapist confirms date of birth (under 17), speech
   use and therapist-selected goals.
-- `POST /consent`: guardian name, relationship, current consent version and
-  agreement, entered in the child's authenticated account. This is explicitly
+- Consent: the parent's signed care consent (`POST /api/patients/:id/consent`)
+  covers word practice, so a child cannot send an attempt before it. This is
   prototype wording; approved consent and guardian identity verification are
   required before real child use. There is no approval step for each attempt.
 - `POST /words`: therapist supplies word, base64 PNG/JPEG picture and original

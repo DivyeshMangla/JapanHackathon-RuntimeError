@@ -12,7 +12,6 @@ import '../data/word_repository.dart';
 import '../domain/useful_word.dart';
 import 'word_audio_controller.dart';
 import 'word_capture_panel.dart';
-import 'word_guardian_form.dart';
 import 'word_page_actions.dart';
 import 'word_strings.dart';
 
@@ -139,11 +138,7 @@ class _ChildWordPageState extends State<ChildWordPage> with WordPageActions {
           if (practice != null && !practice.enrolled)
             const InfoNotice(WordStrings.waiting),
           if (practice?.enrolled == true && !practice!.consented)
-            WordGuardianForm(
-              repository: widget.repository,
-              version: practice.consentVersion,
-              onSaved: () => unawaited(_load()),
-            ),
+            const InfoNotice(WordStrings.askParent),
           if (canPractice && word != null)
             _WordPracticePanel(
               word: word,

@@ -11,11 +11,14 @@ User userFromApi(JsonObject json) => User(
   createdAt: DateTime.parse(json['created_at']! as String).toLocal(),
   participantCode: json['participant_code'] as String?,
   therapistId: json['therapist_id'] as String?,
+  parentId: json['parent_id'] as String?,
+  parentName: json['parent_name'] as String?,
+  linkCode: json['link_code'] as String?,
 );
 
-/// Users as the care service lets the signed-in account see them: a patient
-/// sees themself and their therapist, a therapist their caseload, an
-/// administrator everyone.
+/// Users as the care service lets the signed-in account see them: a child
+/// sees themself, their parent and their therapist, a parent their children
+/// and therapist, a therapist their caseload, an administrator everyone.
 class BackendUserRepository implements UserRepository {
   BackendUserRepository(this._client);
 
@@ -110,17 +113,17 @@ class BackendUserRepository implements UserRepository {
   Future<void> _loadVisible() async {
     final role = _current?.role;
     if (role == null) return;
-    if (role == UserRole.patient) {
+    if (role == UserRole.patient || role == UserRole.parent) {
       for (final json in (await _client.get('/directory')).objects('users')) {
         if (_known.containsKey(json['id'])) continue;
         remember(_directoryUser(json));
       }
-      return;
+      if (role == UserRole.patient) return;
     }
     final response = await _client.get(
-      role == UserRole.therapist ? '/patients' : '/users',
+      role == UserRole.admin ? '/users' : '/patients',
     );
-    final key = role == UserRole.therapist ? 'patients' : 'users';
+    final key = role == UserRole.admin ? 'users' : 'patients';
     for (final json in response.objects(key)) {
       remember(userFromApi(json));
     }

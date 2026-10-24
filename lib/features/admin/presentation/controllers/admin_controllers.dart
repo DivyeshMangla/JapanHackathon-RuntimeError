@@ -77,7 +77,7 @@ class AdminActions {
     required String password,
     String? therapistId,
   }) async {
-    if (role == UserRole.patient && therapistId == null) {
+    if (role == UserRole.parent && therapistId == null) {
       throw const InvalidInputFailure(InputProblem.therapistRequired);
     }
     final user = await _ref
@@ -87,7 +87,7 @@ class AdminActions {
           name: name.trim(),
           email: email.trim().toLowerCase(),
           password: password,
-          therapistId: role == UserRole.patient ? therapistId : null,
+          therapistId: role == UserRole.parent ? therapistId : null,
         );
     _ref.invalidate(usersByRoleProvider(role));
     return user;

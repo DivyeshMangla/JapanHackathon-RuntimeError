@@ -12,9 +12,11 @@ import '../../../shared/widgets/choice_pills.dart';
 import '../../../shared/widgets/labeled_text_field.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../auth/domain/user.dart';
+import '../../auth/presentation/account_validators.dart';
 import 'controllers/admin_controllers.dart';
 
-/// Creates a patient or therapist account.
+/// Creates a parent or therapist account. Children join from their
+/// parent's code instead.
 class UserFormScreen extends ConsumerStatefulWidget {
   const UserFormScreen({super.key, required this.role});
 
@@ -33,7 +35,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   InvalidInputFailure? _problem;
   bool _saving = false;
 
-  bool get _isPatient => widget.role == UserRole.patient;
+  bool get _isParent => widget.role == UserRole.parent;
 
   @override
   void dispose() {
@@ -62,15 +64,9 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
           );
       if (!mounted) return;
       final l10n = context.l10n;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _isPatient
-                ? l10n.createdPatient(user.participantCode ?? '', user.name)
-                : l10n.createdUser(user.name),
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.createdUser(user.name))));
       context.pop();
     } on InvalidInputFailure catch (failure) {
       setState(() {
@@ -94,14 +90,14 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isPatient ? l10n.addPatient : l10n.addTherapist),
+        title: Text(_isParent ? l10n.addParent : l10n.addTherapist),
       ),
       body: Form(
         key: _form,
         child: PageList(
           children: [
             _AccountFields(name: _name, email: _email, password: _password),
-            if (_isPatient) ...[
+            if (_isParent) ...[
               const SizedBox(height: AppSpacing.lg),
               _TherapistPicker(
                 selected: _therapistId,
@@ -139,8 +135,6 @@ class _AccountFields extends StatelessWidget {
   final TextEditingController email;
   final TextEditingController password;
 
-  static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -151,7 +145,7 @@ class _AccountFields extends StatelessWidget {
           label: l10n.fullName,
           controller: name,
           textInputAction: TextInputAction.next,
-          validator: (v) => (v ?? '').trim().isEmpty ? l10n.nameRequired : null,
+          validator: (v) => requiredName(l10n, v),
         ),
         const SizedBox(height: AppSpacing.md),
         LabeledTextField(
@@ -159,22 +153,14 @@ class _AccountFields extends StatelessWidget {
           controller: email,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
-          validator: (v) => _emailPattern.hasMatch((v ?? '').trim())
-              ? null
-              : l10n.emailInvalid,
+          validator: (v) => validEmail(l10n, v),
         ),
         const SizedBox(height: AppSpacing.md),
         LabeledTextField(
           label: l10n.temporaryPassword,
           controller: password,
           obscureText: true,
-          validator: (v) {
-            final value = v ?? '';
-            if (value.length < 10) return l10n.passwordTooShort;
-            if (value.length > 128) return l10n.passwordTooLong;
-            if (value != value.trim()) return l10n.passwordSpaces;
-            return null;
-          },
+          validator: (v) => validPassword(l10n, v),
         ),
       ],
     );
@@ -201,11 +187,6 @@ class _TherapistPicker extends ConsumerWidget {
           selected: selected ?? '',
           labelOf: (id) => therapists.firstWhere((t) => t.id == id).name,
           onSelected: onSelected,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          l10n.participantCodeNote,
-          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );

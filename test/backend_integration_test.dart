@@ -132,7 +132,10 @@ void main() {
     );
     expect(adminUser?.role, UserRole.admin);
     final library = BackendExerciseRepository(admin.client);
-    expect(await library.all(), isEmpty);
+    expect(
+      (await library.all()).map((e) => e.id),
+      isNot(contains(plainExercise.id)),
+    );
     final exercise = plainExercise.approve(
       by: adminUser!.id,
       at: DateTime(2026, 5, 1),
@@ -183,17 +186,19 @@ void main() {
       );
     }
 
-    // The patient sees the assignment, marks it done, logs and records.
+    // The child's device opens with the demo parent's code and the child's
+    // name, then sees the assignment, marks it done, logs and records.
     final patientSession = _Session(baseUrl);
-    final signedIn = await patientSession.auth.signIn(
-      email: patient.email,
-      password: demoPassword,
+    final signedIn = await patientSession.auth.setUpChild(
+      parentCode: 'parent',
+      childName: patient.name,
     );
-    expect(signedIn?.id, patient.id);
+    expect(signedIn.id, patient.id);
+    expect(signedIn.email, isEmpty);
     final assignments = await BackendScheduleRepository(
       patientSession.client,
     ).forPatient(patient.id);
-    expect(assignments.single.exerciseId, exercise.id);
+    expect(assignments.map((a) => a.exerciseId), contains(exercise.id));
 
     final today = dateOnly(DateTime.now());
     final completions = BackendCompletionRepository(patientSession.client);
@@ -271,21 +276,43 @@ void main() {
     final audio = await recordings.audio(recording.id);
     expect(ascii.decode(audio.sublist(0, 4)), 'RIFF');
 
-    // The administrator creates a patient with the next code.
-    final created = await admin.users.create(
-      role: UserRole.patient,
-      name: 'Created Patient',
-      email: 'created.patient@melo.test',
+    // A parent joins with the therapist's code, and their code sets up a
+    // new child on the same caseload.
+    final family = _Session(baseUrl);
+    final parent = await family.auth.registerParent(
+      name: 'New Parent',
+      email: 'new.parent@melo.test',
+      password: 'a-long-enough-password',
+      therapistCode: therapistUser.linkCode!,
+    );
+    expect(parent.role, UserRole.parent);
+    expect(parent.therapistId, therapistUser.id);
+    final childDevice = _Session(baseUrl);
+    final child = await childDevice.auth.setUpChild(
+      parentCode: parent.linkCode!,
+      childName: 'Kavya',
+    );
+    expect(child.parentId, parent.id);
+    expect(child.participantCode, isNot(patients.last.participantCode));
+    expect((await family.users.listByRole(UserRole.patient)).map((c) => c.id), [
+      child.id,
+    ]);
+
+    // The administrator adds a parent, and an email can be used only once.
+    await admin.users.create(
+      role: UserRole.parent,
+      name: 'Created Parent',
+      email: 'created.parent@melo.test',
       password: 'a-long-enough-password',
       therapistId: therapistUser.id,
     );
-    expect(created.participantCode, isNot(patients.last.participantCode));
     await expectLater(
       admin.users.create(
-        role: UserRole.patient,
+        role: UserRole.parent,
         name: 'Duplicate',
-        email: 'created.patient@melo.test',
+        email: 'created.parent@melo.test',
         password: 'a-long-enough-password',
+        therapistId: therapistUser.id,
       ),
       throwsA(
         isA<InvalidInputFailure>().having(

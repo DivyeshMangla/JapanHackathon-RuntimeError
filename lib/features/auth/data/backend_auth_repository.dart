@@ -34,6 +34,50 @@ class BackendAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<User> registerParent({
+    required String name,
+    required String email,
+    required String password,
+    required String therapistCode,
+  }) async {
+    try {
+      await _client.post(
+        '/auth/register',
+        body: {
+          'role': UserRole.parent.name,
+          'name': name.trim(),
+          'email': email.trim(),
+          'password': password,
+          'therapistCode': therapistCode.trim(),
+        },
+      );
+    } on NetworkFailure catch (failure) {
+      if (failure.status == 409) {
+        throw const InvalidInputFailure(InputProblem.emailTaken);
+      }
+      rethrow;
+    }
+    final user = await signIn(email: email, password: password);
+    if (user == null) throw const NetworkFailure(NetworkProblem.badResponse);
+    return user;
+  }
+
+  @override
+  Future<User> setUpChild({
+    required String parentCode,
+    required String childName,
+  }) async {
+    final response = await _client.post(
+      '/auth/child',
+      body: {'parentCode': parentCode.trim(), 'childName': childName.trim()},
+    );
+    await _client.setToken(response['token'] as String?);
+    final user = userFromApi(response.object('user'));
+    _users.remember(user, current: true);
+    return user;
+  }
+
+  @override
   Future<User?> restoreSession() async {
     if (!await _client.hasSession) return null;
     try {

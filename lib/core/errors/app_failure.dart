@@ -36,6 +36,15 @@ final class SensorFailure extends AppFailure {
   const SensorFailure([super.cause]);
 }
 
+enum MediaProblem { unavailable, tooLarge }
+
+/// A picked photo, picture or sound file could not be used.
+final class MediaFailure extends AppFailure {
+  const MediaFailure(this.problem, [super.cause]);
+
+  final MediaProblem problem;
+}
+
 /// Building or saving a CSV export failed.
 final class ExportFailure extends AppFailure {
   const ExportFailure([super.cause]);

@@ -1,27 +1,33 @@
 import '../../features/auth/domain/user.dart';
-import '../../features/education/domain/education_topic.dart';
 
 abstract final class AppRoutes {
   static const splash = '/';
+  static const welcome = '/welcome';
   static const login = '/login';
+  static const parentSignUp = '/sign-up';
+  static const childSetup = '/child-setup';
 
   /// Developer sensor check, reachable while signed out.
   static const sensorCheck = '/sensor-check';
 
+  /// Pages a signed-out visitor may open.
+  static const public = {welcome, login, parentSignUp, childSetup, sensorCheck};
+
+  /// The child's area. The path keeps the service's name for the role.
   static const patient = '/patient';
   static const patientExercises = '/patient/exercises';
   static String patientExercise(String id) => '$patientExercises/$id';
   static String patientVoiceDiary(String exerciseId) =>
       '${patientExercise(exerciseId)}/diary';
-  static const patientRecord = '/patient/record';
-  static const patientProgress = '/patient/progress';
-  static const patientProfile = '/patient/profile';
-  static const patientProfileProgress = '$patientProfile?section=progress';
-  static const patientProfileReminders = '$patientProfile?section=reminders';
-  static const patientRecordings = '$patientProfile/recordings';
-  static const patientLearn = '/patient/learn';
-  static String patientLearnTopic(EducationTopic topic) =>
-      '$patientLearn/${topic.name}';
+  static const patientWords = '/patient/words';
+  static const patientDrawing = '/patient/drawing';
+  static String patientDrawingExercise(String exerciseId) =>
+      '$patientDrawing/$exerciseId';
+
+  static const parent = '/parent';
+  static String parentChild(String id) => '$parent/children/$id';
+  static String parentConsent(String id) => '${parentChild(id)}/consent';
+  static const parentSettings = '/parent/settings';
 
   static const therapist = '/therapist';
   static const therapistParticipants = '/therapist/participants';
@@ -31,6 +37,10 @@ abstract final class AppRoutes {
   static String therapistAssign(String id, {String? scheduleId}) =>
       '${therapistParticipant(id)}/assign'
       '${scheduleId == null ? '' : '?schedule=$scheduleId'}';
+  static String therapistWords(String id) =>
+      '${therapistParticipant(id)}/words';
+  static String therapistDrawing(String id) =>
+      '${therapistParticipant(id)}/drawing';
   static const therapistRecordings = '/therapist/recordings';
   static String therapistRecordingsFor(String patientId) =>
       '$therapistRecordings?patient=$patientId';
@@ -48,6 +58,7 @@ abstract final class AppRoutes {
 
   static String homeFor(UserRole role) => switch (role) {
     UserRole.patient => patient,
+    UserRole.parent => parent,
     UserRole.therapist => therapist,
     UserRole.admin => admin,
   };

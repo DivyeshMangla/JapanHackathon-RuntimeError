@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { openDatabase, root, now, publicUser, audit, nextParticipantCode, consentVersion, consentText } from './db.mjs';
+import { openDatabase, root, now, publicUser, audit, nextParticipantCode, newLinkCode, normalizeLinkCode, consentVersion, consentText } from './db.mjs';
 import { careRoutes } from './care-routes.mjs';
 import { hashPassword, verifyPassword, newSession, authenticate, requestToken, tokenHash } from './auth.mjs';
 
@@ -39,7 +39,8 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
   const accessPatient = (u, id) => {
     const p = findUser(id);
     if (!p || p.role !== 'patient') fail(404, 'Patient not found.');
-    if (u.role !== 'admin' && u.id !== p.id && !(u.role === 'therapist' && p.therapist_id === u.id)) fail(403, 'This patient is not assigned to you.');
+    const allowed = u.role === 'admin' || u.id === p.id || (u.role === 'therapist' && p.therapist_id === u.id) || (u.role === 'parent' && p.parent_id === u.id);
+    if (!allowed) fail(403, 'This patient is not assigned to you.');
     return p;
   };
   const planFor = p => db.prepare('SELECT * FROM plans WHERE patient_id=? ORDER BY created_at DESC, rowid DESC LIMIT 1').get(p);
@@ -52,7 +53,7 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
       MAX(completed_at) AS last_practice FROM progress WHERE patient_id=?`).get(p.id);
     const firstDay = new Date(); firstDay.setUTCHours(0,0,0,0); firstDay.setUTCDate(firstDay.getUTCDate()-6);
     const days = db.prepare("SELECT COUNT(DISTINCT substr(completed_at,1,10)) AS n FROM progress WHERE patient_id=? AND completed_at>=?").get(p.id, firstDay.toISOString()).n;
-    return { ...publicUser(p), therapist_name: findUser(p.therapist_id)?.name || null, consent_status: consent?.status || 'missing', has_plan: !!plan, active_days: days, ...activity };
+    return { ...publicUser(p), therapist_name: findUser(p.therapist_id)?.name || null, parent_name: findUser(p.parent_id)?.name || null, consent_status: consent?.status || 'missing', has_plan: !!plan, active_days: days, ...activity };
   };
   const wordRoutes = usefulWords({ db, dataDir, fail, text, body, json, findUser, transcriber });
   const motor = motorApi({db,dataDir,analyze:motorAnalyzer,accessPatient,requireRole,body,text,fail,json});
@@ -94,14 +95,27 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
       }
       if (path === '/api/auth/register' && method === 'POST') {
         const b = await body(req);
-        if (!['patient', 'therapist'].includes(b.role)) fail(400, 'Choose patient or therapist.');
-        // Rate-limit public registration independently of credential attempts.
-        const key = `register:${req.socket.remoteAddress}`;
-        const attempts = db.prepare('SELECT * FROM login_attempts WHERE key=?').get(key);
-        if (attempts?.reset_at > Date.now() && attempts.failures >= 10) fail(429, 'Too many registrations. Try again later.');
-        const user = await createUser(b, null);
-        db.prepare(`INSERT INTO login_attempts VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET failures=CASE WHEN reset_at<? THEN 1 ELSE failures+1 END, reset_at=excluded.reset_at`).run(key, Date.now() + 3600000, Date.now());
-        return json(res, 201, { user });
+        if (!['parent', 'therapist'].includes(b.role)) fail(400, 'Choose parent or therapist.');
+        limitRegistration(req);
+        return json(res, 201, { user: await createUser(b, null) });
+      }
+      if (path === '/api/auth/child' && method === 'POST') {
+        const b = await body(req);
+        limitRegistration(req);
+        const parent = db.prepare("SELECT * FROM users WHERE link_code=? AND role='parent' AND status='active'").get(normalizeLinkCode(b.parentCode));
+        if (!parent) fail(400, 'That parent code was not found. It is on the parent’s Settings screen.');
+        // A child never types a password: the device keeps the session the parent's code opened.
+        // Setting up a second device, or the same one again, finds the child by name.
+        const childName = text(b.childName, 'Child’s name', 80);
+        const existing = db.prepare("SELECT * FROM users WHERE parent_id=? AND role='patient' AND name=? COLLATE NOCASE").get(parent.id, childName);
+        if (existing?.status === 'disabled') fail(403, 'This child’s account is disabled. Contact your therapist.');
+        const id = existing?.id || randomUUID();
+        if (!existing) {
+          db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,therapist_id,parent_id,created_at,participant_code) VALUES (?,?,?,?,?,?,?,?,?,?)')
+            .run(id, childName, `child-${id}@family.melo.invalid`, await hashPassword(randomUUID()), 'patient', 'active', parent.therapist_id, parent.id, now(), nextParticipantCode(db));
+        }
+        audit(db, parent.id, 'Set up child device', id);
+        return json(res, existing ? 200 : 201, { user: publicUser(findUser(id)), token: newSession(db, id) });
       }
       if (path.startsWith('/api/')) {
         const u = authenticate(db, req); if (!u) fail(401, 'Please sign in.');
@@ -123,7 +137,7 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
         if (path === '/api/overview' && method === 'GET') {
           requireRole(u, 'admin');
           const patients = db.prepare("SELECT * FROM users WHERE role='patient'").all().map(patientSummary);
-          const therapists = db.prepare("SELECT id,name,email,clinic,registration,status,created_at FROM users WHERE role='therapist' ORDER BY created_at DESC").all();
+          const therapists = db.prepare("SELECT id,name,email,clinic,registration,status,created_at,link_code FROM users WHERE role='therapist' ORDER BY created_at DESC").all();
           const days = Array.from({ length: 14 }, (_, i) => new Date(Date.now() - (13-i)*86400000).toISOString().slice(0,10));
           const activity = days.map(day => ({ day, sessions: db.prepare('SELECT COUNT(*) AS n FROM progress WHERE substr(completed_at,1,10)=?').get(day).n }));
           return json(res, 200, { patients, therapists, activity, recordings: db.prepare('SELECT COUNT(*) AS n FROM recordings').get().n,
@@ -147,7 +161,9 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
           return json(res, 200, { user: publicUser(findUser(target.id)) });
         }
         if (path === '/api/patients' && method === 'GET') {
-          requireRole(u, 'admin', 'therapist'); const rows = u.role === 'admin' ? db.prepare("SELECT * FROM users WHERE role='patient'").all() : db.prepare("SELECT * FROM users WHERE role='patient' AND therapist_id=?").all(u.id);
+          requireRole(u, 'admin', 'therapist', 'parent');
+          const rows = u.role === 'admin' ? db.prepare("SELECT * FROM users WHERE role='patient'").all()
+            : db.prepare(`SELECT * FROM users WHERE role='patient' AND ${u.role === 'parent' ? 'parent_id' : 'therapist_id'}=?`).all(u.id);
           return json(res, 200, { patients: rows.map(patientSummary) });
         }
         if (await motor.handle(req,res,path,u) !== false) return;
@@ -156,7 +172,7 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
           const id = patientMatch[1]; const action = patientMatch[2]; const p = accessPatient(u, id);
           if (!action && method === 'GET') return json(res, 200, { patient: patientSummary(p), consent: unpackConsent(consentFor(id)), plan: unpackPlan(planFor(id)),
             motorSubmissions: motor.summaries(id,u.role),
-            forms: u.role === 'patient' ? null : db.prepare('SELECT * FROM clinical_forms WHERE patient_id=?').get(id) || null,
+            forms: ['patient', 'parent'].includes(u.role) ? null : db.prepare('SELECT * FROM clinical_forms WHERE patient_id=?').get(id) || null,
             progress: db.prepare('SELECT * FROM progress WHERE patient_id=? ORDER BY completed_at DESC LIMIT 100').all(id),
             recordings: db.prepare('SELECT id,exercise_id,mime,bytes,duration_seconds,created_at,review_note FROM recordings WHERE patient_id=? ORDER BY created_at DESC LIMIT 100').all(id) });
           if (action === 'assignment' && method === 'PUT') {
@@ -167,12 +183,13 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
             return json(res, 200, { patient: patientSummary(findUser(id)) });
           }
           if (action === 'consent' && method === 'POST') {
-            requireRole(u, 'patient'); const b = await body(req);
+            requireRole(u, 'parent'); const b = await body(req);
             if (consentFor(id)?.version === consentVersion) fail(409, 'Consent has already been submitted.');
             if (b.version !== consentVersion || b.checks?.adult !== true || b.checks?.participation !== true || b.checks?.dataSharing !== true || typeof b.checks?.analysis !== 'boolean') fail(400, 'Complete all required consent items.');
             const signer = text(b.signerName, 'Signer name'); const png = text(b.signaturePng, 'Signature', 700000);
             if (!Buffer.from(png, 'base64').subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) fail(400, 'A PNG signature is required.');
-            db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES (?,?,?,?,?,?,?,?)').run(randomUUID(), id, consentVersion, signer, png, JSON.stringify(b.checks), 'pending', now());
+            // The parent is the child's legal guardian, so their signature is the approval.
+            db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at,approved_by,approved_at) VALUES (?,?,?,?,?,?,?,?,?,?)').run(randomUUID(), id, consentVersion, signer, png, JSON.stringify(b.checks), 'approved', now(), u.id, now());
             audit(db, u.id, 'Submitted consent', id); return json(res, 201, { consent: unpackConsent(consentFor(id)) });
           }
           if (action === 'approve-consent' && method === 'POST') {
@@ -191,7 +208,6 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
           if (action === 'plans' && method === 'POST') {
             requireRole(u, 'therapist'); const b = await body(req); const consent = consentFor(id);
             if (!consent || consent.status !== 'approved') fail(409, 'Approve consent before prescribing a plan.');
-            if (!db.prepare('SELECT patient_id FROM clinical_forms WHERE patient_id=?').get(id)) fail(409, 'Save clinical forms before prescribing a plan.');
             if (p.status !== 'active') fail(409, 'Patient account is disabled.');
             if (!Array.isArray(b.exercises) || b.exercises.length < 1 || b.exercises.length > 6 || new Set(b.exercises).size !== b.exercises.length || !b.exercises.every(e => planExercises().some(x => x.id === e))) fail(400, 'Choose one to six different exercises from the library.');
             if (b.exercises.some(id => id.startsWith('motor-')) && consent.version !== consentVersion) fail(409, 'The adult or guardian must sign the updated consent before motor practice.');
@@ -251,18 +267,31 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
     } catch(error) { if(!res.headersSent) json(res,error.status || 500,{error:error.status ? error.message : 'Something went wrong. Please retry.'}); else res.end(); if(!error.status) console.error(error); }
   });
   function validatePassword(value) { if(typeof value!=='string' || value.length<10 || value.length>128 || value!==value.trim()) fail(400,'Use a password of 10–128 characters without leading or trailing spaces.'); return value; }
+  // Public registration is limited per address, separately from sign-in attempts.
+  function limitRegistration(req) {
+    const key = `register:${req.socket.remoteAddress}`;
+    const attempts = db.prepare('SELECT * FROM login_attempts WHERE key=?').get(key);
+    if (attempts?.reset_at > Date.now() && attempts.failures >= 10) fail(429, 'Too many registrations. Try again later.');
+    db.prepare(`INSERT INTO login_attempts VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET failures=CASE WHEN reset_at<? THEN 1 ELSE failures+1 END, reset_at=excluded.reset_at`).run(key, Date.now() + 3600000, Date.now());
+  }
   async function createUser(b, actor) {
-    if(!['patient','therapist'].includes(b.role)) fail(400,'Choose patient or therapist.');
+    if(!['patient','therapist','parent'].includes(b.role)) fail(400,'Choose patient, parent or therapist.');
+    let therapistId=b.therapistId || null;
+    if(b.role==='parent' && (b.therapistCode || !actor)) {
+      const byCode=db.prepare("SELECT id FROM users WHERE link_code=? AND role='therapist' AND status='active'").get(normalizeLinkCode(b.therapistCode));
+      if(!byCode) fail(400,'That therapist code was not found. Ask your therapist for their code.');
+      therapistId=byCode.id;
+    }
     const name=text(b.name,'Name'); const email=text(b.email,'Email').toLowerCase(); if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400,'Enter a valid email.');
     const password=validatePassword(b.password); const clinic=b.role==='therapist'?text(b.clinic,'Clinic'):''; const registration=b.role==='therapist'?text(b.registration,'Registration number'):'';
     const hash=await hashPassword(password); const id=randomUUID();
     // A therapist who registers themselves waits for approval; one an
     // administrator creates is approved by that act.
     const status=b.role==='therapist' && !actor ? 'pending' : 'active';
-    try { db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,clinic,registration,created_at,participant_code) VALUES (?,?,?,?,?,?,?,?,?,?)').run(id,name,email,hash,b.role,status,clinic,registration,now(),b.role==='patient'?nextParticipantCode(db):null); }
+    try { db.prepare('INSERT INTO users(id,name,email,password_hash,role,status,clinic,registration,created_at,participant_code,link_code) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(id,name,email,hash,b.role,status,clinic,registration,now(),b.role==='patient'?nextParticipantCode(db):null,b.role==='patient'?null:newLinkCode(db)); }
     catch(error) { if(error.code?.includes('SQLITE') && String(error).includes('UNIQUE')) fail(409,'An account with this email already exists.'); throw error; }
-    if(b.role==='patient' && b.therapistId) {
-      const therapist=findUser(b.therapistId);
+    if(b.role!=='therapist' && therapistId) {
+      const therapist=findUser(therapistId);
       if(!therapist || therapist.role!=='therapist' || therapist.status!=='active') fail(400,'Choose an approved, active therapist.');
       db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,id);
     }

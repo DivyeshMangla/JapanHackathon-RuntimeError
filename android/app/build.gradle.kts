@@ -28,19 +28,6 @@ android {
         versionName = flutter.versionName
     }
 
-    flavorDimensions += "mode"
-    productFlavors {
-        create("study") { dimension = "mode" }
-        create("connected") {
-            dimension = "mode"
-            applicationIdSuffix = ".connected"
-        }
-        create("setupcheck") {
-            dimension = "mode"
-            applicationIdSuffix = ".setupcheck"
-        }
-    }
-
     buildTypes {
         release {
             // Prototype builds are signed with the debug key.

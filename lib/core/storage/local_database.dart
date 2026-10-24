@@ -4,11 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
-/// Device-only data: reminder times and this phone's access log. Everything
-/// else lives on the care service. Every box is opened with one AES-256 key
+/// Device-only data: reminder times, this phone's access log and a child's
+/// unsent word attempt. Everything else lives on the care service. Every box is opened with one AES-256 key
 /// that lives only in the platform keystore (Android Keystore / iOS Keychain).
 class LocalDatabase {
-  LocalDatabase._({required this.reminders, required this.accessLog});
+  LocalDatabase._({
+    required this.reminders,
+    required this.accessLog,
+    required this.wordDrafts,
+  });
 
   static const _keyName = 'hive_encryption_key_v1';
 
@@ -17,6 +21,10 @@ class LocalDatabase {
 
   /// Append-only record of recording playback and data export.
   final Box<Map<dynamic, dynamic>> accessLog;
+
+  /// A word attempt that failed to send, keyed by child id, so it is never
+  /// lost before it reaches the therapist.
+  final Box<String> wordDrafts;
 
   static Future<LocalDatabase> open({
     FlutterSecureStorage secureStorage = const FlutterSecureStorage(),
@@ -33,6 +41,10 @@ class LocalDatabase {
         encryptionCipher: cipher,
       ),
       accessLog: await records('access_log'),
+      wordDrafts: await Hive.openBox<String>(
+        'word_drafts',
+        encryptionCipher: cipher,
+      ),
     );
   }
 

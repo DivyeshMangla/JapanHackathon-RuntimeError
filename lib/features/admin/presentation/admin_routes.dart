@@ -59,7 +59,7 @@ final adminRoutes = StatefulShellRoute.indexedStack(
               path: 'new',
               builder: (context, state) => UserFormScreen(
                 role: UserRole.values.byName(
-                  state.uri.queryParameters['role'] ?? UserRole.patient.name,
+                  state.uri.queryParameters['role'] ?? UserRole.parent.name,
                 ),
               ),
             ),

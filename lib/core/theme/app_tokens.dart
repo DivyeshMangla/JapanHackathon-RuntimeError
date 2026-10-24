@@ -40,6 +40,20 @@ abstract final class AppSizes {
   /// Reading width for step-by-step forms and consent text on tablets.
   static const double readingWidth = 560;
 
+  /// The Melo mark at the top of the welcome page.
+  static const double welcomeMark = 88;
+
+  /// Coloured circle behind the icon of a welcome choice.
+  static const double choiceIcon = 56;
+
+  /// The child's picture tiles: tall enough for a big icon and a word, and
+  /// an easy target for small fingers.
+  static const double childTile = 152;
+  static const double childTileIcon = 72;
+
+  /// The mascot on the child's home page and in celebrations.
+  static const double childMascot = 96;
+
   /// Width of the full logo on launch. Android 12+ masks its splash icon to a
   /// 192dp circle, and the logo fits that circle at this width; the native
   /// splashes use the same width so the hand-over to Flutter does not jump.

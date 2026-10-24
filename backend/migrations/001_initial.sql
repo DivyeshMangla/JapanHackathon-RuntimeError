@@ -1,10 +1,11 @@
 PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-  password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('admin','therapist','patient')),
+  password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('admin','therapist','parent','patient')),
   status TEXT NOT NULL CHECK(status IN ('active','pending','disabled')),
   clinic TEXT NOT NULL DEFAULT '', registration TEXT NOT NULL DEFAULT '',
-  therapist_id TEXT REFERENCES users(id), created_at TEXT NOT NULL
+  therapist_id TEXT REFERENCES users(id), created_at TEXT NOT NULL,
+  participant_code TEXT, parent_id TEXT REFERENCES users(id), link_code TEXT
 );
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), expires_at INTEGER NOT NULL

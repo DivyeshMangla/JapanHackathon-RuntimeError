@@ -49,9 +49,10 @@ export async function careRoutes(ctx) {
   }
 
   if (path === '/api/directory' && method === 'GET') {
-    // Names only, so a screen can show who a patient's therapist is.
+    // Names only, so a screen can show who a family's therapist is.
     const ids = new Set([u.id]);
-    if (u.role === 'patient' && u.therapist_id) ids.add(u.therapist_id);
+    if (['patient', 'parent'].includes(u.role) && u.therapist_id) ids.add(u.therapist_id);
+    if (u.role === 'patient' && u.parent_id) ids.add(u.parent_id);
     const users = [...ids].map(id => findUser(id)).filter(Boolean).map(x => ({ id: x.id, name: x.name, role: x.role }));
     return send(200, { users });
   }

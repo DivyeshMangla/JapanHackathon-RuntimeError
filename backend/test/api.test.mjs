@@ -58,20 +58,24 @@ test('patient assignment isolation, consent gating, plans, idempotent progress, 
   assert.equal((await f.call('/patients','GET',undefined,tt)).data.patients.length,1);
   assert.equal((await f.call(patientPath,'GET',undefined,ot)).status,403);
   assert.equal((await f.call(patientPath,'GET',undefined,op)).status,403);
+  const parent=f.add('parent'),otherParent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,patient.id);
+  const parentToken=await f.login(parent),otherParentToken=await f.login(otherParent);
+  assert.equal((await f.call(patientPath,'GET',undefined,parentToken)).status,200);
+  assert.equal((await f.call(patientPath,'GET',undefined,otherParentToken)).status,403);
   const plan={title:'Practice plan',exercises:['humming','breathing'],sessionsPerDay:2,notes:'Synthetic test plan'};
   assert.equal((await f.call(`${patientPath}/plans`,'POST',plan,tt)).status,409);
   const forms={age:30,demographic:'Synthetic demographic data',clinical:'Synthetic clinical data'};
   assert.equal((await f.call(`${patientPath}/forms`,'PUT',forms,tt)).status,409);
-  const consent={version:consentVersion,signerName:patient.name,signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:false}};
-  assert.equal((await f.call(`${patientPath}/consent`,'POST',{...consent,checks:{...consent.checks,adult:false}},pt)).status,400);
-  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,pt)).status,201);
-  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,pt)).status,409);
-  assert.equal((await f.call(`${patientPath}/approve-consent`,'POST',{paperCopy:true},pt)).status,403);
-  assert.equal((await f.call(`${patientPath}/approve-consent`,'POST',{paperCopy:false},tt)).status,400);
-  assert.equal((await f.call(`${patientPath}/approve-consent`,'POST',{paperCopy:true},tt)).status,200);
-  assert.equal((await f.call(`${patientPath}/plans`,'POST',plan,tt)).status,409);
+  const consent={version:consentVersion,signerName:parent.name,signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:false}};
+  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,pt)).status,403);
+  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,otherParentToken)).status,403);
+  assert.equal((await f.call(`${patientPath}/consent`,'POST',{...consent,checks:{...consent.checks,adult:false}},parentToken)).status,400);
+  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,parentToken)).status,201);
+  assert.equal((await f.call(`${patientPath}/consent`,'POST',consent,parentToken)).status,409);
+  assert.equal((await f.call(patientPath,'GET',undefined,tt)).data.consent.status,'approved');
   assert.equal((await f.call(`${patientPath}/forms`,'PUT',forms,tt)).status,200);
   assert.equal((await f.call(patientPath,'GET',undefined,pt)).data.forms,null);
+  assert.equal((await f.call(patientPath,'GET',undefined,parentToken)).data.forms,null);
   assert.equal((await f.call(`${patientPath}/plans`,'POST',{...plan,exercises:['invented']},tt)).status,400);
   const created=await f.call(`${patientPath}/plans`,'POST',plan,tt);assert.equal(created.status,201);
   const progress={id:randomUUID(),planId:created.data.plan.id,exerciseId:'humming',minutes:5,completedAt:now()};
@@ -98,8 +102,9 @@ test('patient assignment isolation, consent gating, plans, idempotent progress, 
 });
 
 test('registration normalization, duplicate email, password changes and rate limiting',async t=>{
-  const f=await fixture(t);
-  const account={name:'Patient Example',email:'PERSON@Test.Example',password,role:'patient'};
+  const f=await fixture(t);const therapist=f.add('therapist');f.db.prepare("UPDATE users SET link_code='TCODE2' WHERE id=?").run(therapist.id);
+  assert.equal((await f.call('/auth/register','POST',{name:'Patient Example',email:'patient@test.example',password,role:'patient'})).status,400);
+  const account={name:'Parent Example',email:'PERSON@Test.Example',password,role:'parent',therapistCode:'tcode2'};
   const created=await f.call('/auth/register','POST',account);assert.equal(created.status,201);assert.equal(created.data.user.email,'person@test.example');assert.equal(created.data.user.password_hash,undefined);
   assert.equal((await f.call('/auth/register','POST',{...account,email:'person@test.example'})).status,409);
   const pt=await f.login(created.data.user);
@@ -109,6 +114,49 @@ test('registration normalization, duplicate email, password changes and rate lim
   assert.equal((await f.call('/auth/login','POST',{email:account.email,password:'NewPassword!2026'})).status,200);
   for(let i=0;i<5;i++)assert.equal((await f.call('/auth/login','POST',{email:'unknown@example.test',password:'incorrect'})).status,401);
   assert.equal((await f.call('/auth/login','POST',{email:'unknown@example.test',password:'incorrect'})).status,429);
+});
+
+test('therapist code links a parent, and the parent code sets up a child device',async t=>{
+  const f=await fixture(t);const admin=f.add('admin');const at=await f.login(admin);
+  const therapist=(await f.call('/users','POST',{role:'therapist',name:'Code Therapist',email:'code.therapist@test.example',clinic:'Clinic',registration:'REG-2',password},at)).data.user;
+  assert.match(therapist.link_code,/^[A-HJ-NP-Z2-9]{6}$/);
+  const parentDetails={role:'parent',name:'Code Parent',email:'code.parent@test.example',password};
+  assert.equal((await f.call('/auth/register','POST',parentDetails)).status,400);
+  assert.equal((await f.call('/auth/register','POST',{...parentDetails,therapistCode:'NOPE22'})).status,400);
+  const parent=(await f.call('/auth/register','POST',{...parentDetails,therapistCode:therapist.link_code.toLowerCase()})).data.user;
+  assert.equal(parent.therapist_id,therapist.id);assert.equal(parent.status,'active');assert.notEqual(parent.link_code,therapist.link_code);
+  assert.equal((await f.call('/auth/child','POST',{parentCode:therapist.link_code,childName:'Kid'})).status,400);
+  assert.equal((await f.call('/auth/child','POST',{parentCode:parent.link_code,childName:''})).status,400);
+  const setup=await f.call('/auth/child','POST',{parentCode:` ${parent.link_code.slice(0,3)}-${parent.link_code.slice(3)} `,childName:'Kid'});
+  assert.equal(setup.status,201);
+  const child=setup.data.user;assert.equal(child.role,'patient');assert.equal(child.parent_id,parent.id);assert.equal(child.therapist_id,therapist.id);assert.equal(child.link_code,null);
+  assert.equal((await f.call('/auth/me','GET',undefined,setup.data.token)).data.user.id,child.id);
+  const again=await f.call('/auth/child','POST',{parentCode:parent.link_code,childName:'kid'});
+  assert.equal(again.status,200);assert.equal(again.data.user.id,child.id);
+  const pt=await f.login({email:parentDetails.email}),tt=await f.login({email:therapist.email});
+  assert.deepEqual((await f.call('/patients','GET',undefined,pt)).data.patients.map(p=>p.id),[child.id]);
+  assert.equal((await f.call('/patients','GET',undefined,tt)).data.patients[0].parent_name,'Code Parent');
+  const names=(await f.call('/directory','GET',undefined,setup.data.token)).data.users.map(u=>u.role).sort();
+  assert.deepEqual(names,['parent','patient','therapist']);
+});
+
+test('a database from before family accounts gains the parent role without losing users',async t=>{
+  const dir=await mkdtemp(join(tmpdir(),'melo-legacy-'));
+  const { DatabaseSync }=await import('node:sqlite');
+  const legacy=new DatabaseSync(join(dir,'melo.sqlite'));
+  legacy.exec(`CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('admin','therapist','patient')),
+    status TEXT NOT NULL CHECK(status IN ('active','pending','disabled')), clinic TEXT NOT NULL DEFAULT '', registration TEXT NOT NULL DEFAULT '',
+    therapist_id TEXT REFERENCES users(id), created_at TEXT NOT NULL);
+    INSERT INTO users VALUES ('t1','Old Therapist','old@test.example','x','therapist','active','','',NULL,'2026-01-01'),
+    ('p1','Old Patient','oldp@test.example','x','patient','active','','','t1','2026-01-02');`);
+  legacy.close();
+  const app=createApp({dataDir:dir});
+  t.after(async()=>{app.db.close();await rm(dir,{recursive:true,force:true});});
+  assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM users').get().n,2);
+  assert.ok(app.db.prepare("SELECT link_code FROM users WHERE id='t1'").get().link_code);
+  assert.equal(app.db.prepare("SELECT participant_code FROM users WHERE id='p1'").get().participant_code,'P001');
+  app.db.prepare("INSERT INTO users(id,name,email,password_hash,role,status,created_at) VALUES ('f1','Parent','parent@test.example','x','parent','active','2026-01-03')").run();
 });
 
 test('persistent database survives restart and static files do not expose runtime data',async t=>{
@@ -240,12 +288,12 @@ test('useful words preserve exact audio, encrypt payloads and isolate paired acc
   assert.equal(word.status,201);
   const payload={id:randomUUID(),wordId:word.data.id,audio:wav.toString('base64')};
   assert.equal((await f.call(`${path}/attempts`,'POST',payload,ct)).status,409);
-  const version=(await f.call(path,'GET',undefined,ct)).data.consentVersion;
-  const consent={version,guardianName:'Guardian Example',relationship:'Parent',guardianConsent:true};
-  assert.equal((await f.call(`${path}/consent`,'POST',consent,tt)).status,403);
-  assert.equal((await f.call(`${path}/consent`,'POST',{...consent,guardianConsent:false},ct)).status,400);
-  assert.equal((await f.call(`${path}/consent`,'POST',consent,ct)).status,201);
+  const parent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,child.id);
+  const parentToken=await f.login(parent);
+  assert.equal((await f.call(`/patients/${child.id}/consent`,'POST',{version:consentVersion,signerName:'Guardian Example',signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:false}},parentToken)).status,201);
+  assert.equal((await f.call(path,'GET',undefined,parentToken)).data.consent,true);
   assert.equal((await f.call(`${path}/attempts`,'POST',payload,tt)).status,403);
+  assert.equal((await f.call(`${path}/attempts`,'POST',payload,parentToken)).status,403);
   assert.equal((await f.call(`${path}/attempts`,'POST',payload,ct)).status,201);
   const repeats=await Promise.all(Array.from({length:3},()=>f.call(`${path}/attempts`,'POST',payload,ct)));
   assert.ok(repeats.every(r=>r.status===200));
@@ -267,7 +315,8 @@ test('useful words preserve exact audio, encrypt payloads and isolate paired acc
   assert.deepEqual(Buffer.from((await f.call(`${path}/attempts/${payload.id}/feedback`,'GET',undefined,ct)).data.audio,'base64'),wav);
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(other.id,child.id);
   assert.equal((await f.call(audioPath,'GET',undefined,tt)).status,403);
-  assert.equal((await f.call(`${path}/attempts`,'POST',{...payload,id:randomUUID()},ct)).status,409);
+  // Words chosen by the previous therapist do not carry over to the new one.
+  assert.equal((await f.call(`${path}/attempts`,'POST',{...payload,id:randomUUID()},ct)).status,400);
 });
 
 test('useful word delivery completes while recognition is stalled; suggestions never alter audio or review', async t => {
@@ -278,8 +327,7 @@ test('useful word delivery completes while recognition is stalled; suggestions n
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
   const ct=await f.login(child), tt=await f.login(therapist), path=`/useful-words/patients/${child.id}`;
   await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
-  const version=(await f.call(path,'GET',undefined,ct)).data.consentVersion;
-  await f.call(`${path}/consent`,'POST',{version,guardianName:'Guardian',relationship:'Parent',guardianConsent:true},ct);
+  f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:false}),'approved',now());
   const wav=Buffer.alloc(100);wav.write('RIFF');wav.write('WAVE',8);
   const word=await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
   const id=randomUUID();
@@ -308,10 +356,9 @@ test('child motor practice: consent, photo integrity, real analysis seam, review
   const priorConsent=randomUUID();
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(priorConsent,patient.id,'CONNECTED-DEMO-1','Earlier signer',png,JSON.stringify({analysis:true}),'approved',now());
   assert.equal((await f.call(`${path}/motor-submissions`,'POST',payload,pt)).status,409);
-  await f.call(`${path}/consent`,'POST',{version:consentVersion,signerName:'Synthetic Parent',signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:true}},pt);
+  const parent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,patient.id);
+  await f.call(`${path}/consent`,'POST',{version:consentVersion,signerName:'Synthetic Parent',signaturePng:png,checks:{adult:true,participation:true,dataSharing:true,analysis:true}},await f.login(parent));
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM consents WHERE patient_id=?').get(patient.id).n,2);
-  await f.call(`${path}/approve-consent`,'POST',{paperCopy:true},tt);
-  assert.equal((await f.call(`${path}/forms`,'PUT',{age:7,demographic:'Child with guardian',clinical:'Short supervised practice'},tt)).status,200);
   const plan=await f.call(`${path}/plans`,'POST',{title:'Daily little practice',exercises:['motor-lines','motor-shapes','motor-letter'],sessionsPerDay:1,notes:'Rest when tired'},tt);
   assert.equal(plan.status,201);payload.planId=plan.data.plan.id;
   assert.equal((await f.call(`${path}/motor-submissions`,'POST',{...payload,photo:'bm90IGEgcmVhbCBwaG90bw=='},pt)).status,400);

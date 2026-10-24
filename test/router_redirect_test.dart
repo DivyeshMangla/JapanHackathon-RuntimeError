@@ -20,13 +20,24 @@ void main() {
     expect(redirectFor(const AsyncLoading(), AppRoutes.splash), isNull);
   });
 
-  test('sends signed-out users to login', () {
+  test('sends signed-out users to the welcome page', () {
     expect(
       redirectFor(const AsyncData(null), AppRoutes.admin),
-      AppRoutes.login,
+      AppRoutes.welcome,
     );
-    expect(redirectFor(const AsyncData(null), AppRoutes.login), isNull);
-    expect(redirectFor(const AsyncData(null), AppRoutes.sensorCheck), isNull);
+    expect(
+      redirectFor(const AsyncData(null), AppRoutes.parent),
+      AppRoutes.welcome,
+    );
+    for (final open in [
+      AppRoutes.welcome,
+      AppRoutes.login,
+      AppRoutes.parentSignUp,
+      AppRoutes.childSetup,
+      AppRoutes.sensorCheck,
+    ]) {
+      expect(redirectFor(const AsyncData(null), open), isNull);
+    }
   });
 
   test('keeps each role inside its own route tree', () {
@@ -34,6 +45,11 @@ void main() {
     expect(redirectFor(patient, AppRoutes.login), AppRoutes.patient);
     expect(redirectFor(patient, AppRoutes.therapist), AppRoutes.patient);
     expect(redirectFor(patient, '${AppRoutes.patient}/exercises'), isNull);
+
+    final parent = AsyncData<User?>(_user(UserRole.parent));
+    expect(redirectFor(parent, AppRoutes.childSetup), AppRoutes.parent);
+    expect(redirectFor(parent, AppRoutes.patient), AppRoutes.parent);
+    expect(redirectFor(parent, AppRoutes.parentSettings), isNull);
 
     final therapist = AsyncData<User?>(_user(UserRole.therapist));
     expect(redirectFor(therapist, AppRoutes.admin), AppRoutes.therapist);

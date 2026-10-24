@@ -131,7 +131,7 @@ function renderLogin(error = '') {
             </div>`
             : ''
         }
-        <p class="login-footer">Administrator and approved therapist access. Patients use the mobile app.</p>
+        <p class="login-footer">Administrator and approved therapist access. Parents and children use the mobile app.</p>
       </div>
     </section>
   </main>`;
@@ -145,7 +145,7 @@ function renderLogin(error = '') {
       if (!['admin', 'therapist'].includes(data.user.role)) {
         await api('/auth/logout', 'POST', {});
         throw Error(
-          'Patients use the mobile app. This workspace is for administrators and approved therapists.',
+          'Parents and children use the mobile app. This workspace is for administrators and approved therapists.',
         );
       }
       user = data.user;
@@ -163,7 +163,7 @@ function renderLogin(error = '') {
 }
 const navItems = [
   ['overview', 'grid', 'Overview'],
-  ['patients', 'users', 'Patients'],
+  ['patients', 'users', 'Children'],
   ['therapists', 'heart', 'Therapists'],
   ['recordings', 'mic', 'Recordings'],
   ['activity', 'activity', 'Activity log'],
@@ -271,8 +271,10 @@ function header(title, subtitle, actions = '') {
     <div class="actions">${actions}</div>
   </section>`;
 }
+// Children join from their parent's code in the app, so the dashboard adds parents.
 const addButton = () =>
-  `<button class="btn" data-action="add">${icon('plus')} Add patient</button>`;
+  `<button class="btn" data-action="add">${icon('plus')} Add parent</button>`;
+const familyLine = p => (p.parent_name ? `Parent: ${p.parent_name}` : p.email || '');
 const cardHead = (title, subtitle = '', right = '') =>
   html`<div class="card-heading">
     <div>
@@ -342,6 +344,8 @@ function pageContent() {
                       <small class="muted">
                         <br>
                         ${esc(t.registration)}
+                        <br>
+                        Code for parents ${esc(t.link_code || '')}
                       </small>
                     </td>
                     <td>${overview.patients.filter(p => p.therapist_id === t.id).length}</td>
@@ -526,7 +530,7 @@ function chart() {
 function filteredPatients() {
   return overview.patients
     .filter(p =>
-      (p.name + ' ' + p.email + ' ' + (p.therapist_name || ''))
+      (p.name + ' ' + familyLine(p) + ' ' + (p.therapist_name || ''))
         .toLowerCase()
         .includes(search.toLowerCase()),
     )
@@ -557,7 +561,7 @@ function patientTable(patients, compact = false) {
             <td>
               <div class="person">${avatar(p.name, i)}
                 <div>${esc(p.name)}
-                  <small>${compact ? relative(p.last_practice) : esc(p.email)}</small>
+                  <small>${compact ? relative(p.last_practice) : esc(familyLine(p))}</small>
                 </div>
               </div>
             </td>
@@ -591,7 +595,7 @@ function bindContent() {
     b =>
       (b.onclick = () =>
         ({
-          add: () => accountDialog('patient'),
+          add: () => accountDialog('parent'),
           'add-therapist': () => accountDialog('therapist'),
           password: passwordDialog,
           logout,
@@ -658,9 +662,9 @@ function handleForm(id, fn) {
 }
 function accountDialog(role) {
   openDialog(
-    role === 'patient' ? 'A new beginning.' : 'Grow your care team.',
-    role === 'patient'
-      ? 'Create a patient account, then assign their therapist.'
+    role === 'parent' ? 'A new family.' : 'Grow your care team.',
+    role === 'parent'
+      ? 'Create a parent account on a therapist’s caseload. The parent then sets up their child’s device with their own code.'
       : 'Therapists you create here can sign in straight away. Self-registered therapists wait for your review.',
     html`<form id="account-form">
       <div class="form-grid">
@@ -682,7 +686,14 @@ function accountDialog(role) {
             <label class="field">Registration number
               <input name="registration" required>
             </label>`
-            : ''
+            : html`<label class="field full">Therapist
+              <select name="therapistId" required>
+                ${overview.therapists
+                  .filter(t => t.status === 'active')
+                  .map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`)
+                  .join('')}
+              </select>
+            </label>`
         }
       </div>
       <div class="form-actions">
@@ -694,7 +705,7 @@ function accountDialog(role) {
   handleForm('#account-form', async b => {
     await api('/users', 'POST', { ...b, role });
     $('#modal').close();
-    toast(`${role === 'patient' ? 'Patient' : 'Therapist'} account created`);
+    toast(`${role === 'parent' ? 'Parent' : 'Therapist'} account created`);
     await load();
   });
 }
@@ -760,7 +771,7 @@ async function patientDialog(id) {
       p = d.patient;
     openDialog(
       esc(p.name),
-      esc(p.email),
+      esc(familyLine(p)),
       html`<form id="assignment-form">
         <label class="field">Assigned therapist
           <select name="therapistId">
@@ -880,10 +891,10 @@ function exportCsv() {
       .replaceAll('"', '""') +
     '"';
   const rows = [
-    ['Name', 'Email', 'Therapist', 'Status', 'Consent', 'Practice days this week'],
+    ['Name', 'Parent', 'Therapist', 'Status', 'Consent', 'Practice days this week'],
     ...filteredPatients().map(p => [
       p.name,
-      p.email,
+      p.parent_name,
       p.therapist_name,
       p.status,
       p.consent_status,

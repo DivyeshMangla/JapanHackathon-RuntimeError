@@ -8,7 +8,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/ink_card.dart';
 
-/// Links from the participant screen to records kept about their app use.
+/// Links from the participant screen to the child's word and drawing
+/// practice and to the record of their app use.
 class ParticipantLinksCard extends StatelessWidget {
   const ParticipantLinksCard({super.key, required this.patientId});
 
@@ -16,31 +17,45 @@ class ParticipantLinksCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return InkCard(
-      child: InkWell(
-        onTap: () => context.push(AppRoutes.therapistUsage(patientId)),
-        borderRadius: BorderRadius.circular(AppRadius.base),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: AppSizes.minTouchTarget),
-          child: Row(
-            children: [
-              const Icon(LucideIcons.activity, size: 18, color: AppColors.seal),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  context.l10n.usageLogTitle,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-              const Icon(
-                LucideIcons.chevronRight,
-                size: 18,
-                color: AppColors.wash,
-              ),
-            ],
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Column(
+        children: [
+          _Link(
+            icon: LucideIcons.messageCircle,
+            label: l10n.therapistWordsLink,
+            onTap: () => context.push(AppRoutes.therapistWords(patientId)),
           ),
-        ),
+          _Link(
+            icon: LucideIcons.pencil,
+            label: l10n.therapistDrawingLink,
+            onTap: () => context.push(AppRoutes.therapistDrawing(patientId)),
+          ),
+          _Link(
+            icon: LucideIcons.activity,
+            label: l10n.usageLogTitle,
+            onTap: () => context.push(AppRoutes.therapistUsage(patientId)),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _Link extends StatelessWidget {
+  const _Link({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    minTileHeight: AppSizes.minTouchTarget,
+    leading: Icon(icon, color: AppColors.seal),
+    title: Text(label, style: Theme.of(context).textTheme.bodyLarge),
+    trailing: const Icon(LucideIcons.chevronRight, color: AppColors.wash),
+    onTap: onTap,
+  );
 }
