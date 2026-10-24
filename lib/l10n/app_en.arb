@@ -736,7 +736,7 @@
   "consentAdult": "I am this child's parent or legal guardian and I am 18 or older.",
   "consentParticipation": "I agree to my child taking part in home practice with Melo.",
   "consentDataSharing": "I agree to my child's practice, recordings and drawing photos being shared with their therapist.",
-  "consentAnalysis": "Optional: a computer on the care service may describe drawing photos to help the therapist review them.",
+  "consentAnalysis": "Optional: a computer on the care service may describe drawing photos and suggest speech transcripts and pronunciation reports for therapist review. Estimates can be inaccurate or unable to assess reliably.",
   "consentRequiredItem": "Required",
   "consentOptionalItem": "Optional",
   "consentSignerName": "Your full name",

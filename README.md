@@ -51,3 +51,8 @@ npm run test:backend
 ```
 
 See `CLAUDE.md` for the architecture and engineering rules, `design.md` for the visual system and `backend/README.md` for the API.
+
+Say a Word includes therapist-only automated analysis reports and separate
+clinician corrections. No validated pronunciation model is configured, so reports
+say **Unable to assess reliably** and provide no accuracy score. Original audio
+delivery works independently of optional analysis.

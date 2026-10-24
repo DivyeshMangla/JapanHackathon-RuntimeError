@@ -35,7 +35,24 @@ abstract final class WordStrings {
   static const transcribing =
       'Transcript pending. Original recording is delivered.';
   static const mock =
-      'Mock integration: speech recognition is not configured. Audio delivery works independently.';
+      'Mock integration: speech recognition and validated pronunciation assessment are not configured. Reports state Unable to assess reliably. Audio delivery works independently.';
+  static const reportTitle = 'Automated estimate requiring therapist review';
+  static const unable = 'Unable to assess reliably';
+  static const target = 'Target word';
+  static const recognized = 'Recognized word or sounds';
+  static const unavailable = 'Unavailable';
+  static const accuracyUnavailable =
+      'Pronunciation accuracy: unavailable. No validated model is configured.';
+  static const soundsUnavailable = 'Possible sound differences: not assessed.';
+  static const confidenceUnavailable =
+      'Model confidence: unavailable. Recognition confidence is not pronunciation accuracy.';
+  static const sameText =
+      'Recognized text matches the target. This is a text comparison only.';
+  static const differentText =
+      'Recognized text differs from the target. This does not identify sound differences.';
+  static const correction = 'Therapist correction of analysis (optional)';
+  static const correctionHint =
+      'Keep your correction separate from the automated estimate. Only feedback is shown to the child.';
   static const feedback = 'Therapist feedback';
   static const playFeedback = 'Listen to feedback';
   static const therapist = 'Words and recordings';

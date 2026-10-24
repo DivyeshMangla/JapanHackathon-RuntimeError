@@ -80,5 +80,5 @@ export function audit(db, actor, action, target = null, detail = '') {
   db.prepare('INSERT INTO audit VALUES (?, ?, ?, ?, ?, ?)').run(randomUUID(), actor, action, target, detail, now());
 }
 export const exercises = [...motorExercises];
-export const consentVersion = 'CONNECTED-DEMO-2';
-export const consentText = 'Prototype consent: I understand that this demonstration stores my profile, practice progress, handwriting photos and voice recordings on the connected service and shares them with my assigned therapist. An adult signs for a child. Optional automated analysis describes visible practice marks and requires therapist review. This placeholder must be replaced with approved study information before participant recruitment.';
+export const consentVersion = 'CONNECTED-DEMO-3';
+export const consentText = 'Prototype consent: I understand that this demonstration stores my profile, practice progress, handwriting photos and voice recordings on the connected service and shares them with my assigned therapist. An adult signs for a child. Optional automated analysis describes visible practice marks and may suggest recognized speech and pronunciation reports for therapist review. Estimates may be inaccurate or unable to assess reliably; pronunciation accuracy requires a model validated for the child’s age, language and speech characteristics. This placeholder must be replaced with approved study information before participant recruitment.';

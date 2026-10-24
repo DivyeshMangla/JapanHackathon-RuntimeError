@@ -1,3 +1,5 @@
+import 'pronunciation_report.dart';
+
 class UsefulWord {
   const UsefulWord({
     required this.id,
@@ -24,9 +26,13 @@ class WordAttempt {
     required this.hasFeedbackAudio,
     required this.reviewed,
     this.transcript,
+    this.analysisReport,
+    this.analysisCorrection,
   });
   final String id, word, transcriptionStatus, feedback;
   final DateTime date;
+  final PronunciationReport? analysisReport;
+  final String? analysisCorrection;
   final String? transcript;
   final bool hasFeedbackAudio, reviewed;
   factory WordAttempt.fromJson(Map<String, dynamic> json) => WordAttempt(
@@ -38,6 +44,15 @@ class WordAttempt {
     feedback: json['feedback'] as String,
     hasFeedbackAudio: json['hasFeedbackAudio'] as bool,
     reviewed: json['reviewed'] as bool,
+    analysisReport: json['analysisReport'] == null
+        ? null
+        : PronunciationReport.fromJson(
+            json['analysisReport'] as Map<String, dynamic>,
+          ),
+    analysisCorrection: json['analysisCorrection'] == null
+        ? null
+        : (json['analysisCorrection'] as Map<String, dynamic>)['text']
+              as String?,
   );
 }
 

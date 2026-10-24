@@ -175,13 +175,13 @@ diagnoses, severity, or emotion predictions. There are no client API keys.
 
 ## Children's daily motor and handwriting practice
 
-The connected exercise library includes Little paths (1 minute), Round and round
-(1 minute) and My letter L (2 minutes). A therapist approves consent, records the
-child's clinical assessment, and prescribes suitable activities as one gentle
-round per day. An adult signs their full name on the participant's account for a
-child. The updated prototype consent version is CONNECTED-DEMO-2. Existing
-accounts must sign the updated information and obtain therapist approval before
-motor plans or photo submission; the prior signed record is retained.
+The exercise library includes Little paths (1 minute), Round and round
+(1 minute) and My letter L (2 minutes). A parent signs the unified care consent
+once, when adding the child; the therapist records the child's assessment and prescribes
+suitable activities. The current prototype consent version is CONNECTED-DEMO-3.
+Consent is taken only when a child is added, so a child whose consent predates
+this version has no current consent until re-added (or the demo is reseeded);
+prior signed records are retained.
 The child sees an animated, replayable stroke guide and numbered instructions,
 practises on paper, chooses a JPEG/PNG photo, checks its preview and sends it.
 In a freshly seeded demo, `patient@melo.test` is a synthetic 7-year-old with these
@@ -244,3 +244,32 @@ Practice guidance draws on [NHS children's OT handwriting advice](https://bridge
 and [short, regular task practice](https://cambspborochildrenshealth.nhs.uk/media/q0ehrhfy/1-occupational-therapy-ready-to-learn-pack-small.pdf).
 The sample tasks and dose are starting material for therapist adaptation, not a
 validated treatment or a promise to cure motor coordination difficulties.
+
+### Automated pronunciation report
+
+The feature is labeled **Say a Word** in the app. Each delivered attempt has an
+independent encrypted `analysisReport` snapshot available only to the assigned
+therapist. It includes the target, suggested recognized text, a text-only
+comparison, unavailable sound/accuracy/confidence fields, and explicit model and
+recording-quality limitations. No validated pronunciation model is installed:
+reports say **Unable to assess reliably**, even when recognized text matches.
+Speech-recognition confidence is never converted into pronunciation accuracy,
+and text differences are never interpreted as phonetic differences. This is a
+conservative mock assessment integration, not a functioning pronunciation model.
+
+Recognition has a 15-second deadline and does not delay delivery. Failure or
+expiry leaves the unchanged original available with an unassessable report.
+Legacy attempts also receive a conservative report when read. A future model
+integration requires reviewed validation evidence covering the child's age,
+language and speech characteristics, plus reliable quality/eligibility gates;
+the current API intentionally has no path for accepting an accuracy score.
+
+`PUT /attempts/:id/review` additionally accepts optional `analysisCorrection`
+(up to 4000 characters), stored with server-derived therapist identity/date.
+Corrections never overwrite the automated snapshot, and later recognition cannot
+overwrite a correction. Reports/corrections are excluded from child and parent API
+views; only explicit clinician feedback is shown. The parent's unified care
+consent is now `CONNECTED-DEMO-3`, including voice-analysis disclosures. Older
+consent does not count for new word submissions, and optional analysis is
+only invoked when the parent agrees to it. Approved wording and guardian identity
+verification remain deployment requirements.
