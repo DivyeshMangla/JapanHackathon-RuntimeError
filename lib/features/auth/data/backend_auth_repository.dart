@@ -69,7 +69,7 @@ class BackendAuthRepository implements AuthRepository {
   @override
   Future<User?> endChildMode(String password) async {
     try {
-      return _adopt(
+      return await _adopt(
         await _client.post(
           '/auth/end-child-mode',
           body: {'password': password},

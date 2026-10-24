@@ -53,8 +53,9 @@ class _MotorPracticeScreenState extends ConsumerState<MotorPracticeScreen> {
     if (mounted) setState(() => _working = false);
   }
 
-  Future<void> _pick() => _run(() async {
-    final photo = await ref.read(motorPhotoPickerProvider).pick();
+  Future<void> _pick({bool camera = false}) => _run(() async {
+    final picker = ref.read(motorPhotoPickerProvider);
+    final photo = await (camera ? picker.capture() : picker.pick());
     if (photo == null || !mounted) return;
     setState(() {
       _photo = photo;
@@ -96,6 +97,11 @@ class _MotorPracticeScreenState extends ConsumerState<MotorPracticeScreen> {
       error: _error,
       actions: [
         SecondaryButton(
+          label: _photo == null ? l10n.motorTakePhoto : l10n.motorRetakePhoto,
+          icon: LucideIcons.camera,
+          onPressed: _working ? null : () => _pick(camera: true),
+        ),
+        SecondaryButton(
           label: _photo == null ? l10n.motorChoosePhoto : l10n.drawingNewPhoto,
           icon: LucideIcons.image,
           onPressed: _working ? null : _pick,
@@ -128,6 +134,7 @@ class _PhotoPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Image.memory(
     photo,
+    cacheWidth: AppSizes.photoPreviewPixels,
     height: AppSizes.qrCode,
     fit: BoxFit.contain,
     semanticLabel: context.l10n.motorOriginalPhoto,

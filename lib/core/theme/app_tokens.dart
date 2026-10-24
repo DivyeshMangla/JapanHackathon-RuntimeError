@@ -35,6 +35,9 @@ abstract final class AppSizes {
   static const double signaturePad = 180;
   static const double signaturePreview = 120;
 
+  /// Decode previews at a bounded size while retaining original upload bytes.
+  static const int photoPreviewPixels = 1280;
+
   /// Reading width for step-by-step forms and consent text on tablets.
   static const double readingWidth = 560;
 

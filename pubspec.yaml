@@ -19,6 +19,7 @@ dependencies:
   go_router: ^17.5.0
   hive_ce: ^2.20.2
   hive_ce_flutter: ^2.3.4
+  image_picker: 1.2.3
   intl: ^0.20.2
   just_audio: ^0.10.6
   lucide_icons_flutter: ^3.1.22

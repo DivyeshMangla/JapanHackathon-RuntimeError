@@ -587,7 +587,7 @@
   "motorSendPhoto": "Send to my therapist",
   "motorOriginalPhoto": "Original, unedited practice photo",
   "motorInvalidPhoto": "This photo could not be displayed. Choose a different JPEG or PNG.",
-  "motorPhotoInstructions": "Photograph just the paper in good light. Keep the whole exercise in view, without faces or names. Check the preview before sending. Keep the photo until your upload succeeds.",
+  "motorPhotoInstructions": "Take a photo or choose one from your gallery. Keep the whole paper in view, without faces or names. Check the preview before sending. Your original photo is shared with your therapist. If you agreed to automated analysis, a draft comparison report is prepared in the background for your therapist to review.",
   "motorDailyGuidance": "One gentle round each day: about 4 minutes for all three activities, with breaks. Your therapist chooses which tasks suit you. Practice may help you build skills over time.",
   "motorReviewTitle": "Handwriting photos and review",
   "motorReportCaution": "Automated visual observations are provisional. Check the original before giving feedback. A still photo cannot assess grip, pressure, movement, diagnose a condition or establish clinical improvement.",
@@ -799,5 +799,12 @@
   "childModeChecking": "Checking",
   "childModeWrongPassword": "That password is not right.",
   "childModePasswordRequired": "Enter your password.",
-  "parentConsentMissing": "No consent is on file for this child. Contact your therapist."
+  "parentConsentMissing": "No consent is on file for this child. Contact your therapist.",
+  "motorTakePhoto": "Take a practice photo",
+  "motorRetakePhoto": "Take another photo",
+  "motorCameraUnavailable": "Could not open the camera. Check camera access and try again.",
+  "motorReportTarget": "Expected result: {target}",
+  "@motorReportTarget": {"placeholders": {"target": {"type": "String"}}},
+  "motorReportComparison": "Compared with the example: {comparison}",
+  "@motorReportComparison": {"placeholders": {"comparison": {"type": "String"}}}
 }

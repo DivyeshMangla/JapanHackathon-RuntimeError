@@ -36,7 +36,7 @@ final class SensorFailure extends AppFailure {
   const SensorFailure([super.cause]);
 }
 
-enum MediaProblem { unavailable, tooLarge }
+enum MediaProblem { unavailable, cameraUnavailable, tooLarge }
 
 /// A picked photo, picture or sound file could not be used.
 final class MediaFailure extends AppFailure {

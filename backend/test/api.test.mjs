@@ -317,7 +317,7 @@ test('useful word delivery completes while recognition is stalled; suggestions n
 
 test('child motor practice: consent, photo integrity, real analysis seam, review and reassignment', async t => {
   let calls=0;
-  const report={imageQuality:'usable',observations:'Three lines are visible.',alignment:'developing',formation:'emerging',spacing:'not_assessable',suggestion:'Try one short line, then rest.',model:'test-vision',generatedAt:now()};
+  const report={imageQuality:'usable',observations:'Three lines are visible.',comparison:'The count matches; the gaps vary.',expectedResult:'Three horizontal lines',alignment:'developing',formation:'emerging',spacing:'not_assessable',suggestion:'Try one short line, then rest.',model:'test-vision',generatedAt:now()};
   const f=await fixture(t,{motorAnalyzer:async()=>{calls++;return report;}});
   const admin=f.add('admin'),therapist=f.add('therapist'),other=f.add('therapist'),patient=f.add('patient'),outsider=f.add('patient');
   const at=await f.login(admin),tt=await f.login(therapist),ot=await f.login(other),pt=await f.login(patient),out=await f.login(outsider);
@@ -348,13 +348,24 @@ test('child motor practice: consent, photo integrity, real analysis seam, review
   const get=await f.call(path,'GET',undefined,tt);
   assert.equal(get.data.progress.length,1);assert.equal(get.data.progress[0].minutes,1);assert.equal(get.data.motorSubmissions.length,1);assert.equal(get.data.motorSubmissions[0].analysis_status,'ready');assert.deepEqual(get.data.motorSubmissions[0].report,report);
   assert.equal((await f.call(path,'GET',undefined,pt)).data.motorSubmissions[0].report,null);
+  const parentToken=await f.login(parent);
+  assert.equal((await f.call(path,'GET',undefined,parentToken)).data.motorSubmissions[0].report,null);
   const media=`/motor-submissions/${payload.id}/photo`;
   assert.equal((await f.call(media)).status,401);
   assert.equal((await f.call(media,'GET',undefined,ot)).status,403);
   const original=await f.call(media,'GET',undefined,tt);assert.equal(original.status,200);assert.deepEqual(Buffer.from(original.data),photo);
+  // A camera original larger than the previous 6 MB cap must survive unchanged.
+  const cameraHeader=Buffer.from([255,216,255,192,0,11,8,0,128,0,128,1,1,17,0,255,218,0,8,1,1,0,0,63,0,1,2,3,255,217]);
+  const cameraPhoto=Buffer.concat([cameraHeader,Buffer.alloc(6*1024*1024+1,7)]);
+  const cameraId=randomUUID();
+  assert.equal((await f.call(`${path}/motor-submissions`,'POST',{...payload,id:cameraId,photo:cameraPhoto.toString('base64')},pt)).status,201);
+  await f.motor.waitForIdle();
+  const cameraOriginal=await f.call(`/motor-submissions/${cameraId}/photo`,'GET',undefined,tt);
+  assert.deepEqual(Buffer.from(cameraOriginal.data),cameraPhoto);
+
   assert.equal((await f.call(`/motor-submissions/${payload.id}/review`,'POST',{note:'Nice practice. Let us work on one line next time.'},pt)).status,403);
   assert.equal((await f.call(`/motor-submissions/${payload.id}/review`,'POST',{note:'Nice practice. Let us work on one line next time.'},tt)).status,200);
-  assert.ok((await f.call(path,'GET',undefined,pt)).data.motorSubmissions[0].review_note);
+  assert.ok((await f.call(path,'GET',undefined,pt)).data.motorSubmissions.find(s=>s.id===payload.id).review_note);
   const restarted=createApp({dataDir:f.dir});assert.equal(restarted.motor.summaries(patient.id,'therapist')[0].report.model,'test-vision');restarted.db.close();
   await f.call(`${path}/assignment`,'PUT',{therapistId:other.id},at);
   assert.equal((await f.call(media,'GET',undefined,tt)).status,403);

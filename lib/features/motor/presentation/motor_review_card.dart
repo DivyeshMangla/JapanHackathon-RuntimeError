@@ -149,6 +149,7 @@ class _Photo extends StatelessWidget {
           }
           return Image.memory(
             snapshot.data!,
+            cacheWidth: AppSizes.photoPreviewPixels,
             height: AppSizes.qrCode,
             fit: BoxFit.contain,
             semanticLabel: l10n.motorOriginalPhoto,
@@ -181,6 +182,10 @@ class _Report extends StatelessWidget {
         children: [
           if (report.imageQuality == 'retake') InfoNotice(l10n.motorRetake),
           Text(report.observations),
+          if (report.expectedResult != null)
+            Text(l10n.motorReportTarget(report.expectedResult!)),
+          if (report.comparison != null)
+            Text(l10n.motorReportComparison(report.comparison!)),
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.motorReportMetrics(

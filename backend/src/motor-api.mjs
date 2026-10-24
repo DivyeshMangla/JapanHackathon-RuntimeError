@@ -2,7 +2,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { audit, now } from './db.mjs';
-import { motorExercises, photoType } from './motor.mjs';
+import { motorExercises, photoType, maxMotorPhotoBytes } from './motor.mjs';
 
 export function motorApi({
   db,
@@ -70,7 +70,7 @@ export function motorApi({
     summaries(patientId, role) {
       return rows(patientId).map(({ filename, photo_hash, report, ...row }) => ({
         ...row,
-        report: role === 'patient' ? null : report ? JSON.parse(report) : null,
+        report: ['therapist', 'admin'].includes(role) && report ? JSON.parse(report) : null,
       }));
     },
     waitForIdle: () => work,
@@ -79,7 +79,7 @@ export function motorApi({
       if (upload && req.method === 'POST') {
         const p = accessPatient(u, upload[1]);
         requireRole(u, 'patient');
-        const b = await body(req, 9 * 1024 * 1024);
+        const b = await body(req, 4 * Math.ceil(maxMotorPhotoBytes / 3) + 65536);
         const c = consent(p.id);
         if (c?.status !== 'approved')
           fail(409, 'Your therapist must approve consent first.');
@@ -96,16 +96,16 @@ export function motorApi({
         if (!/^[a-zA-Z0-9-]+$/.test(id)) fail(400, 'Invalid submission ID.');
         if (
           typeof b.photo !== 'string' ||
-          b.photo.length > 8 * 1024 * 1024 ||
+          b.photo.length > 4 * Math.ceil(maxMotorPhotoBytes / 3) ||
           !/^[A-Za-z0-9+/]+={0,2}$/.test(b.photo)
         )
-          fail(400, 'Choose a JPEG or PNG photo up to 6 MB.');
+          fail(400, 'Choose a JPEG or PNG photo up to 20 MB.');
         const photo = Buffer.from(b.photo, 'base64');
         const mime = photoType(photo);
-        if (!mime || photo.length > 6 * 1024 * 1024)
+        if (!mime || photo.length > maxMotorPhotoBytes)
           fail(
             400,
-            'Choose a JPEG or PNG photo up to 6 MB (PNG: at least 64 × 64, at most 24 megapixels).',
+            'Choose a JPEG or PNG photo up to 20 MB, at least 64 × 64 and at most 24 megapixels.',
           );
         const day = text(b.practiceDay, 'Practice day', 10);
         const date = new Date(`${day}T12:00:00Z`);
