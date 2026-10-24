@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/errors/app_failure.dart';
-import '../../../core/security/password_hasher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/l10n.dart';
@@ -13,10 +12,11 @@ import '../../../shared/widgets/choice_pills.dart';
 import '../../../shared/widgets/labeled_text_field.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../auth/domain/user.dart';
-import '../../study/presentation/consent_fields.dart';
+import '../../auth/presentation/account_validators.dart';
 import 'controllers/admin_controllers.dart';
 
-/// Creates a patient or therapist account.
+/// Creates a parent or therapist account. Children join from their
+/// parent's code instead.
 class UserFormScreen extends ConsumerStatefulWidget {
   const UserFormScreen({super.key, required this.role});
 
@@ -32,13 +32,10 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   String? _therapistId;
-  bool _infoSheet = false;
-  DateTime? _consentOn;
   InvalidInputFailure? _problem;
-  bool _attempted = false;
   bool _saving = false;
 
-  bool get _isPatient => widget.role == UserRole.patient;
+  bool get _isParent => widget.role == UserRole.parent;
 
   @override
   void dispose() {
@@ -50,11 +47,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
 
   Future<void> _submit() async {
     final fieldsValid = _form.currentState!.validate();
-    final consentGiven = !_isPatient || (_infoSheet && _consentOn != null);
-    if (!fieldsValid || !consentGiven) {
-      setState(() => _attempted = true);
-      return;
-    }
+    if (!fieldsValid) return;
     setState(() {
       _saving = true;
       _problem = null;
@@ -68,20 +61,12 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
             email: _email.text,
             password: _password.text,
             therapistId: _therapistId,
-            infoSheetProvided: _infoSheet,
-            consentSignedOn: _consentOn,
           );
       if (!mounted) return;
       final l10n = context.l10n;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _isPatient
-                ? l10n.createdPatient(user.participantCode ?? '', user.name)
-                : l10n.createdUser(user.name),
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.createdUser(user.name))));
       context.pop();
     } on InvalidInputFailure catch (failure) {
       setState(() {
@@ -105,27 +90,18 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isPatient ? l10n.addPatient : l10n.addTherapist),
+        title: Text(_isParent ? l10n.addParent : l10n.addTherapist),
       ),
       body: Form(
         key: _form,
         child: PageList(
           children: [
             _AccountFields(name: _name, email: _email, password: _password),
-            if (_isPatient) ...[
+            if (_isParent) ...[
               const SizedBox(height: AppSpacing.lg),
               _TherapistPicker(
                 selected: _therapistId,
                 onSelected: (id) => setState(() => _therapistId = id),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SectionLabel(l10n.consentSection),
-              ConsentFields(
-                infoSheet: _infoSheet,
-                consentOn: _consentOn,
-                showMissing: _attempted,
-                onInfoSheet: (v) => setState(() => _infoSheet = v),
-                onConsentOn: (d) => setState(() => _consentOn = d),
               ),
             ],
             if (problem != null) ...[
@@ -159,8 +135,6 @@ class _AccountFields extends StatelessWidget {
   final TextEditingController email;
   final TextEditingController password;
 
-  static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -171,7 +145,7 @@ class _AccountFields extends StatelessWidget {
           label: l10n.fullName,
           controller: name,
           textInputAction: TextInputAction.next,
-          validator: (v) => (v ?? '').trim().isEmpty ? l10n.nameRequired : null,
+          validator: (v) => requiredName(l10n, v),
         ),
         const SizedBox(height: AppSpacing.md),
         LabeledTextField(
@@ -179,23 +153,14 @@ class _AccountFields extends StatelessWidget {
           controller: email,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
-          validator: (v) => _emailPattern.hasMatch((v ?? '').trim())
-              ? null
-              : l10n.emailInvalid,
+          validator: (v) => validEmail(l10n, v),
         ),
         const SizedBox(height: AppSpacing.md),
         LabeledTextField(
           label: l10n.temporaryPassword,
           controller: password,
           obscureText: true,
-          validator: (v) {
-            final value = v ?? '';
-            if (value.length < 8) return l10n.passwordTooShort;
-            if (!PasswordHasher.isWithinLimit(value)) {
-              return l10n.passwordTooLong;
-            }
-            return null;
-          },
+          validator: (v) => validPassword(l10n, v),
         ),
       ],
     );
@@ -222,11 +187,6 @@ class _TherapistPicker extends ConsumerWidget {
           selected: selected ?? '',
           labelOf: (id) => therapists.firstWhere((t) => t.id == id).name,
           onSelected: onSelected,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          l10n.participantCodeNote,
-          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );

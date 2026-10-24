@@ -12,8 +12,9 @@ typedef WordRequest =
       Map<String, dynamic>? data,
     });
 
-/// Uses the connected account's authenticated transport and encrypted Hive box.
-/// Each repository is tied to one session; the transport rejects account changes.
+/// One child's word practice on the care service. An attempt that fails to
+/// send waits in the device's encrypted storage until it is delivered or
+/// discarded. The transport and store are passed in so tests can fake them.
 class WordRepository {
   WordRepository(this.patientId, this._request, this._read, this._write);
   final String patientId;
@@ -32,19 +33,6 @@ class WordRepository {
         'birthDate': birthDate,
         'usesSpeech': true,
         'therapistSelectedGoals': true,
-      },
-    );
-  }
-
-  Future<void> consent(String version, String name, String relationship) async {
-    await _request(
-      '$_path/consent',
-      method: 'POST',
-      data: {
-        'version': version,
-        'guardianName': name,
-        'relationship': relationship,
-        'guardianConsent': true,
       },
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -15,7 +14,6 @@ import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/choice_pills.dart';
 import '../../../shared/widgets/failure_feedback.dart';
 import '../../../shared/widgets/ink_card.dart';
-import '../../../shared/widgets/labeled_text_field.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../../settings/domain/study_settings.dart';
@@ -106,15 +104,9 @@ class _ExportSectionState extends ConsumerState<_ExportSection> {
 
   static String _exportLabel(AppLocalizations l10n, ExportKind kind) =>
       switch (kind) {
-        ExportKind.participants => l10n.exportParticipants,
-        ExportKind.outcomes => l10n.exportOutcomes,
         ExportKind.completions => l10n.exportCompletions,
         ExportKind.assignments => l10n.exportAssignments,
         ExportKind.recordings => l10n.exportRecordings,
-        ExportKind.selfReports => l10n.exportSelfReports,
-        ExportKind.monitoring => l10n.exportMonitoring,
-        ExportKind.usability => l10n.exportUsability,
-        ExportKind.feedback => l10n.exportFeedback,
         ExportKind.voiceDiary => l10n.exportVoiceDiary,
         ExportKind.usageLog => l10n.exportUsageLog,
       };
@@ -155,21 +147,10 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
   late StudySettings _draft = widget.initial;
   bool _saving = false;
 
-  late final _approached = TextEditingController(
-    text: widget.initial.participantsApproached?.toString() ?? '',
-  );
-
-  @override
-  void dispose() {
-    _approached.dispose();
-    super.dispose();
-  }
-
   bool get _changed =>
       _draft.adherenceThreshold != widget.initial.adherenceThreshold ||
       _draft.probeIntervalDays != widget.initial.probeIntervalDays ||
-      _draft.studyWeeks != widget.initial.studyWeeks ||
-      _draft.participantsApproached != widget.initial.participantsApproached;
+      _draft.studyWeeks != widget.initial.studyWeeks;
 
   Future<void> _save() async {
     setState(() => _saving = true);
@@ -203,23 +184,6 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
           onChanged: (draft) => setState(() => _draft = draft),
         ),
         const SizedBox(height: AppSpacing.lg),
-        SectionLabel(l10n.recruitmentSection),
-        LabeledTextField(
-          label: l10n.approachedLabel,
-          controller: _approached,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          onChanged: (v) => setState(
-            () => _draft = StudySettings(
-              adherenceThreshold: _draft.adherenceThreshold,
-              probeIntervalDays: _draft.probeIntervalDays,
-              studyWeeks: _draft.studyWeeks,
-              participantsApproached: int.tryParse(v),
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(l10n.approachedHelp, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: AppSpacing.lg),
         PrimaryButton(
           label: _saving ? l10n.saving : l10n.saveSettings,

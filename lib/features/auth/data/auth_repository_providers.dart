@@ -1,26 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/security/password_hasher.dart';
-import '../../../core/storage/local_database.dart';
+import '../../../core/network/backend_client.dart';
 import '../domain/auth_repository.dart';
 import '../domain/user_repository.dart';
-import 'hive_auth_repository.dart';
-import 'hive_user_repository.dart';
+import 'backend_auth_repository.dart';
+import 'backend_user_repository.dart';
 
-final passwordHasherProvider = Provider<PasswordHasher>(
-  (ref) => const PasswordHasher(),
+final _backendUsersProvider = Provider<BackendUserRepository>(
+  (ref) => BackendUserRepository(ref.watch(backendClientProvider)),
 );
 
 final userRepositoryProvider = Provider<UserRepository>(
-  (ref) => HiveUserRepository(ref.watch(localDatabaseProvider).users),
+  (ref) => ref.watch(_backendUsersProvider),
 );
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final db = ref.watch(localDatabaseProvider);
-  return HiveAuthRepository(
-    credentials: db.credentials,
-    meta: db.meta,
-    users: ref.watch(userRepositoryProvider),
-    hasher: ref.watch(passwordHasherProvider),
-  );
-});
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => BackendAuthRepository(
+    ref.watch(backendClientProvider),
+    ref.watch(_backendUsersProvider),
+  ),
+);

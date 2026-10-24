@@ -2,7 +2,8 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 
-import '../../../core/errors/connected_failure.dart';
+import '../../../core/errors/app_failure.dart';
+import '../../../core/errors/guard.dart';
 
 class WordMedia {
   const WordMedia(this.bytes, this.mime);
@@ -11,7 +12,7 @@ class WordMedia {
 }
 
 class WordMediaPicker {
-  Future<WordMedia?> choose({required bool picture}) async {
+  Future<WordMedia?> choose({required bool picture}) => guard(() async {
     final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: picture ? ['png', 'jpg', 'jpeg'] : ['wav'],
@@ -20,16 +21,10 @@ class WordMediaPicker {
     final limit = picture ? 1500000 : 12 * 1024 * 1024;
     final size = await file.length();
     if (size == null || size > limit) {
-      throw const ConnectedFailure(
-        ConnectedFailureReason.rejected,
-        serverMessage:
-            'Choose a picture up to 1.5 MB or a WAV recording up to 12 MB.',
-      );
+      throw const MediaFailure(MediaProblem.tooLarge);
     }
     final bytes = await file.readAsBytes();
-    if (bytes.length > limit) {
-      throw const ConnectedFailure(ConnectedFailureReason.badResponse);
-    }
+    if (bytes.length > limit) throw const MediaFailure(MediaProblem.tooLarge);
     return WordMedia(
       bytes,
       picture
@@ -38,5 +33,5 @@ class WordMediaPicker {
                 : 'image/jpeg')
           : 'audio/wav',
     );
-  }
+  }, (error) => MediaFailure(MediaProblem.unavailable, error));
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -65,6 +64,14 @@ class _LoginHeader extends StatelessWidget {
           ),
           child: Row(
             children: [
+              if (Navigator.canPop(context)) ...[
+                IconButton(
+                  tooltip: context.l10n.back,
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(LucideIcons.arrowLeft),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+              ],
               const SealMark(size: AppSizes.minTouchTarget),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -277,26 +284,22 @@ class _LoginFormState extends ConsumerState<_LoginForm> {
             icon: LucideIcons.logIn,
             onPressed: _submitting ? null : _submit,
           ),
+          const SizedBox(height: AppSpacing.sm),
+          SecondaryButton(
+            label: l10n.loginCreateParent,
+            icon: LucideIcons.userPlus,
+            onPressed: _submitting
+                ? null
+                : () => context.pushReplacement(AppRoutes.parentSignUp),
+          ),
           const SizedBox(height: AppSpacing.md),
-          // There is no self-service reset, so point patients to the people
-          // who manage their account.
+          // There is no self-service reset, so point people to whoever
+          // manages their account.
           Text(
             l10n.loginHelp,
             textAlign: TextAlign.center,
             style: text.bodySmall,
           ),
-          // A developer tool; release builds given to patients never show it.
-          if (!kReleaseMode) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Center(
-              child: TextButton.icon(
-                onPressed: () => context.push(AppRoutes.sensorCheck),
-                style: TextButton.styleFrom(foregroundColor: AppColors.muted),
-                icon: const Icon(LucideIcons.activity, size: 16),
-                label: Text(l10n.sensorCheckOpen, style: text.bodySmall),
-              ),
-            ),
-          ],
         ],
       ),
     );

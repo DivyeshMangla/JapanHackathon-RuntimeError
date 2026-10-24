@@ -115,7 +115,7 @@ class _TimelineNode extends StatelessWidget {
           color: done
               ? AppColors.sunshine
               : featured
-              ? AppColors.ink
+              ? AppColors.childButter
               : AppColors.surface,
           shape: BoxShape.circle,
           border: done || featured ? null : Border.all(color: AppColors.rail),
@@ -124,16 +124,14 @@ class _TimelineNode extends StatelessWidget {
             ? const Icon(LucideIcons.check, size: 16, color: AppColors.ink)
             : Text(
                 number.toString().padLeft(2, '0'),
-                style: AppTypography.monoSmall.copyWith(
-                  color: featured ? AppColors.surface : AppColors.muted,
-                ),
+                style: AppTypography.monoSmall.copyWith(color: AppColors.ink),
               ),
       ),
     );
   }
 }
 
-/// One of today's exercises. The first unfinished one is [featured]: a dark
+/// One of today's exercises. The first unfinished one is [featured]: a pastel
 /// card that leads with starting the exercise. The rest are compact white
 /// cards whose main action marks the next session.
 class ExercisePracticeCard extends StatefulWidget {
@@ -171,7 +169,7 @@ class _ExercisePracticeCardState extends State<ExercisePracticeCard> {
   Widget build(BuildContext context) {
     final body = _CardBody(
       item: widget.item,
-      dark: widget.featured,
+      featured: widget.featured,
       saving: _saving,
       onOpen: widget.onOpen,
       onMark: _mark,
@@ -182,7 +180,7 @@ class _ExercisePracticeCardState extends State<ExercisePracticeCard> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        gradient: AppColors.darkGradient,
+        color: AppColors.childButter,
         borderRadius: BorderRadius.circular(AppRadius.base),
       ),
       child: body,
@@ -193,14 +191,14 @@ class _ExercisePracticeCardState extends State<ExercisePracticeCard> {
 class _CardBody extends StatelessWidget {
   const _CardBody({
     required this.item,
-    required this.dark,
+    required this.featured,
     required this.saving,
     required this.onOpen,
     required this.onMark,
   });
 
   final DayItem item;
-  final bool dark;
+  final bool featured;
   final bool saving;
   final VoidCallback onOpen;
   final Future<void> Function(bool done) onMark;
@@ -210,11 +208,7 @@ class _CardBody extends StatelessWidget {
     final l10n = context.l10n;
     final text = Theme.of(context).textTheme;
     final exercise = item.exercise;
-    final titleColor = dark
-        ? AppColors.surface
-        : item.isDone
-        ? AppColors.muted
-        : AppColors.ink;
+    final titleColor = item.isDone ? AppColors.muted : AppColors.ink;
 
     if (item.isDone) {
       return Row(
@@ -251,8 +245,8 @@ class _CardBody extends StatelessWidget {
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: _Chip(
-                  label: dark ? l10n.practiceUpNext : exercise.program,
-                  dark: dark,
+                  label: featured ? l10n.practiceUpNext : exercise.program,
+                  featured: featured,
                 ),
               ),
             ),
@@ -261,10 +255,10 @@ class _CardBody extends StatelessWidget {
               tooltip: l10n.practiceOpenNamed(exercise.title),
               onPressed: onOpen,
               style: IconButton.styleFrom(
-                backgroundColor: dark
-                    ? AppColors.dockSelection
+                backgroundColor: featured
+                    ? AppColors.surface
                     : AppColors.washTint,
-                foregroundColor: dark ? AppColors.surface : AppColors.ink,
+                foregroundColor: AppColors.ink,
               ),
               icon: const Icon(LucideIcons.arrowUpRight, size: 20),
             ),
@@ -273,15 +267,15 @@ class _CardBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           exercise.title,
-          style: (dark ? text.headlineMedium : text.titleLarge)?.copyWith(
+          style: (featured ? text.headlineMedium : text.titleLarge)?.copyWith(
             color: titleColor,
           ),
         ),
-        if (dark) ...[
+        if (featured) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
             exercise.program,
-            style: text.bodySmall?.copyWith(color: AppColors.onDarkMuted),
+            style: text.bodySmall?.copyWith(color: AppColors.muted),
           ),
         ],
         const SizedBox(height: AppSpacing.md),
@@ -293,21 +287,21 @@ class _CardBody extends StatelessWidget {
             _DoseBadge(
               icon: LucideIcons.clock,
               label: l10n.practiceMinutes(exercise.durationMinutes),
-              dark: dark,
+              featured: featured,
             ),
             _DoseBadge(
               icon: LucideIcons.repeat,
               label: l10n.practiceRepetitions(item.schedule.repetitions),
-              dark: dark,
+              featured: featured,
             ),
             if (item.schedule.sessionsPerDay > 1)
-              _SessionDots(item: item, dark: dark),
+              _SessionDots(item: item, featured: featured),
           ],
         ),
         const SizedBox(height: AppSpacing.md),
         _SessionActions(
           item: item,
-          dark: dark,
+          featured: featured,
           saving: saving,
           onOpen: onOpen,
           onMark: onMark,
@@ -318,10 +312,10 @@ class _CardBody extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.dark});
+  const _Chip({required this.label, required this.featured});
 
   final String label;
-  final bool dark;
+  final bool featured;
 
   @override
   Widget build(BuildContext context) {
@@ -331,8 +325,8 @@ class _Chip extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: dark ? AppColors.dockSelection : AppColors.surface,
-        border: dark ? null : Border.all(color: AppColors.hairline),
+        color: AppColors.surface,
+        border: featured ? null : Border.all(color: AppColors.hairline),
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Row(
@@ -342,7 +336,7 @@ class _Chip extends StatelessWidget {
             width: AppSpacing.sm,
             height: AppSpacing.sm,
             decoration: BoxDecoration(
-              color: dark ? AppColors.sunshine : AppColors.purple,
+              color: featured ? AppColors.sunshine : AppColors.purple,
               shape: BoxShape.circle,
             ),
           ),
@@ -352,9 +346,9 @@ class _Chip extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: dark ? AppColors.surface : AppColors.ink,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: AppColors.ink),
             ),
           ),
         ],
@@ -367,16 +361,16 @@ class _DoseBadge extends StatelessWidget {
   const _DoseBadge({
     required this.icon,
     required this.label,
-    required this.dark,
+    required this.featured,
   });
 
   final IconData icon;
   final String label;
-  final bool dark;
+  final bool featured;
 
   @override
   Widget build(BuildContext context) {
-    final color = dark ? AppColors.onDarkMuted : AppColors.muted;
+    final color = AppColors.muted;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -395,10 +389,10 @@ class _DoseBadge extends StatelessWidget {
 
 /// One dot per session today, filled as each is marked.
 class _SessionDots extends StatelessWidget {
-  const _SessionDots({required this.item, required this.dark});
+  const _SessionDots({required this.item, required this.featured});
 
   final DayItem item;
-  final bool dark;
+  final bool featured;
 
   @override
   Widget build(BuildContext context) {
@@ -407,7 +401,7 @@ class _SessionDots extends StatelessWidget {
       item.sessionsDone,
       total,
     );
-    final pendingBorder = dark ? AppColors.onDarkMuted : AppColors.rail;
+    final pendingBorder = featured ? AppColors.muted : AppColors.rail;
     return Semantics(
       label: label,
       excludeSemantics: true,
@@ -436,9 +430,7 @@ class _SessionDots extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: AppTypography.monoSmall.copyWith(
-                color: dark ? AppColors.onDarkMuted : AppColors.muted,
-              ),
+              style: AppTypography.monoSmall.copyWith(color: AppColors.muted),
             ),
           ),
         ],
@@ -452,14 +444,14 @@ class _SessionDots extends StatelessWidget {
 class _SessionActions extends StatelessWidget {
   const _SessionActions({
     required this.item,
-    required this.dark,
+    required this.featured,
     required this.saving,
     required this.onOpen,
     required this.onMark,
   });
 
   final DayItem item;
-  final bool dark;
+  final bool featured;
   final bool saving;
   final VoidCallback onOpen;
   final Future<void> Function(bool done) onMark;
@@ -484,15 +476,15 @@ class _SessionActions extends StatelessWidget {
     final Widget main;
     if (item.isDone) {
       main = _CompletedPill(label: l10n.practiceCompleted);
-    } else if (dark) {
+    } else if (featured) {
       main = OutlinedButton.icon(
         onPressed: onMarkNext,
         style: OutlinedButton.styleFrom(
           minimumSize: compactSize,
           backgroundColor: Colors.transparent,
-          foregroundColor: AppColors.surface,
-          disabledForegroundColor: AppColors.onDarkMuted,
-          side: const BorderSide(color: AppColors.dockSelection),
+          foregroundColor: AppColors.ink,
+          disabledForegroundColor: AppColors.muted,
+          side: const BorderSide(color: AppColors.ink),
         ),
         icon: Icon(markIcon, size: 18),
         label: _FitLabel(markLabel),
@@ -515,10 +507,10 @@ class _SessionActions extends StatelessWidget {
             tooltip: l10n.practiceUndoNamed(done, item.exercise.title),
             onPressed: saving ? null : () => onMark(false),
             style: IconButton.styleFrom(
-              backgroundColor: dark
-                  ? AppColors.dockSelection
+              backgroundColor: featured
+                  ? AppColors.surface
                   : AppColors.washTint,
-              foregroundColor: dark ? AppColors.surface : AppColors.ink,
+              foregroundColor: AppColors.ink,
             ),
             icon: const Icon(LucideIcons.undo2, size: 20),
           ),
@@ -526,7 +518,7 @@ class _SessionActions extends StatelessWidget {
       ],
     );
 
-    if (!dark) return markRow;
+    if (!featured) return markRow;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

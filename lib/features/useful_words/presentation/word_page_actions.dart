@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/errors/connected_failure.dart';
+import '../../../core/errors/app_failure.dart';
+import '../../../core/logging/app_logger.dart';
+import '../../../core/utils/l10n.dart';
 import 'word_strings.dart';
 
 mixin WordPageActions<T extends StatefulWidget> on State<T> {
@@ -12,18 +14,25 @@ mixin WordPageActions<T extends StatefulWidget> on State<T> {
       busy = true;
       error = null;
     });
-    String? failure;
+    Object? failure;
     try {
       await action();
-    } on ConnectedFailure catch (e) {
-      failure = e.serverMessage ?? WordStrings.error;
-    } catch (_) {
-      failure = WordStrings.error;
+    } on AppFailure catch (e) {
+      failure = e;
+    } catch (e, stack) {
+      AppLogger.error('Word practice action failed', e, stack);
+      failure = e;
     }
+    // The message is looked up only now: a page may start loading from
+    // initState, before it can read inherited widgets.
     if (mounted) {
       setState(() {
         busy = false;
-        error = failure;
+        error = switch (failure) {
+          null => null,
+          final AppFailure known => context.l10n.failureMessage(known),
+          _ => WordStrings.error,
+        };
       });
     }
     return failure == null;

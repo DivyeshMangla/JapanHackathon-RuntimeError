@@ -36,9 +36,11 @@ class ReminderActions {
   }
 }
 
-/// Keeps device notifications in step with whoever is signed in: a patient's
-/// reminders are scheduled at sign-in, and cleared at sign-out. Watched once
-/// from the app root.
+/// Keeps device notifications in step with whoever is signed in: a child's
+/// or parent's practice reminders are scheduled at sign-in, and cleared at
+/// sign-out. Watched once from the app root.
+const _remindedRoles = {UserRole.patient, UserRole.parent};
+
 final reminderSyncProvider = Provider<void>((ref) {
   ref.listen<AsyncValue<User?>>(authControllerProvider, (previous, next) async {
     try {
@@ -46,7 +48,7 @@ final reminderSyncProvider = Provider<void>((ref) {
       if (user?.id == previous?.value?.id) return;
 
       final scheduler = ref.read(reminderSchedulerProvider);
-      if (user == null || user.role != UserRole.patient) {
+      if (user == null || !_remindedRoles.contains(user.role)) {
         await scheduler.cancelAll();
         return;
       }
@@ -55,8 +57,8 @@ final reminderSyncProvider = Provider<void>((ref) {
         await scheduler.scheduleDaily(times, reminderText());
       }
     } on AppFailure catch (failure) {
-      // Sign-in and sign-out must not fail because of reminders; the patient
-      // can retry from their profile.
+      // Sign-in and sign-out must not fail because of reminders; a parent
+      // can retry from Settings.
       AppLogger.warning('Reminder sync failed', failure);
     }
   }, fireImmediately: true);

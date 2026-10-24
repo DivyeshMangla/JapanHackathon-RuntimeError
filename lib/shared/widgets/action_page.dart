@@ -18,6 +18,7 @@ class ActionPage extends StatelessWidget {
     this.onBack,
     this.backLabel,
     this.headerAction,
+    this.backgroundColor,
   });
 
   final String title;
@@ -30,11 +31,13 @@ class ActionPage extends StatelessWidget {
   final VoidCallback? onBack;
   final String? backLabel;
   final Widget? headerAction;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
     final hasPanel = actions.isNotEmpty || error != null;
     return Scaffold(
+      backgroundColor: backgroundColor,
       body: SafeArea(
         bottom: !hasPanel,
         child: Column(

@@ -19,7 +19,7 @@ abstract interface class ScheduleRepository {
 
   Future<void> save(Schedule schedule);
 
-  Future<void> delete(String id);
+  Future<void> delete({required String patientId, required String id});
 }
 
 abstract interface class CompletionRepository {
@@ -35,5 +35,5 @@ abstract interface class CompletionRepository {
 
   Future<void> add(Completion completion);
 
-  Future<void> delete(String id);
+  Future<void> delete({required String patientId, required String id});
 }

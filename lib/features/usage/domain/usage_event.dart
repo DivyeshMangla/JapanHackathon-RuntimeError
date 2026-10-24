@@ -7,7 +7,6 @@ enum UsageAction {
   sessionMarked,
   sessionUndone,
   recordingSaved,
-  questionnaireSubmitted,
   remindersChanged,
 }
 

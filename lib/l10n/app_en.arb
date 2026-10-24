@@ -1,17 +1,15 @@
 {
   "@@locale": "en",
-  "learnReadGuide": "Read guide",
-  "homePracticeHeading": "Make time\nfor your voice.",
   "appTitle": "Melo",
   "signOut": "Sign out",
   "play": "Play",
   "pause": "Pause",
   "errorTitle": "Something went wrong",
   "errorMessage": "This information could not be loaded. Close and reopen the app to try again.",
-  "loginHeadlineLead": "Your voice,",
-  "loginHeadlineEmphasis": "one session at a time.",
-  "loginIntro": "Sign in with the account your therapist set up for you.",
-  "loginHelp": "Can't sign in? Ask your therapist or the study team.",
+  "loginHeadlineLead": "Little steps,",
+  "loginHeadlineEmphasis": "every day.",
+  "loginIntro": "Parents, therapists and administrators sign in here.",
+  "loginHelp": "Can't sign in? Ask your therapist or the clinic team.",
   "loginEmail": "Email",
   "loginEmailHint": "name@example.org",
   "loginPassword": "Password",
@@ -21,10 +19,6 @@
   "loginSubmitting": "Signing in",
   "loginMissingFields": "Enter your email and password.",
   "loginFailed": "That email and password do not match an account.",
-  "navHome": "Home",
-  "navExercises": "Exercises",
-  "navRecord": "Record",
-  "navProfile": "Profile",
   "greetingMorning": "Good morning,\n{name}",
   "@greetingMorning": {
     "placeholders": {
@@ -49,51 +43,10 @@
       }
     }
   },
-  "homeTodayTitle": "Today's sessions",
-  "homeOfDue": " of {due}",
-  "@homeOfDue": {
-    "placeholders": {
-      "due": {
-        "type": "int"
-      }
-    }
-  },
-  "homeNothingToday": "Nothing is scheduled today. Rest your voice.",
-  "homeAllDone": "All of today's sessions are done.",
-  "homeLeftToday": "{count, plural, =1{1 session left today.} other{{count} sessions left today.}}",
-  "@homeLeftToday": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "homeStart": "Start exercises",
-  "homeContinue": "Continue exercises",
-  "homeStreak": "Streak",
-  "homeStreakDays": "{count, plural, =1{day in a row} other{days in a row}}",
-  "@homeStreakDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "homeNextReminder": "Next reminder",
-  "homeNoReminder": "None",
-  "homeSetReminder": "Tap to set a time",
   "homeToday": "Today",
-  "homeTomorrow": "Tomorrow",
-  "homeRecordTitle": "Record a voice sample",
-  "homeRecordSubtitle": "Practice recording or voice check",
-  "homeBaselineDue": "Baseline voice check due",
-  "homeProbeDue": "Voice check due",
-  "homeProbeBody": "A short set of standard recordings your therapist uses to follow your progress.",
-  "homeProbeStart": "Start voice check",
-  "exercisesTitle": "Today's exercises",
-  "exercisesNoneTitle": "Nothing scheduled today",
-  "exercisesNoneBody": "Your therapist has not set any exercises for today.",
-  "exercisesSeeProgress": "See your progress",
+  "exercisesTitle": "Today's activities",
+  "exercisesNoneTitle": "No activities today",
+  "exercisesNoneBody": "Your therapist has not picked any activities for today. Come back tomorrow!",
   "exerciseDosage": "{minutes} min  ·  {reps} reps  ·  {sessions, plural, =1{once a day} other{{sessions} times a day}}",
   "@exerciseDosage": {
     "placeholders": {
@@ -195,79 +148,6 @@
   },
   "detailMarkSession": "Mark session done",
   "detailUndoSession": "Undo last session",
-  "recordTitle": "Voice recording",
-  "recordBaselineTitle": "Baseline voice check",
-  "recordProbeTitle": "Voice check",
-  "recordProbeBody": "{count} short recordings, the same for everyone, so your therapist can compare them over time.",
-  "@recordProbeBody": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "recordProbeDueNow": "Due now",
-  "recordProbeNext": "Next one due {date}",
-  "@recordProbeNext": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "recordProbeFinished": "All voice checks for the study are done.",
-  "recordProbeStart": "Start voice check",
-  "recordPracticeTitle": "Practice recording",
-  "recordPracticeBody": "Record any time to hear how your practice sounds.",
-  "recordStart": "Start recording",
-  "recordTip": "Find a quiet room and hold the phone 10 to 15 cm from your mouth, slightly to one side.",
-  "recordStop": "Stop",
-  "recordAutoStop": "Recording stops by itself after {minutes} minutes.",
-  "@recordAutoStop": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "recordWait": "Wait",
-  "recordGo": "Go",
-  "recordTakeOf": "Take {index} of {total}",
-  "@recordTakeOf": {
-    "placeholders": {
-      "index": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "recordTrialOf": "Try {trial} of {of}",
-  "@recordTrialOf": {
-    "placeholders": {
-      "trial": {
-        "type": "int"
-      },
-      "of": {
-        "type": "int"
-      }
-    }
-  },
-  "recordBegin": "Record this take",
-  "recordListenBack": "Listen back",
-  "recordReviewBody": "Check the take before you save it. Saved recordings are shared with your therapist.",
-  "recordSave": "Save recording",
-  "recordSaveNext": "Save and continue",
-  "recordSaving": "Saving",
-  "recordAgain": "Record again",
-  "recordDiscard": "Discard",
-  "recordFinishLater": "Finish later",
-  "recordSaved": "Recording saved",
-  "recordMicOff": "Microphone access is turned off. Allow it for Melo in your phone settings, then try again.",
-  "recordCompleteTitle": "Voice check complete",
-  "recordCompleteBody": "Thank you. Your therapist can now listen to these recordings.",
-  "recordDone": "Done",
   "recordInputLevel": "Input level",
   "readingPassage": "Every morning the baker on our street opens the shop before the sun is up. She lights the oven, weighs the flour, and sets a row of bowls along the counter. By the time the first buses pass, the windows are fogged with warm air and the smell of bread has reached the corner. People who walk by often slow down, and a few of them cannot help stepping inside.",
   "kindPractice": "Practice",
@@ -312,10 +192,6 @@
   "progressRateCaption": "of prescribed sessions done",
   "progressStreak": "Streak",
   "progressDays": "days",
-  "progressRecordings": "Recordings",
-  "progressNoRecordingsTitle": "No recordings yet",
-  "progressNoRecordingsBody": "Saved voice samples will appear here.",
-  "progressMakeRecording": "Make a recording",
   "rangeDaily": "Daily, 14 days",
   "rangeWeekly": "Weekly, 8 weeks",
   "showTable": "Show as table",
@@ -355,16 +231,8 @@
       }
     }
   },
-  "profileTitle": "Profile",
-  "profileProgress": "Your progress",
   "profileHistory": "Practice history",
-  "profileRecentRecordings": "Recent recordings",
-  "profileViewAll": "View all",
-  "profileAccount": "Account details",
   "profileEditReminder": "Edit reminder",
-  "profileParticipantCode": "Participant code",
-  "profileTherapist": "Therapist",
-  "profileReminders": "Daily reminders",
   "profileNoReminders": "No reminders set. Add a time and Melo will nudge you each day.",
   "profileAddReminder": "Add reminder time",
   "profileRemoveReminder": "Remove reminder",
@@ -383,7 +251,7 @@
     }
   },
   "invalidNumber": "Enter a number, or leave this empty.",
-  "fieldRequired": "Required.",
+  "fieldRequired": "Fill in this field.",
   "wholeNumberRequired": "Enter a whole number from 1.",
   "everyDay": "Every day",
   "weekdaysOnly": "Weekdays",
@@ -639,9 +507,8 @@
   "noEnrolledTitle": "No one enrolled yet",
   "noEnrolledBody": "Add patients from the People tab.",
   "peopleTitle": "People",
-  "patientsFilter": "Patients",
+  "patientsFilter": "Children",
   "therapistsFilter": "Therapists",
-  "addPatient": "Add patient",
   "addTherapist": "Add therapist",
   "noTherapistAssigned": "No therapist assigned",
   "therapistNamed": "Therapist: {name}",
@@ -661,7 +528,7 @@
       }
     }
   },
-  "patientCount": "{count, plural, =1{patient} other{patients}}",
+  "patientCount": "{count, plural, =1{child} other{children}}",
   "@patientCount": {
     "placeholders": {
       "count": {
@@ -675,23 +542,12 @@
   "nameRequired": "Enter a name.",
   "emailInvalid": "Enter a valid email address.",
   "temporaryPassword": "Temporary password",
-  "passwordTooShort": "Use at least 8 characters.",
-  "passwordTooLong": "That password is too long.",
+  "passwordTooShort": "Use at least 10 characters.",
+  "passwordTooLong": "Use at most 128 characters.",
+  "passwordSpaces": "Remove spaces at the start and end.",
   "therapistSection": "Therapist",
-  "participantCodeNote": "The next free participant code is assigned automatically. Only the code appears in exports and file names.",
   "createAccount": "Create account",
   "creatingAccount": "Creating",
-  "createdPatient": "Created {code} for {name}",
-  "@createdPatient": {
-    "placeholders": {
-      "code": {
-        "type": "String"
-      },
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "createdUser": "Created {name}",
   "@createdUser": {
     "placeholders": {
@@ -701,7 +557,7 @@
     }
   },
   "emailTaken": "An account with that email exists.",
-  "chooseTherapist": "Choose a therapist for the patient.",
+  "chooseTherapist": "Choose a therapist for the parent.",
   "libraryTitle": "Exercise library",
   "filterAllCount": "All ({count})",
   "@filterAllCount": {
@@ -851,7 +707,20 @@
   "failureReminder": "Reminders could not be scheduled. Check notification settings and try again.",
   "exerciseNotApproved": "This exercise needs approval before it can be assigned.",
   "failureSensor": "A sensor could not be started on this device.",
+  "startupFailed": "Melo could not start. Check the server address and this phone's secure storage, then restart the app.",
+  "failureOffline": "Cannot reach the care service. Check your connection and try again.",
+  "failureTimeout": "The care service took too long to answer. Try again.",
+  "failureBadResponse": "The care service sent an answer this app could not read.",
+  "failureSessionEnded": "Your session has ended. Sign in again.",
+  "failureRejected": "The care service did not accept this request.",
   "sensorCheckOpen": "Sensor check (debug)",
+  "demoSignInTitle": "Demo sign-in (debug)",
+  "demoSignInChild": "Child: Ananya",
+  "demoSignInParent": "Parent",
+  "demoSignInTherapist": "Therapist: Meera",
+  "demoSignInAdmin": "Administrator",
+  "demoSignInWorking": "Signing in",
+  "demoSignInFailed": "The demo accounts were not found. Start the care service with npm run demo.",
   "sensorCheckTitle": "Sensor check",
   "sensorCheckNote": "Developer tool. Audio is analysed in memory and nothing on this screen is saved. Noise removal is for display only; saved recordings are never processed.",
   "micDenied": "Microphone access is turned off. Allow it in your phone settings to use this check.",
@@ -1092,112 +961,8 @@
       }
     }
   },
-  "recordKeepAnyway": "Keep anyway",
   "clearLabel": "Clear",
   "consentRequired": "Confirm that the information sheet was given and enter the date the consent form was signed.",
-  "learnTitle": "Learn",
-  "learnIntro": "How to use the app, how to practise, and how to look after your voice.",
-  "learnAppTitle": "Using the app",
-  "learnAppSummary": "A short tour of each tab.",
-  "learnApp1": "Home shows today's sessions, your streak, your next reminder and any questionnaire that is due.",
-  "learnApp2": "Exercises lists what your therapist prescribed for today. Open an exercise to read its steps.",
-  "learnApp3": "Tick one box for each session you finish. Mark a session only after you have done it. Your therapist sees the same record.",
-  "learnApp4": "Record is for the voice recordings your therapist asks for: a baseline before you start, follow-ups during the study, and practice takes whenever you like.",
-  "learnApp5": "Progress shows how many of your prescribed sessions you completed, by day or by week.",
-  "learnApp6": "Profile is where you set reminder times and sign out.",
-  "learnApp7": "Short questionnaires appear on Home when they are due. Each takes one to five minutes.",
-  "learnPracticeTitle": "Practising at home",
-  "learnPracticeSummary": "Why regular practice matters and how to fit it in.",
-  "learnPractice1": "Short, regular practice helps more than one long session.",
-  "learnPractice2": "Practise at the times your therapist set. If you have more than one session a day, spread them out.",
-  "learnPractice3": "Keep the sound easy. Exercises should feel comfortable, never forced.",
-  "learnPractice4": "Stop if an exercise hurts or makes your voice worse, and tell your therapist.",
-  "learnPractice5": "If you miss a day, start again the next day. Do not double up to catch up.",
-  "learnPracticeNote": "Your therapist's instructions always come first.",
-  "learnVoiceCareTitle": "Caring for your voice",
-  "learnVoiceCareSummary": "Everyday habits that protect your voice.",
-  "learnVoiceCare1": "Drink water through the day, unless your doctor has told you to limit fluids.",
-  "learnVoiceCare2": "Avoid shouting, screaming and talking over loud noise.",
-  "learnVoiceCare3": "Rest your voice when it feels tired.",
-  "learnVoiceCare4": "Swallow or take a sip of water instead of clearing your throat.",
-  "learnVoiceCare5": "Whispering strains the voice too. Use a soft, easy voice instead.",
-  "learnVoiceCare6": "Avoid smoking and smoky places.",
-  "learnVoiceCare7": "Limit caffeine and alcohol, which can dry your throat.",
-  "learnVoiceCareNote": "This is general advice. Where your therapist's advice differs, follow theirs.",
-  "learnStudyTitle": "About this study",
-  "learnStudySummary": "What the study is and what happens to your data.",
-  "learnStudy1": "This study looks at whether an app helps people keep up their voice exercises at home for four weeks, alongside their usual voice therapy.",
-  "learnStudy2": "The app keeps a record of the sessions you mark as done, when you use the app, your voice recordings and your questionnaire answers.",
-  "learnStudy3": "Everything is stored encrypted on this phone. The app sends nothing over the internet.",
-  "learnStudy4": "Your therapist and the research team see your records. Data used for analysis carries your participant code, never your name.",
-  "learnStudy5": "Taking part is voluntary. You can stop at any time without it affecting your care. Tell your therapist if you want to withdraw.",
-  "learnStudy6": "Your therapist gave you the full Participant Information Sheet. Ask them if anything is unclear.",
-  "taskBaselineReport": "Your practice before starting",
-  "taskWeeklyReport": "Your practice in week {week}",
-  "@taskWeeklyReport": {
-    "placeholders": {
-      "week": {
-        "type": "int"
-      }
-    }
-  },
-  "taskUsability": "How easy is the app to use?",
-  "taskFeedback": "Your feedback on the app",
-  "taskOneMinute": "About 1 minute",
-  "taskTwoMinutes": "About 2 minutes",
-  "taskFiveMinutes": "About 5 minutes",
-  "barrierNone": "Nothing, I practised as planned",
-  "barrierForgot": "I forgot",
-  "barrierNoTime": "Not enough time",
-  "barrierDiscomfort": "My voice or throat felt uncomfortable",
-  "barrierUnsure": "I was unsure how to do the exercises",
-  "barrierFeltBetter": "My voice felt better, so I stopped",
-  "barrierOther": "Something else",
-  "sus1": "I think that I would like to use this app frequently.",
-  "sus2": "I found the app unnecessarily complex.",
-  "sus3": "I thought the app was easy to use.",
-  "sus4": "I think that I would need the support of a technical person to be able to use this app.",
-  "sus5": "I found the various functions in this app were well integrated.",
-  "sus6": "I thought there was too much inconsistency in this app.",
-  "sus7": "I would imagine that most people would learn to use this app very quickly.",
-  "sus8": "I found the app very cumbersome to use.",
-  "sus9": "I felt very confident using the app.",
-  "sus10": "I needed to learn a lot of things before I could get going with this app.",
-  "feedbackReminders": "The reminders helped me remember to practise.",
-  "feedbackSchedule": "My daily practice schedule was clear.",
-  "feedbackInstructions": "The exercise instructions were easy to understand.",
-  "feedbackChecklist": "Marking sessions as done was easy.",
-  "feedbackProgress": "Seeing my progress encouraged me to keep practising.",
-  "feedbackRecording": "Recording my voice was easy.",
-  "feedbackPrivacy": "I was comfortable with how the app stores my recordings.",
-  "feedbackOverall": "Overall, I am satisfied with the app.",
-  "feedbackContinue": "I would like to keep using the app after the study.",
-  "agreeStronglyDisagree": "Strongly disagree",
-  "agreeDisagree": "Disagree",
-  "agreeNeutral": "Neither agree nor disagree",
-  "agreeAgree": "Agree",
-  "agreeStronglyAgree": "Strongly agree",
-  "genderFemale": "Female",
-  "genderMale": "Male",
-  "genderOther": "Another gender",
-  "genderUndisclosed": "Prefer not to say",
-  "educationNone": "No formal education",
-  "educationPrimary": "Primary",
-  "educationSecondary": "Secondary",
-  "educationHigherSecondary": "Higher secondary",
-  "educationGraduate": "Graduate",
-  "educationPostgraduate": "Postgraduate",
-  "voiceUseElite": "Elite vocal performer",
-  "voiceUseProfessional": "Professional voice user",
-  "voiceUseNonVocalProfessional": "Non-vocal professional",
-  "voiceUseNonVocal": "Non-vocal, non-professional",
-  "smokingNever": "Never smoked",
-  "smokingFormer": "Former smoker",
-  "smokingCurrent": "Current smoker",
-  "ratingFully": "Fully",
-  "ratingMostly": "Mostly",
-  "ratingPartly": "Partly",
-  "ratingNotAtAll": "Not at all",
   "usageSignIn": "Signed in",
   "usageSignOut": "Signed out",
   "usageExerciseOpened": "Opened exercise instructions",
@@ -1205,294 +970,9 @@
   "usageSessionMarked": "Marked a session done",
   "usageSessionUndone": "Undid a session",
   "usageRecordingSaved": "Saved a recording",
-  "usageQuestionnaireSubmitted": "Submitted a questionnaire",
   "usageRemindersChanged": "Changed reminders",
   "chooseDate": "Choose a date",
-  "likertAnchors": "1 = strongly disagree, 5 = strongly agree",
   "answerRequired": "Answer this question.",
-  "questionsUnanswered": "{count, plural, =1{1 question still needs an answer.} other{{count} questions still need an answer.}}",
-  "@questionsUnanswered": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "submitAnswers": "Submit answers",
-  "submitting": "Submitting",
-  "questionnaireThanks": "Thank you. Your answers are saved.",
-  "dayCount": "{count, plural, =0{No days} =1{1 day} other{{count} days}}",
-  "@dayCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "selfReportBaselineIntro": "Before you start using the app, tell us about your home practice so far. There are no right or wrong answers.",
-  "selfReportWeeklyIntro": "Think about the last 7 days, including any practice you did not mark in the app. Honest answers help your therapist support you.",
-  "selfReportDaysQuestion": "In the last 7 days, on how many days did you do the voice exercises your therapist gave you?",
-  "selfReportBarrierQuestion": "What most often got in the way of your practice?",
-  "selfReportNoteLabel": "Anything else you want to tell your therapist (optional)",
-  "usabilityIntro": "Rate each statement about the app. Go with your first reaction and answer every one.",
-  "feedbackIntro": "Your views will help improve the app. Rate each statement, then add any comments in your own words.",
-  "feedbackOpenSection": "In your own words (optional)",
-  "feedbackLikedLabel": "What did you like most about the app?",
-  "feedbackDifficultLabel": "What was difficult or frustrating?",
-  "feedbackSuggestLabel": "What would you change or add?",
-  "homeTasksTitle": "Questionnaires due",
-  "homeTasksBody": "Your answers are part of the study. They stay on this phone.",
-  "homeLearnSubtitle": "Using the app, practising at home and caring for your voice",
-  "profileLearnLink": "Guides and study information",
-  "learnNotFoundTitle": "Topic not found",
-  "learnNotFoundBody": "This guide is not available. Go back to Learn to see every topic.",
-  "studySection": "Study",
-  "studyRates": "Adherence {adherence} · Compliance {compliance}",
-  "@studyRates": {
-    "placeholders": {
-      "adherence": {
-        "type": "String"
-      },
-      "compliance": {
-        "type": "String"
-      }
-    }
-  },
-  "assessmentProgress": "Baseline {baselineDone} of {baselineTotal} done · Follow-up {followUpDone} of {followUpTotal} done",
-  "@assessmentProgress": {
-    "placeholders": {
-      "baselineDone": {
-        "type": "int"
-      },
-      "baselineTotal": {
-        "type": "int"
-      },
-      "followUpDone": {
-        "type": "int"
-      },
-      "followUpTotal": {
-        "type": "int"
-      }
-    }
-  },
-  "studyRecordTitle": "Study record",
-  "studyRecordSaved": "Study record saved.",
-  "studyRecordIncomplete": "Some required answers are missing. They are marked above.",
-  "saveStudyRecord": "Save study record",
-  "consentSection": "Consent",
-  "infoSheetProvided": "Participant Information Sheet given and explained",
-  "infoSheetRequired": "Confirm the information sheet was given.",
-  "consentSignedLabel": "Written consent form signed on",
-  "dateRequired": "Choose a date.",
-  "chooseOne": "Choose one.",
-  "interventionSection": "Intervention",
-  "interventionStartLabel": "First day of app use",
-  "interventionStartHelp": "The study weeks, weekly questionnaires and probe recordings are counted from this day.",
-  "orientationLabel": "Orientation to the app given on",
-  "demographicsSection": "Demographic information",
-  "ageLabel": "Age in years",
-  "ageInvalid": "Enter an age between 1 and 120.",
-  "genderTitle": "Gender",
-  "educationTitle": "Highest education",
-  "occupationLabel": "Occupation",
-  "voiceUseTitle": "Voice use",
-  "languageLabel": "Primary language",
-  "clinicalSection": "Clinical details",
-  "diagnosisLabel": "Diagnosis",
-  "diagnosisHint": "As recorded after laryngeal examination",
-  "symptomMonthsLabel": "Duration of voice problem in months",
-  "monthsInvalid": "Enter a whole number of months.",
-  "smokingTitle": "Smoking",
-  "laryngoscopyLabel": "Laryngeal examination on (optional)",
-  "therapyStartLabel": "Voice therapy started on (optional)",
-  "clinicSessionsLabel": "In-clinic therapy sessions per week (optional)",
-  "sessionsInvalid": "Enter a whole number from 0 to 14.",
-  "otherConditionsLabel": "Other relevant conditions (optional)",
-  "otherConditionsHint": "For example reflux, asthma or hearing loss",
-  "withdrawalSection": "Withdrawal",
-  "withdrawalHelp": "Record withdrawal if the participant leaves the study. Their data so far is kept, and the app stops asking them for questionnaires.",
-  "recordWithdrawal": "Record withdrawal",
-  "withdrawalReasonLabel": "Reason given",
-  "withdrawnOn": "Withdrawn on {date}",
-  "@withdrawnOn": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "phaseNotStarted": "Starts using the app on {date}",
-  "@phaseNotStarted": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "phaseEnded": "Intervention ended on {date}",
-  "@phaseEnded": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "phaseWeek": "Week {week} of {weeks}",
-  "@phaseWeek": {
-    "placeholders": {
-      "week": {
-        "type": "int"
-      },
-      "weeks": {
-        "type": "int"
-      }
-    }
-  },
-  "assessmentTitle": "Assessment and monitoring",
-  "baselineSection": "Baseline assessment",
-  "baselineConsent": "Information sheet and written consent",
-  "baselineDemographics": "Demographic information",
-  "baselineClinical": "Clinical details",
-  "baselineAdherence": "Baseline adherence self-report",
-  "baselineOrientation": "Orientation to the app",
-  "baselineRecording": "Baseline voice recording",
-  "baselineReportSummary": "Before the app: practised on {days} of 7 days. Main barrier: {barrier}.",
-  "@baselineReportSummary": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      },
-      "barrier": {
-        "type": "String"
-      }
-    }
-  },
-  "editStudyRecord": "Edit study record",
-  "studyAdherence": "Adherence",
-  "studyCompliance": "Compliance",
-  "sessionsOf": "{done} of {due} sessions",
-  "@sessionsOf": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "due": {
-        "type": "int"
-      }
-    }
-  },
-  "daysOf": "{done} of {total} days at full dose",
-  "@daysOf": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "outcomeDefinitions": "Adherence is completed sessions divided by prescribed sessions. Compliance is the share of prescribed days on which every prescribed session was done that day. Both count finished days of the intervention only.",
-  "weekLabel": "Week {week}",
-  "@weekLabel": {
-    "placeholders": {
-      "week": {
-        "type": "int"
-      }
-    }
-  },
-  "sourceAppLog": "App log",
-  "sourceFullDose": "Full-dose days",
-  "sourceRecordings": "Practice recordings",
-  "sourceSelfReport": "Self-report",
-  "sourceTherapist": "Therapist",
-  "notScoredYet": "Not scored yet",
-  "notSubmitted": "Not submitted",
-  "sessionsOfPercent": "{done} of {due} sessions ({percent})",
-  "@sessionsOfPercent": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "due": {
-        "type": "int"
-      },
-      "percent": {
-        "type": "String"
-      }
-    }
-  },
-  "daysOfPercent": "{done} of {total} days ({percent})",
-  "@daysOfPercent": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "percent": {
-        "type": "String"
-      }
-    }
-  },
-  "selfReportValue": "{days} of 7 days. {barrier}",
-  "@selfReportValue": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      },
-      "barrier": {
-        "type": "String"
-      }
-    }
-  },
-  "selfReportNoteShort": "Participant note",
-  "selfReportMissing": "No self-report for this week yet.",
-  "monitoringSummary": "Practice: {practice}. Schedule: {schedule}. Technique: {technique}.",
-  "@monitoringSummary": {
-    "placeholders": {
-      "practice": {
-        "type": "String"
-      },
-      "schedule": {
-        "type": "String"
-      },
-      "technique": {
-        "type": "String"
-      }
-    }
-  },
-  "addMonitoringForm": "Add monitoring form",
-  "addAnotherMonitoringForm": "Add another monitoring form",
-  "checklistDone": "Done",
-  "checklistToDo": "To do",
-  "followUpSection": "Follow-up assessment",
-  "followUpAdherence": "Adherence over the intervention",
-  "followUpCompliance": "Compliance over the intervention",
-  "followUpUsability": "Usability questionnaire",
-  "followUpFeedback": "Satisfaction feedback",
-  "followUpRecording": "Post-intervention voice recording",
-  "followUpNotSubmitted": "The participant has not submitted the follow-up questionnaires yet. They open on the last day of the intervention.",
-  "susScoreLabel": "System Usability Scale score (0 to 100)",
-  "satisfactionLabel": "Satisfaction",
-  "meanOutOfFive": "{value} of 5",
-  "@meanOutOfFive": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
-  "monitoringFormTitle": "Monitoring form",
-  "monitoringReference": "For reference this week",
-  "monitoringPracticeQuestion": "Did the participant complete the prescribed exercises?",
-  "monitoringScheduleQuestion": "Did they keep to the recommended frequency and schedule?",
-  "monitoringTechniqueQuestion": "Were the exercises done as instructed when reviewed?",
-  "monitoringBarriersLabel": "Barriers discussed (optional)",
-  "monitoringNotesLabel": "Notes (optional)",
-  "saveMonitoringForm": "Save monitoring form",
-  "monitoringSaved": "Monitoring form saved.",
   "usageLogTitle": "Usage log",
   "usageEmptyTitle": "No app use recorded",
   "usageEmptyBody": "Sign-ins, exercise views, completed sessions, recordings and questionnaires appear here as the participant uses the app.",
@@ -1506,138 +986,7 @@
       }
     }
   },
-  "recruitmentSection": "Recruitment",
-  "approachedLabel": "Eligible people approached",
-  "approachedHelp": "Everyone invited to take part, whether or not they enrolled. The recruitment rate is enrolled participants divided by this number.",
-  "exportParticipants": "Demographic and clinical information",
-  "exportOutcomes": "Outcome measures per participant",
-  "exportSelfReports": "Participant self-reports",
-  "exportMonitoring": "Adherence and compliance monitoring forms",
-  "exportUsability": "Usability questionnaire",
-  "exportFeedback": "Satisfaction feedback and comments",
   "exportUsageLog": "Application usage log",
-  "outcomesTitle": "Study outcomes",
-  "outcomesIntro": "Calculated from the app's records for every enrolled participant. Export the same data from Settings for analysis.",
-  "outcomesLinkBody": "Adherence, compliance, feasibility, usability and satisfaction",
-  "outcomesLinkSummary": "Retention {retention} · App usage completion {usage}",
-  "@outcomesLinkSummary": {
-    "placeholders": {
-      "retention": {
-        "type": "String"
-      },
-      "usage": {
-        "type": "String"
-      }
-    }
-  },
-  "primaryOutcomes": "Primary outcomes",
-  "secondaryOutcomes": "Secondary outcomes",
-  "feasibilitySection": "Feasibility",
-  "atOrAboveThreshold": "Participants at or above the adherence threshold",
-  "recruitmentRate": "Recruitment rate",
-  "retentionRate": "Retention rate",
-  "usageCompletionRate": "App usage completion",
-  "feasibilityCounts": "{enrolled} enrolled, {completed} completed the intervention, {withdrawn} withdrawn.",
-  "@feasibilityCounts": {
-    "placeholders": {
-      "enrolled": {
-        "type": "int"
-      },
-      "completed": {
-        "type": "int"
-      },
-      "withdrawn": {
-        "type": "int"
-      }
-    }
-  },
-  "feasibilityDefinitions": "Recruitment: enrolled over approached. Retention: enrolled participants who have not withdrawn. App usage completion: participants who marked practice in every study week, out of those whose intervention has ended (withdrawals count as not completing).",
-  "satisfactionScaleLabel": "Satisfaction, mean rating (1 to 5)",
-  "prePostSection": "Self-reported practice, baseline and week 4",
-  "prePostHelp": "Practice days in the previous week as a percentage, for participants with both the baseline and final-week self-report. Use the t-test when the differences look normally distributed, otherwise the Wilcoxon signed-rank test.",
-  "prePostBefore": "Baseline",
-  "prePostAfter": "Final study week",
-  "pairedTTest": "Paired t-test",
-  "wilcoxonTest": "Wilcoxon signed-rank test",
-  "testNotComputable": "Needs at least two pairs with some variation.",
-  "tTestResult": "Mean change {difference} points, t = {t}, df = {df}, p = {p} (two-sided)",
-  "@tTestResult": {
-    "placeholders": {
-      "difference": {
-        "type": "String"
-      },
-      "t": {
-        "type": "String"
-      },
-      "df": {
-        "type": "int"
-      },
-      "p": {
-        "type": "String"
-      }
-    }
-  },
-  "wilcoxonResult": "W+ = {wPlus}, W- = {wMinus}, n = {n}, p = {p} (two-sided, {method})",
-  "@wilcoxonResult": {
-    "placeholders": {
-      "wPlus": {
-        "type": "String"
-      },
-      "wMinus": {
-        "type": "String"
-      },
-      "n": {
-        "type": "int"
-      },
-      "p": {
-        "type": "String"
-      },
-      "method": {
-        "type": "String"
-      }
-    }
-  },
-  "pExact": "exact",
-  "pApproximate": "normal approximation",
-  "voiceMeasuresNote": "Acoustic voice measures are not computed in the app yet, because voice analysis is a placeholder. Once baseline and post-intervention measures exist, compare them with the same paired tests.",
-  "noDataYet": "No data yet",
-  "notEntered": "Not entered",
-  "meanSd": "Mean {mean} (SD {sd})",
-  "@meanSd": {
-    "placeholders": {
-      "mean": {
-        "type": "String"
-      },
-      "sd": {
-        "type": "String"
-      }
-    }
-  },
-  "medianN": "Median {median}, n = {n}",
-  "@medianN": {
-    "placeholders": {
-      "median": {
-        "type": "String"
-      },
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "proportionValue": "{percent} ({count} of {total})",
-  "@proportionValue": {
-    "placeholders": {
-      "percent": {
-        "type": "String"
-      },
-      "count": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "verifyVoiceDiary": "Voice-use diary",
   "voiceDiaryNoTarget": "No targets. The patient completes each session by filling in the voice-use diary: speaking time, vocal fatigue and situations that increased effort.",
   "cautionTitle": "Caution",
@@ -1746,7 +1095,7 @@
   "practiceUpNext": "Up next",
   "practiceReady": "Ready when you are",
   "practiceComplete": "Practice complete",
-  "practiceStart": "Start exercise",
+  "practiceStart": "Start activity",
   "practiceMarkDone": "Mark done",
   "practiceMarkSession": "Mark session {number}",
   "@practiceMarkSession": {
@@ -1793,7 +1142,7 @@
       }
     }
   },
-  "practiceAllDone": "All your scheduled sessions are done for today.",
+  "practiceAllDone": "Your practice is done for today. Well done!",
   "practiceOpenNamed": "Open {exercise}",
   "@practiceOpenNamed": {
     "placeholders": {
@@ -1835,250 +1184,252 @@
       }
     }
   },
-  "connectedWorking": "Please wait…",
-  "connectedStartupFailed": "The connected workspace could not be opened. Check the server address and this phone's secure storage, then restart the app.",
-  "connectedSignInTitle": "Welcome back.",
-  "connectedRegisterTitle": "Create your account",
-  "connectedAccessIntro": "Your practice syncs with your care team whenever you are online.",
-  "connectedRolePatient": "Patient",
-  "connectedRoleTherapist": "Therapist",
-  "connectedName": "Full name",
-  "connectedClinic": "Clinic",
-  "connectedRegistrationNumber": "Registration number",
-  "connectedPasswordRule": "Use at least 10 characters.",
-  "connectedFieldRequired": "This field is required.",
-  "connectedEmailInvalid": "Enter a valid email address.",
-  "connectedCreateAccount": "Create account",
-  "connectedHaveAccount": "Already registered? Sign in",
-  "connectedNeedAccount": "New here? Create an account",
-  "connectedTherapistRegistered": "Registration submitted. An administrator must approve it before you can sign in.",
-  "connectedPatientRegistered": "Account created. Sign in to read and sign your consent.",
-  "connectedSetPinTitle": "Protect your patient records",
-  "connectedUnlockTitle": "Unlock your workspace",
-  "connectedPinIntro": "Use a 4 to 6 digit PIN for this account on this phone.",
-  "connectedPin": "PIN",
-  "connectedConfirmPin": "Confirm PIN",
-  "connectedPinLength": "Enter 4 to 6 digits.",
-  "connectedPinMismatch": "The PINs do not match.",
-  "connectedEnableBiometrics": "Unlock with fingerprint or face",
-  "connectedSavePin": "Save PIN",
-  "connectedUnlock": "Unlock",
-  "connectedUnlockBiometrics": "Use biometrics",
-  "connectedBiometricReason": "Unlock your Melo workspace",
-  "connectedForgotPin": "Forgot PIN? Verify your account",
-  "connectedBackToPin": "Back to PIN",
-  "connectedRecoverPassword": "Account password",
-  "connectedRecoverHint": "Needs an internet connection. You then choose a new PIN.",
-  "connectedVerifyAccount": "Verify account",
-  "connectedRefresh": "Refresh and sync",
-  "connectedLock": "Lock",
-  "connectedAccount": "Account",
-  "connectedGreeting": "Hello, {name}",
-  "@connectedGreeting": {
+  "motorWatch": "Watch, then try on paper",
+  "motorDemoDescription": "Writing guide with start dots. Follow the numbered instructions; replay to see each stroke in order.",
+  "motorReplay": "Show me the strokes",
+  "motorPracticeIntro": "Watch the demo. Try it slowly on paper. A grown-up can help you send a photo to your therapist.",
+  "motorComfort": "Sit comfortably, support your feet and rest your forearm. Relax your hand. Take a break whenever you need one; stop if your hand hurts or feels tired.",
+  "motorChoosePhoto": "Choose practice photo",
+  "motorSendPhoto": "Send to my therapist",
+  "motorOriginalPhoto": "Original, unedited practice photo",
+  "motorInvalidPhoto": "This photo could not be displayed. Choose a different JPEG or PNG.",
+  "motorPhotoInstructions": "Photograph just the paper in good light. Keep the whole exercise in view, without faces or names. Check the preview before sending. Keep the photo until your upload succeeds.",
+  "motorDailyGuidance": "One gentle round each day: about 4 minutes for all three activities, with breaks. Your therapist chooses which tasks suit you. Practice may help you build skills over time.",
+  "motorReviewTitle": "Handwriting photos and review",
+  "motorReportCaution": "Automated visual observations are provisional. Check the original before giving feedback. A still photo cannot assess grip, pressure, movement, diagnose a condition or establish clinical improvement.",
+  "motorEmpty": "No handwriting photos submitted yet.",
+  "motorAnalysisReady": "Automated report ready · therapist review required",
+  "motorAnalysisUnavailable": "Analysis unavailable. Original photo is available for your review; retry when the local vision model is running.",
+  "motorAnalysisDeclined": "Automated analysis declined · therapist review only",
+  "motorAnalysisPending": "Automated analysis queued or processing. Refresh to check.",
+  "motorViewPhoto": "View original photo / reload",
+  "motorPhotoLoadFailed": "Could not load this photo. Try again using View original photo.",
+  "motorRetake": "The model could not assess this photo. Check the original and consider requesting a clearer photo.",
+  "motorReportMetrics": "Alignment: {alignment} · Formation: {formation} · Spacing: {spacing}",
+  "@motorReportMetrics": {
+    "placeholders": {
+      "alignment": {
+        "type": "String"
+      },
+      "formation": {
+        "type": "String"
+      },
+      "spacing": {
+        "type": "String"
+      }
+    }
+  },
+  "motorModel": "Model: {model} · unvalidated visual observations",
+  "@motorModel": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "motorRetryAnalysis": "Retry automated analysis",
+  "motorFeedback": "Therapist feedback: {note}",
+  "@motorFeedback": {
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "motorReviewAction": "Add or update therapist feedback",
+  "motorEmerging": "emerging",
+  "motorDeveloping": "developing",
+  "motorConsistent": "consistent",
+  "motorNotAssessable": "not assessable",
+  "back": "Back",
+  "navFamily": "Family",
+  "welcomeTagline": "Little steps, every day. Guided activities for children, with their parents and therapists.",
+  "welcomeQuestion": "Who is using this phone?",
+  "welcomeParent": "I'm a parent",
+  "welcomeParentHint": "Join your therapist with their code and follow your child's practice.",
+  "welcomeChild": "Set up for my child",
+  "welcomeChildHint": "Use your parent code to open your child's practice activities on this device.",
+  "welcomeTherapist": "I'm a therapist",
+  "welcomeTherapistHint": "Sign in to see the children you look after.",
+  "loginCreateParent": "Create a parent account",
+  "signUpTitle": "Create a parent account",
+  "signUpIntro": "Your therapist gives you their code. It links your family to them.",
+  "signUpTherapistCode": "Therapist code",
+  "signUpTherapistCodeHint": "For example MEERA7",
+  "signUpPasswordHint": "At least 10 characters",
+  "signUpHaveAccount": "I already have an account",
+  "childSetupTitle": "Set up for my child",
+  "childSetupIntro": "Enter the parent code from your Melo Settings. This device then opens straight to your child's activities.",
+  "childSetupParentCode": "Parent code",
+  "childSetupParentCodeHint": "For example PARENT",
+  "childSetupName": "Child's first name",
+  "childSetupNameHint": "For example Ananya",
+  "childSetupNote": "Already set up on another device? Use the same name to open the same child.",
+  "childSetupSubmit": "Start",
+  "childSetupSubmitting": "Opening",
+  "failureMediaUnavailable": "That file could not be opened. Try choosing it again.",
+  "failureMediaTooLarge": "That file is too large. Choose a photo up to 6 MB, a picture up to 1.5 MB or a recording up to 12 MB.",
+  "codeCopy": "Copy code",
+  "codeCopied": "Code copied",
+  "celebrationTitle": "Great job!",
+  "celebrationDone": "Yay!",
+  "feedbackTitle": "Feedback",
+  "feedbackLabel": "What would you like to tell the family?",
+  "childHello": "Hi, {name}!",
+  "@childHello": {
     "placeholders": {
       "name": {
         "type": "String"
       }
     }
   },
-  "connectedTherapistIntro": "Your patients at a glance.",
-  "connectedPatientIntro": "A little practice makes a meaningful difference.",
-  "connectedOutbox": "{count, plural, =1{1 item is saved on this phone and waiting to sync.} other{{count} items are saved on this phone and waiting to sync.}}",
-  "@connectedOutbox": {
+  "childActivitiesIntro": "Choose an activity. Take it at your own pace.",
+  "childDrawingIntro": "Watch, then draw. Take a break whenever you need.",
+  "childPrompt": "What shall we try today?",
+  "childGames": "Activities",
+  "childGamesNone": "No activities today",
+  "childGamesProgress": "{done} of {due} done",
+  "@childGamesProgress": {
     "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "connectedSyncNow": "Sync now",
-  "connectedSyncing": "Syncing…",
-  "connectedNoPatientsTitle": "No patients yet",
-  "connectedNoPatientsMessage": "Your administrator assigns patients from the dashboard.",
-  "connectedConsentMissing": "No consent",
-  "connectedConsentPending": "Consent to review",
-  "connectedConsentApproved": "Consent approved",
-  "connectedActiveDays": "{count, plural, =1{1 practice day this week} other{{count} practice days this week}}",
-  "@connectedActiveDays": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "connectedNotLoadedTitle": "Not connected yet",
-  "connectedNotLoadedMessage": "Connect to the internet to load your record.",
-  "connectedRetry": "Retry",
-  "connectedConsentNeededTitle": "Before we begin",
-  "connectedConsentNeededMessage": "Read the study information and sign your consent.",
-  "connectedReadConsent": "Read and sign consent",
-  "connectedNextStepTitle": "Your next step",
-  "connectedWaitingTherapist": "An administrator will assign your therapist.",
-  "connectedWaitingPlan": "Your therapist will review your consent and prepare your plan.",
-  "connectedSessionsPerDay": "{count, plural, =1{1 session a day} other{{count} sessions a day}}",
-  "@connectedSessionsPerDay": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "connectedLogPractice": "Log practice",
-  "connectedRecordPractice": "Record practice",
-  "connectedProgressTitle": "Your progress",
-  "connectedProgressSummary": "{sessions} sessions synced, {minutes} minutes of practice",
-  "@connectedProgressSummary": {
-    "placeholders": {
-      "sessions": {
+      "done": {
         "type": "int"
       },
-      "minutes": {
+      "due": {
         "type": "int"
       }
     }
   },
-  "connectedTherapistFeedback": "Therapist feedback",
-  "connectedPracticeSaved": "Practice saved.",
-  "connectedLogPracticeTitle": "How long did you practise?",
-  "connectedMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
-  "@connectedMinutes": {
+  "childWords": "Say a word",
+  "childWordsHint": "Listen, then try it yourself",
+  "childDrawing": "Drawing",
+  "childDrawingHint": "Watch the dot, then draw",
+  "childStars": "{done} of {due} stars today",
+  "@childStars": {
     "placeholders": {
-      "count": {
+      "done": {
+        "type": "int"
+      },
+      "due": {
         "type": "int"
       }
     }
   },
-  "connectedFewerMinutes": "One minute less",
-  "connectedMoreMinutes": "One minute more",
-  "connectedSavePractice": "Save practice",
-  "connectedConsentTitle": "Your consent",
-  "connectedStudyInformation": "Study information",
-  "connectedConsentUnavailable": "Connect to the internet to load the consent document.",
-  "connectedConsentAdult": "I confirm I am 18 or older.",
-  "connectedConsentParticipation": "I have read the information and agree to take part.",
-  "connectedConsentDataSharing": "I agree to store and share my data with my assigned care team.",
-  "connectedConsentAnalysis": "I agree to anonymised analysis of my data.",
-  "connectedRequired": "Required",
-  "connectedOptional": "Optional",
-  "connectedSignHeading": "Draw your signature",
-  "connectedSignHint": "Tick every required statement before signing.",
-  "connectedSubmitConsent": "Submit consent",
-  "connectedRedraw": "Redraw",
-  "connectedRecordTitle": "Record practice",
-  "connectedRecordIntro": "Follow your therapist's instructions. A take can last up to two minutes.",
-  "connectedStartRecording": "Start recording",
-  "connectedStopAndSave": "Stop and save",
-  "connectedRetrySave": "Try saving again",
-  "connectedSaving": "Saving…",
-  "connectedRecordQueued": "If the server cannot be reached, the recording stays encrypted on this phone and uploads later.",
-  "connectedRecordingNow": "Recording",
-  "connectedPatientTitle": "Patient",
-  "connectedPatientLoadFailed": "This patient could not be loaded.",
-  "connectedConsentSection": "Consent",
-  "connectedNoConsent": "This patient has not submitted consent yet.",
-  "connectedSignedBy": "Signed by {name} on {date}",
-  "@connectedSignedBy": {
+  "childGameDone": "You finished {name}.",
+  "@childGameDone": {
     "placeholders": {
       "name": {
         "type": "String"
+      }
+    }
+  },
+  "childGrownUps": "Grown-ups: sign out",
+  "childSignOutTitle": "Sign out this device?",
+  "childSignOutBody": "Your child's activities close on this device. Use your parent code to open them again.",
+  "drawingTitle": "Drawing",
+  "drawingFor": "Drawing · {name}",
+  "@drawingFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "drawingNewPhoto": "Choose a different photo",
+  "drawingSending": "Sending",
+  "drawingSent": "Your drawing is on its way to your therapist.",
+  "drawingWaitingTitle": "Not yet",
+  "drawingNeedsConsent": "Ask your grown-up to sign the consent in their Melo app first.",
+  "drawingNothingYet": "Your therapist has not picked any drawing activities yet.",
+  "drawingDoneToday": "Photo sent today",
+  "drawingChoose": "Drawing activities for this child",
+  "drawingSave": "Save drawing activities",
+  "drawingSaving": "Saving",
+  "drawingPlanSaved": "Drawing activities saved",
+  "drawingPlanTitle": "Drawing practice for {name}",
+  "@drawingPlanTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "drawingTherapistNeedsConsent": "Drawing activities can be chosen once the parent has signed consent in their Melo app.",
+  "parentHomeHeading": "Your family",
+  "parentNoChildrenTitle": "Set up your child's device",
+  "parentNoChildrenBody": "On your child's phone or tablet, open Melo, choose Set up for my child and enter your parent code.",
+  "parentShowCode": "Show my parent code",
+  "parentNothingToday": "Nothing to practise today.",
+  "parentTodayDone": "{done} of {due} activities done today",
+  "@parentTodayDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
       },
+      "due": {
+        "type": "int"
+      }
+    }
+  },
+  "parentConsentNeeded": "Sign the consent so your child's practice can reach their therapist.",
+  "parentConsentSigned": "Consent signed on {date}",
+  "@parentConsentSigned": {
+    "placeholders": {
       "date": {
         "type": "String"
       }
     }
   },
-  "connectedConsentVersion": "Version {version}",
-  "@connectedConsentVersion": {
+  "parentConsentUnknown": "Consent could not be checked. Pull down to try again.",
+  "parentSignConsent": "Sign consent",
+  "parentChildNotFoundTitle": "Child not found",
+  "parentChildNotFoundBody": "This child is not linked to your account.",
+  "parentToday": "Today",
+  "parentProgress": "Progress",
+  "parentGameDone": "Done",
+  "parentGameToDo": "Still to do",
+  "parentDrawingFeedback": "Drawing feedback",
+  "parentNoDrawingFeedback": "No feedback from the therapist yet.",
+  "parentCodeTitle": "Your parent code",
+  "parentCodeHowTo": "On your child's device, open Melo, choose Set up for my child and enter this code with your child's first name.",
+  "parentYourTherapist": "Your therapist",
+  "parentReminders": "Practice reminders",
+  "parentRemindersHint": "Reminders show on this phone at the times you choose.",
+  "consentTitle": "Consent",
+  "consentIntro": "You are signing for {name}.",
+  "@consentIntro": {
     "placeholders": {
-      "version": {
+      "name": {
         "type": "String"
       }
     }
   },
-  "connectedAnalysisAgreed": "Agreed to anonymised analysis",
-  "connectedAnalysisDeclined": "Declined anonymised analysis",
-  "connectedSignatureUnavailable": "Signature preview unavailable.",
-  "connectedPaperCopy": "I have collected the paper copy and reviewed this consent.",
-  "connectedApproveConsent": "Approve consent",
-  "connectedAssessmentSection": "Clinical assessment",
-  "connectedAge": "Age in years",
-  "connectedAgeRange": "Enter an age from 18 to 120.",
-  "connectedDemographic": "Demographic information",
-  "connectedClinical": "Clinical assessment notes",
-  "connectedSaveAssessment": "Save assessment",
-  "connectedPlanSection": "Prescribe a plan",
-  "connectedCurrentPlan": "Current plan: {title}",
-  "@connectedCurrentPlan": {
+  "consentInformation": "About this practice",
+  "consentUnavailable": "The consent text could not be loaded. Go back and try again.",
+  "consentAdult": "I am this child's parent or legal guardian and I am 18 or older.",
+  "consentParticipation": "I agree to my child taking part in home practice with Melo.",
+  "consentDataSharing": "I agree to my child's practice, recordings and drawing photos being shared with their therapist.",
+  "consentAnalysis": "Optional: a computer on the care service may describe drawing photos and suggest speech transcripts and pronunciation reports for therapist review. Estimates can be inaccurate or unable to assess reliably.",
+  "consentRequiredItem": "Required",
+  "consentOptionalItem": "Optional",
+  "consentSignerName": "Your full name",
+  "consentSignHeading": "Sign here",
+  "consentSignHint": "Tick every required statement and enter your name to sign.",
+  "consentSubmit": "Sign consent",
+  "consentSubmitting": "Signing",
+  "consentRedraw": "Clear and sign again",
+  "therapistCodeTitle": "Your therapist code",
+  "therapistCodeHowTo": "Give this code to parents. They enter it when they create their account and join your caseload.",
+  "therapistWordsLink": "Say a word",
+  "therapistDrawingLink": "Drawing",
+  "participantParent": "Parent: {name}",
+  "@participantParent": {
     "placeholders": {
-      "title": {
+      "name": {
         "type": "String"
       }
     }
   },
-  "connectedPlanTitle": "Plan title",
-  "connectedPlanTitleDefault": "Your daily voice practice",
-  "connectedPlanExercises": "Exercises",
-  "connectedSessionsPerDayLabel": "Sessions per day",
-  "connectedInstructions": "Instructions",
-  "connectedSavePlan": "Save plan",
-  "connectedPracticeSection": "Practice",
-  "connectedNoPractice": "No practice logged yet.",
-  "connectedPracticeLine": "{exercise}, {minutes} min",
-  "@connectedPracticeLine": {
-    "placeholders": {
-      "exercise": {
-        "type": "String"
-      },
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "connectedRecordingsSection": "Recordings",
-  "connectedNoRecordings": "No recordings yet.",
-  "connectedRecordingLine": "{exercise}, {seconds} s",
-  "@connectedRecordingLine": {
-    "placeholders": {
-      "exercise": {
-        "type": "String"
-      },
-      "seconds": {
-        "type": "int"
-      }
-    }
-  },
-  "connectedStop": "Stop",
-  "connectedAddFeedback": "Add feedback",
-  "connectedFeedbackTitle": "Practice feedback",
-  "connectedFeedbackLabel": "Feedback for the patient",
-  "connectedSaved": "Saved.",
-  "connectedAccountTitle": "Your account",
-  "connectedOutboxKept": "Items waiting to sync stay with this account after you sign out.",
-  "connectedChangePassword": "Change password",
-  "connectedCurrentPassword": "Current password",
-  "connectedNewPassword": "New password",
-  "connectedChangePasswordSubmit": "Change password and sign out",
-  "connectedFailureOffline": "Cannot reach the server. Saved practice will sync when you reconnect.",
-  "connectedFailureTimeout": "The connection timed out. Try again.",
-  "connectedFailureBadResponse": "The server sent an unexpected response.",
-  "connectedFailureSessionEnded": "Your session ended. Sign in again to continue.",
-  "connectedFailureRejected": "The server could not complete this request.",
-  "connectedFailureInvalidServer": "The server address is not valid.",
-  "connectedFailureHttps": "This build needs an HTTPS server address.",
-  "connectedFailureAdmin": "Administrators sign in through the web dashboard.",
-  "connectedFailureWrongPin": "That PIN is not correct.",
-  "connectedFailurePinLocked": "Too many attempts. Try again in {seconds} s.",
-  "@connectedFailurePinLocked": {
-    "placeholders": {
-      "seconds": {
-        "type": "int"
-      }
-    }
-  },
-  "connectedFailureBiometricsDisabled": "Biometric unlock is not turned on for this account.",
-  "connectedFailureNoBiometric": "Add a fingerprint or face in the phone's settings first.",
-  "connectedFailureMicrophone": "Allow microphone access to record.",
-  "connectedFailureNoRecording": "Nothing was recorded. Try again.",
-  "connectedFailureRecordingUnavailable": "This recording is not available to your account.",
-  "connectedBack": "Back"
+  "parentsFilter": "Parents",
+  "addParent": "Add parent",
+  "childrenJoinNote": "Children join from their parent's code on their own device, so there is nothing to add here."
 }

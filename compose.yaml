@@ -5,6 +5,7 @@ services:
       - "127.0.0.1:8787:8787"
     environment:
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN to the https URL clients use}
+      USEFUL_WORDS_KEY: ${USEFUL_WORDS_KEY:?set USEFUL_WORDS_KEY to a base64-encoded 32-byte key}
     volumes:
       - melo-data:/data
     restart: unless-stopped

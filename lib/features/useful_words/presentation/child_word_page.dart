@@ -4,15 +4,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/action_page.dart';
 import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/ink_card.dart';
+import '../../patient/presentation/child_activity_picture.dart';
+import '../../patient/presentation/child_practice_intro.dart';
 import '../data/word_repository.dart';
 import '../domain/useful_word.dart';
 import 'word_audio_controller.dart';
 import 'word_capture_panel.dart';
-import 'word_guardian_form.dart';
 import 'word_page_actions.dart';
 import 'word_strings.dart';
 
@@ -103,8 +105,8 @@ class _ChildWordPageState extends State<ChildWordPage> with WordPageActions {
     return PopScope(
       canPop: !busy && !_audio.recording,
       child: ActionPage(
+        backgroundColor: AppColors.paper,
         title: WordStrings.title,
-        intro: WordStrings.guidance,
         onBack: busy || _audio.recording ? null : () => Navigator.pop(context),
         backLabel: WordStrings.back,
         error: error,
@@ -135,15 +137,16 @@ class _ChildWordPageState extends State<ChildWordPage> with WordPageActions {
             ),
         ],
         children: [
+          const ChildPracticeIntro(
+            activity: ChildActivity.words,
+            message: WordStrings.guidance,
+            color: AppColors.childMint,
+          ),
           if (practice == null && busy) const LinearProgressIndicator(),
           if (practice != null && !practice.enrolled)
             const InfoNotice(WordStrings.waiting),
           if (practice?.enrolled == true && !practice!.consented)
-            WordGuardianForm(
-              repository: widget.repository,
-              version: practice.consentVersion,
-              onSaved: () => unawaited(_load()),
-            ),
+            const InfoNotice(WordStrings.askParent),
           if (canPractice && word != null)
             _WordPracticePanel(
               word: word,

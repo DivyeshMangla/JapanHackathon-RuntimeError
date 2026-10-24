@@ -6,14 +6,13 @@ import '../../../core/routing/app_routes.dart';
 import '../../../core/routing/role_shell.dart';
 import '../../../core/utils/l10n.dart';
 import '../../auth/presentation/signed_in_gate.dart';
+import '../../motor/presentation/therapist_drawing_screen.dart';
 import '../../usage/presentation/usage_log_screen.dart';
-import 'assessment_screen.dart';
+import '../../useful_words/presentation/word_screens.dart';
 import 'assignment_editor_screen.dart';
-import 'monitoring_form_screen.dart';
 import 'participant_adherence_screen.dart';
 import 'participant_detail_screen.dart';
 import 'participants_screen.dart';
-import 'study_record_screen.dart';
 import 'therapist_dashboard_screen.dart';
 import 'voice_samples_screen.dart';
 
@@ -73,33 +72,20 @@ final therapistRoutes = StatefulShellRoute.indexedStack(
                   ),
                 ),
                 GoRoute(
-                  path: 'record',
-                  builder: (context, state) => StudyRecordScreen(
-                    patientId: state.pathParameters['patientId']!,
-                  ),
-                ),
-                GoRoute(
-                  path: 'assessment',
-                  builder: (context, state) => AssessmentScreen(
-                    patientId: state.pathParameters['patientId']!,
-                  ),
-                  routes: [
-                    GoRoute(
-                      path: 'monitoring',
-                      builder: (context, state) => MonitoringFormScreen(
-                        patientId: state.pathParameters['patientId']!,
-                        week:
-                            int.tryParse(
-                              state.uri.queryParameters['week'] ?? '',
-                            ) ??
-                            0,
-                      ),
-                    ),
-                  ],
-                ),
-                GoRoute(
                   path: 'usage',
                   builder: (context, state) => UsageLogScreen(
+                    patientId: state.pathParameters['patientId']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'words',
+                  builder: (context, state) => TherapistWordsScreen(
+                    patientId: state.pathParameters['patientId']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'drawing',
+                  builder: (context, state) => TherapistDrawingScreen(
                     patientId: state.pathParameters['patientId']!,
                   ),
                 ),

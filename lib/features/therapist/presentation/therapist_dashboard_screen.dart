@@ -11,6 +11,7 @@ import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/entry_cascade.dart';
 import '../../../shared/widgets/ink_card.dart';
+import '../../../shared/widgets/link_code_card.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../../shared/widgets/seal_mark.dart';
 import '../../../shared/widgets/stat_tile.dart';
@@ -41,6 +42,7 @@ class TherapistDashboardScreen extends ConsumerWidget {
             EntryCascade(
               children: [
                 const _Greeting(),
+                const _TherapistCode(),
                 const SizedBox(height: AppSpacing.xl),
                 _CaseloadStats(caseload: caseload),
                 const SizedBox(height: AppSpacing.xl),
@@ -51,6 +53,26 @@ class TherapistDashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The code parents enter at sign-up to join this caseload.
+class _TherapistCode extends ConsumerWidget {
+  const _TherapistCode();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final code = ref.watch(currentUserProvider).linkCode;
+    if (code == null) return const SizedBox.shrink();
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: LinkCodeCard(
+        title: l10n.therapistCodeTitle,
+        code: code,
+        message: l10n.therapistCodeHowTo,
       ),
     );
   }

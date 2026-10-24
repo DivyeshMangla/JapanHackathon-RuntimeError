@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, randomBytes, randomUUID, createHash }
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pronunciationReport, recognizeWithDeadline } from './pronunciation-report.mjs';
+import { consentVersion } from './db.mjs';
 
 // Recognition is deliberately independent of accepting audio. Replace this seam
 // with a server-side recognizer; it must never change the stored original.
@@ -49,7 +50,8 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
     return bytes;
   };
   const therapist = u => { if (u.role !== 'therapist') fail(403,'Only the assigned therapist can do this.'); };
-  const consentVersion = 'USEFUL-WORD-GUARDIAN-DEMO-2';
+  // The parent's signed care consent covers word practice, so there is no separate form.
+  const parentConsent = patientId => db.prepare("SELECT checks FROM consents WHERE patient_id=? AND status='approved' AND version=? ORDER BY signed_at DESC, rowid DESC LIMIT 1").get(patientId, consentVersion);
   const summary = (a, includeAnalysis) => ({ id:a.id, wordId:a.wordId, word:a.word, date:a.date, transcript:a.transcript,
     transcriptionStatus:a.transcriptionStatus, feedback:a.feedback, hasFeedbackAudio:!!a.feedbackAudio, reviewed:a.reviewed,
     ...(includeAnalysis ? {analysisReport:a.analysisReport || pronunciationReport(a.word,a.transcript,a.transcriptionStatus==='pending'?'pending':a.transcriptionStatus==='failed'?'failed':'complete'),analysisCorrection:a.analysisCorrection || null} : {}) });
@@ -69,21 +71,24 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
     }
   }
   return async function route(req,res,url,u) {
-    const match = url.pathname.match(/^\/api\/useful-words\/patients\/([^/]+)(?:\/(enrollment|consent|words|attempts)(?:\/([^/]+)(?:\/(audio|review|feedback))?)?)?$/);
+    const match = url.pathname.match(/^\/api\/useful-words\/patients\/([^/]+)(?:\/(enrollment|words|attempts)(?:\/([^/]+)(?:\/(audio|review|feedback))?)?)?$/);
     if (!match) return false;
     const [, patientId, action, itemId, subaction] = match;
     const patient = findUser(patientId);
     const assigned = patient && patient.role === 'patient' && patient.therapist_id && findUser(patient.therapist_id)?.status === 'active';
-    if (!assigned || !(u.id === patientId && u.role === 'patient' || u.role === 'therapist' && u.id === patient.therapist_id)) fail(403,'This child is not paired with your account.');
+    const linked = u.id === patientId && u.role === 'patient' || u.role === 'therapist' && u.id === patient?.therapist_id || u.role === 'parent' && u.id === patient?.parent_id;
+    if (!assigned || !linked) fail(403,'This child is not paired with your account.');
     const enrollment = get('enrollment',patientId);
     const requireEnrollment = () => { if (!enrollment || new Date(enrollment.birthDate).getTime() > Date.now()) fail(409,'Therapist enrollment is required.');
       const birth=new Date(enrollment.birthDate), today=new Date();
       const age=today.getUTCFullYear()-birth.getUTCFullYear()-(today.toISOString().slice(5,10)<enrollment.birthDate.slice(5,10)?1:0);
       if (age >= 17) fail(409,'This feature is for children under 17.'); };
-    const consent = get('consent',patientId);
+    const careConsent = parentConsent(patientId);
+    const consent = !!careConsent;
+    const analysisAllowed = consent && JSON.parse(careConsent.checks).analysis === true;
     if (!action && req.method === 'GET') {
       const words = list('word',patientId).filter(w => w.therapistId === patient.therapist_id);
-      json(res,200,{ enrollment:!!enrollment, consent:!!consent && consent.version===consentVersion && consent.therapistId===patient.therapist_id,
+      json(res,200,{ enrollment:!!enrollment, consent,
         consentVersion, mockTranscription:transcriber instanceof UnavailableTranscriber,
         words:words.map(({exampleAudio,...w})=>w), attempts:list('attempt',patientId).sort((a,b)=>b.date.localeCompare(a.date)).map(a=>summary(a,u.role==='therapist')) }); return true;
     }
@@ -96,13 +101,6 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
       put('enrollment',patientId,patientId,{birthDate,therapistId:u.id}); json(res,200,{ok:true}); return true;
     }
     requireEnrollment();
-    if (action === 'consent' && req.method === 'POST') {
-      if (u.id !== patientId) fail(403,'Consent must be entered in the child’s account by their guardian.');
-      const b=await body(req);
-      if(b.version!==consentVersion || b.guardianConsent!==true) fail(400,'Guardian consent is required.');
-      put('consent',patientId,patientId,{name:text(b.guardianName,'Guardian name'),relationship:text(b.relationship,'Relationship'),version:consentVersion,therapistId:patient.therapist_id,date:new Date().toISOString()});
-      json(res,201,{ok:true}); return true;
-    }
     if (action === 'words' && !itemId && req.method === 'POST') {
       therapist(u); const b=await body(req,19*1024*1024);
       wav(b.exampleAudio);
@@ -118,7 +116,7 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
     }
     if (action === 'attempts' && !itemId && req.method === 'POST') {
       if (u.id!==patientId) fail(403,'Only the child can submit their attempt.');
-      if (!consent || consent.version!==consentVersion || consent.therapistId!==patient.therapist_id) fail(409,'Guardian consent is required before recording or sending.');
+      if (!consent) fail(409,'A parent must sign consent before recording or sending.');
       const b=await body(req,17*1024*1024); const id=text(b.id,'Submission ID',80);
       const audio=wav(b.audio), digest=createHash('sha256').update(audio).digest('hex');
       const existing=get('attempt',id);
@@ -128,11 +126,13 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
       }
       const word=list('word',patientId).find(w=>w.id===b.wordId && w.therapistId===patient.therapist_id);
       if (!word) fail(400,'Choose a word assigned by your current therapist.');
-      const attempt={id,wordId:word.id,word:word.word,audio:b.audio,digest,date:new Date().toISOString(),transcript:null,transcriptionStatus:'pending',analysisReport:pronunciationReport(word.word,null,'pending'),analysisCorrection:null,feedback:'',feedbackAudio:null,reviewed:false};
+      const analysisStatus=analysisAllowed?'pending':'declined';
+      const attempt={id,wordId:word.id,word:word.word,audio:b.audio,digest,date:new Date().toISOString(),transcript:null,transcriptionStatus:analysisStatus,analysisReport:pronunciationReport(word.word,null,analysisStatus),analysisCorrection:null,feedback:'',feedbackAudio:null,reviewed:false};
       // Persist and acknowledge before recognition; a stalled recognizer cannot
       // hold the delivery response or replace the submitted bytes.
       put('attempt',id,patientId,attempt); json(res,201,{id,status:'delivered'});
-      const job=transcribe(patientId,attempt); pending.add(job); job.finally(()=>pending.delete(job)); return true;
+      if (analysisAllowed) { const job=transcribe(patientId,attempt); pending.add(job); job.finally(()=>pending.delete(job)); }
+      return true;
     }
     if (action === 'attempts' && itemId) {
       const attempt=list('attempt',patientId).find(a=>a.id===itemId);

@@ -24,6 +24,9 @@ abstract final class AppColors {
   static const sunshine = Color(0xFFFFC95C);
   static const teal = Color(0xFF4FB8A4);
   static const blossom = Color(0xFFF28BA8);
+  static const childButter = Color(0xFFFFEDBA);
+  static const childMint = Color(0xFFDDF2E9);
+  static const childRose = Color(0xFFFBE2E9);
   static const orchid = Color(0xFFA98BD6);
   static const lilac = Color(0xFFEFE6F8);
   static const peach = Color(0xFFFFE3C4);

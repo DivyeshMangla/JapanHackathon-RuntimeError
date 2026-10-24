@@ -11,6 +11,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/l10n.dart';
 import '../../../shared/widgets/async_view.dart';
+import '../../../shared/widgets/celebration.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/entry_cascade.dart';
 import '../../../shared/widgets/failure_feedback.dart';
@@ -18,6 +19,8 @@ import '../../../shared/widgets/page_list.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../../exercises/domain/exercise.dart';
 import '../../exercises/presentation/controllers/exercise_controllers.dart';
+import 'child_activity_picture.dart';
+import 'child_practice_intro.dart';
 import 'exercise_practice_card.dart';
 import 'practice_day_summary.dart';
 
@@ -31,23 +34,35 @@ class TodayExercisesScreen extends ConsumerWidget {
     final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.exercisesTitle)),
+      backgroundColor: AppColors.paper,
+      appBar: AppBar(
+        backgroundColor: AppColors.paper,
+        title: Text(l10n.exercisesTitle),
+      ),
       body: AsyncView(
         value: activity,
         data: (activity) {
           final items = activity.todayItems;
           if (items.isEmpty) {
-            return EmptyState(
-              icon: LucideIcons.calendarCheck,
-              title: l10n.exercisesNoneTitle,
-              message: l10n.exercisesNoneBody,
-              actionLabel: l10n.exercisesSeeProgress,
-              onAction: () => context.go(AppRoutes.patientProfileProgress),
+            return PageList(
+              children: [
+                EmptyState(
+                  icon: LucideIcons.calendarCheck,
+                  title: l10n.exercisesNoneTitle,
+                  message: l10n.exercisesNoneBody,
+                ),
+              ],
             );
           }
           final next = items.where((item) => !item.isDone).firstOrNull;
           return PageList(
             children: [
+              ChildPracticeIntro(
+                activity: ChildActivity.activities,
+                message: l10n.childActivitiesIntro,
+                color: AppColors.childButter,
+              ),
+              const SizedBox(height: AppSpacing.lg),
               PracticeDaySummary(activity: activity),
               const SizedBox(height: AppSpacing.xl),
               EntryCascade(
@@ -81,12 +96,21 @@ class TodayExercisesScreen extends ConsumerWidget {
                             return;
                           }
                           final actions = ref.read(completionActionsProvider);
-                          await runWithFailureMessage(
+                          final saved = await runWithFailureMessage(
                             context,
                             () => done
                                 ? actions.addSession(user.id, item)
                                 : actions.removeSession(user.id, item),
                           );
+                          final finished =
+                              item.sessionsDone + 1 >=
+                              item.schedule.sessionsPerDay;
+                          if (saved && done && finished && context.mounted) {
+                            await showCelebration(
+                              context,
+                              message: l10n.childGameDone(item.exercise.title),
+                            );
+                          }
                         },
                       ),
                     ),

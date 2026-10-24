@@ -14,7 +14,6 @@ Recording _probe(DateTime at) => Recording(
   kind: RecordingKind.probe,
   task: RecordingTask.sustainedA,
   type: RecordingType.baseline,
-  filePath: 'x.wav.vpa',
   durationSec: 3,
   createdAt: at,
 );
@@ -159,7 +158,6 @@ void main() {
       'patientId': 'p',
       'task': 'sustainedPhonation',
       'type': 'baseline',
-      'filePath': 'a.wav',
       'durationSec': 4,
       'createdAt': '2026-09-01T10:00:00.000',
       'analysisStatus': 'pending',
@@ -172,7 +170,6 @@ void main() {
       'patientId': 'p',
       'task': 'sustainedPhonation',
       'type': 'homePractice',
-      'filePath': 'b.wav',
       'durationSec': 4,
       'createdAt': '2026-09-01T10:00:00.000',
       'analysisStatus': 'pending',

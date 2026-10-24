@@ -50,7 +50,6 @@ class Recording {
     required this.kind,
     required this.task,
     required this.type,
-    required this.filePath,
     required this.durationSec,
     required this.createdAt,
     this.trial = 1,
@@ -64,8 +63,6 @@ class Recording {
   final RecordingTask task;
   final RecordingType type;
 
-  /// Absolute path of the encrypted file in app-private storage.
-  final String filePath;
   final double durationSec;
   final DateTime createdAt;
 
@@ -75,20 +72,6 @@ class Recording {
   /// Groups the recordings of one probe session.
   final String? probeSessionId;
   final AnalysisStatus analysisStatus;
-
-  Recording withFilePath(String path) => Recording(
-    id: id,
-    patientId: patientId,
-    kind: kind,
-    task: task,
-    type: type,
-    filePath: path,
-    durationSec: durationSec,
-    createdAt: createdAt,
-    trial: trial,
-    probeSessionId: probeSessionId,
-    analysisStatus: analysisStatus,
-  );
 
   /// Recordings are identified by id, so they can key provider families.
   @override
@@ -103,7 +86,6 @@ class Recording {
     'kind': kind.name,
     'task': task.name,
     'type': type.name,
-    'filePath': filePath,
     'durationSec': durationSec,
     'createdAt': createdAt.toIso8601String(),
     'trial': trial,
@@ -133,7 +115,6 @@ class Recording {
       kind: kind,
       task: task,
       type: type,
-      filePath: map['filePath'] as String,
       durationSec: (map['durationSec'] as num).toDouble(),
       createdAt: DateTime.parse(map['createdAt'] as String),
       trial: map['trial'] as int? ?? 1,

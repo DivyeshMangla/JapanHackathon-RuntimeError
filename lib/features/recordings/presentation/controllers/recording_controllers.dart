@@ -14,21 +14,17 @@ final patientRecordingsProvider =
     );
 
 /// When the patient's next probe is due under the current study settings.
-/// A withdrawn participant is not asked for any more.
 final probeDueProvider = FutureProvider.family<ProbeDue, String>((
   ref,
   patientId,
 ) async {
-  final record = await ref.watch(participantRecordProvider(patientId).future);
+  final period = await ref.watch(studyPeriodProvider(patientId).future);
   final recordings = await ref.watch(
     patientRecordingsProvider(patientId).future,
   );
   final settings = await ref.watch(studySettingsProvider.future);
-  if (record.isWithdrawn) {
-    return const ProbeDue(nextDue: null, isBaseline: false);
-  }
   return ProbeDue.compute(
-    enrolledOn: record.interventionStart,
+    enrolledOn: period.start,
     recordings: recordings,
     settings: settings,
   );

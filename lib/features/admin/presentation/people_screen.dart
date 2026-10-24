@@ -43,19 +43,34 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
       body: PageList(
         children: [
           ChoicePills<UserRole>(
-            options: const [UserRole.patient, UserRole.therapist],
+            options: const [
+              UserRole.patient,
+              UserRole.parent,
+              UserRole.therapist,
+            ],
             selected: _role,
-            labelOf: (r) => r == UserRole.patient
-                ? l10n.patientsFilter
-                : l10n.therapistsFilter,
+            labelOf: (r) => switch (r) {
+              UserRole.patient => l10n.patientsFilter,
+              UserRole.parent => l10n.parentsFilter,
+              _ => l10n.therapistsFilter,
+            },
             onSelected: (r) => setState(() => _role = r),
           ),
           const SizedBox(height: AppSpacing.lg),
-          PrimaryButton(
-            label: isPatients ? l10n.addPatient : l10n.addTherapist,
-            icon: LucideIcons.userPlus,
-            onPressed: () => context.go(AppRoutes.adminNewUser(_role)),
-          ),
+          // Children join from their parent's code, never from here.
+          if (isPatients)
+            Text(
+              l10n.childrenJoinNote,
+              style: Theme.of(context).textTheme.bodySmall,
+            )
+          else
+            PrimaryButton(
+              label: _role == UserRole.parent
+                  ? l10n.addParent
+                  : l10n.addTherapist,
+              icon: LucideIcons.userPlus,
+              onPressed: () => context.go(AppRoutes.adminNewUser(_role)),
+            ),
           const SizedBox(height: AppSpacing.lg),
           AsyncView(
             value: people,
@@ -75,10 +90,14 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
                                   patient: person,
                                   therapists: therapists,
                                 )
-                              : _TherapistCard(
-                                  therapist: person,
-                                  caseload: patients
-                                      .where((p) => p.therapistId == person.id)
+                              : _AccountCard(
+                                  account: person,
+                                  children: patients
+                                      .where(
+                                        (p) => _role == UserRole.parent
+                                            ? p.parentId == person.id
+                                            : p.therapistId == person.id,
+                                      )
                                       .length,
                                 ),
                         ),
@@ -202,15 +221,18 @@ class _TherapistChooser extends StatelessWidget {
   }
 }
 
-class _TherapistCard extends StatelessWidget {
-  const _TherapistCard({required this.therapist, required this.caseload});
+/// A therapist or parent, with their link code and how many children they
+/// look after.
+class _AccountCard extends StatelessWidget {
+  const _AccountCard({required this.account, required this.children});
 
-  final User therapist;
-  final int caseload;
+  final User account;
+  final int children;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final code = account.linkCode;
     return InkCard(
       child: Row(
         children: [
@@ -218,16 +240,18 @@ class _TherapistCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(therapist.name, style: text.titleMedium),
-                Text(therapist.email, style: text.bodySmall),
+                if (code != null)
+                  Text(code, style: AppTypography.participantCode),
+                Text(account.name, style: text.titleMedium),
+                Text(account.email, style: text.bodySmall),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('$caseload', style: text.headlineSmall),
-              Text(context.l10n.patientCount(caseload), style: text.bodySmall),
+              Text('$children', style: text.headlineSmall),
+              Text(context.l10n.patientCount(children), style: text.bodySmall),
             ],
           ),
         ],
