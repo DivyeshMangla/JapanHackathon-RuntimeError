@@ -21,8 +21,12 @@ final participantSummaryProvider =
       );
     });
 
-/// The signed-in therapist's patients, ordered by participant code.
-final caseloadProvider = FutureProvider<List<ParticipantSummary>>((ref) async {
+/// The signed-in therapist's patients, ordered by participant code. Disposed
+/// with the screens that show it, so a later sign-in builds it afresh rather
+/// than refreshing a previous session's caseload in the middle of a frame.
+final caseloadProvider = FutureProvider.autoDispose<List<ParticipantSummary>>((
+  ref,
+) async {
   final therapist = ref.watch(currentUserProvider);
   final patients = await ref
       .watch(userRepositoryProvider)
@@ -36,15 +40,17 @@ final caseloadProvider = FutureProvider<List<ParticipantSummary>>((ref) async {
 /// Looks up one participant, but only if they are on the signed-in
 /// therapist's caseload. Null otherwise, so a therapist cannot open another
 /// therapist's patient by URL.
-final caseloadParticipantProvider =
-    FutureProvider.family<ParticipantSummary?, String>((ref, patientId) async {
+final caseloadParticipantProvider = FutureProvider.autoDispose
+    .family<ParticipantSummary?, String>((ref, patientId) async {
       final caseload = await ref.watch(caseloadProvider.future);
       return caseload.where((p) => p.patient.id == patientId).firstOrNull;
     });
 
 /// Every recording across the caseload, newest first, with its patient.
 final caseloadRecordingsProvider =
-    FutureProvider<List<(ParticipantSummary, Recording)>>((ref) async {
+    FutureProvider.autoDispose<List<(ParticipantSummary, Recording)>>((
+      ref,
+    ) async {
       final caseload = await ref.watch(caseloadProvider.future);
       return [
         for (final participant in caseload)

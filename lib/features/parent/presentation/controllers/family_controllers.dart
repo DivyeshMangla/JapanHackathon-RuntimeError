@@ -6,8 +6,12 @@ import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../data/family_repository_providers.dart';
 import '../../domain/consent.dart';
 
-/// The signed-in parent's children, by name.
-final familyChildrenProvider = FutureProvider<List<User>>((ref) async {
+/// The signed-in parent's children, by name. Disposed with the screens that
+/// show it, so returning from child mode builds it afresh rather than
+/// refreshing the previous session's list in the middle of a frame.
+final familyChildrenProvider = FutureProvider.autoDispose<List<User>>((
+  ref,
+) async {
   final parent = ref.watch(currentUserProvider);
   final children = await ref
       .watch(userRepositoryProvider)
@@ -20,7 +24,7 @@ final familyChildrenProvider = FutureProvider<List<User>>((ref) async {
 
 /// One of the signed-in parent's children, or null for anyone else's, so a
 /// typed URL cannot open another family's child.
-final familyChildProvider = FutureProvider.family<User?, String>((
+final familyChildProvider = FutureProvider.autoDispose.family<User?, String>((
   ref,
   childId,
 ) async {
@@ -29,7 +33,7 @@ final familyChildProvider = FutureProvider.family<User?, String>((
 });
 
 /// The signed-in account's therapist, by name.
-final familyTherapistProvider = FutureProvider<User?>((ref) async {
+final familyTherapistProvider = FutureProvider.autoDispose<User?>((ref) async {
   final therapistId = ref.watch(currentUserProvider).therapistId;
   if (therapistId == null) return null;
   return ref.watch(userByIdProvider(therapistId).future);
