@@ -7,7 +7,7 @@ import { consentVersion } from './db.mjs';
 // Recognition is deliberately independent of accepting audio. Replace this seam
 // with a server-side recognizer; it must never change the stored original.
 export class UnavailableTranscriber {
-  constructor() { if (process.env.SPEECH_ML_PROVIDER === 'groq') this.externalProvider='groq'; }
+  constructor() { if (['groq','gemini'].includes(process.env.SPEECH_ML_PROVIDER)) this.externalProvider=process.env.SPEECH_ML_PROVIDER; }
   async suggest() { throw new Error('No speech recognition service configured'); }
 }
 

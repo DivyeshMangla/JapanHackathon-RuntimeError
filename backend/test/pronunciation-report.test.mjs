@@ -22,7 +22,7 @@ test('recognition deadline bounds a stalled integration',async()=>{
 
 import { createServer } from 'node:http';
 import { spawnSync } from 'node:child_process';
-import { createLocalTranscriber, createHostedTranscriber, createSpeechTranscriber, assessWordAudio } from '../src/pronunciation-report.mjs';
+import { createLocalTranscriber, createHostedTranscriber, createGeminiTranscriber, createSpeechTranscriber, assessWordAudio } from '../src/pronunciation-report.mjs';
 import { compareRecognizedText } from '../src/speech-comparison.mjs';
 import { toneWav } from './fixtures/audio.mjs';
 
@@ -156,4 +156,24 @@ test('hosted recognition rechecks permission after local audio preparation and b
   await assert.rejects(recognizeWithDeadline(transcriber,toneWav()),/permission/);
   await assert.rejects(recognizeWithDeadline(transcriber,toneWav(),undefined,{canUseHosted:()=>false}),/permission/);
   assert.equal(calls,0);
+});
+
+test('Gemini transcription sends original WAV without the target word to the fixed endpoint',async()=>{
+  const original=toneWav(),backup=Buffer.from(original);let request,calls=0;
+  const transcriber=createGeminiTranscriber({apiKey:'test-private-key',transport:async(url,options)=>{
+    calls++;request={url,...options};
+    return new Response(JSON.stringify({candidates:[{content:{parts:[{text:'{"text":" help ","speechHeard":false}'}]}}]}));
+  }});
+  assert.equal(transcriber.externalProvider,'gemini');assert.equal(transcriber.modelId,'gemini-3.5-flash-lite');
+  await assert.rejects(()=>recognizeWithDeadline(transcriber,original,undefined,{canUseHosted:()=>false}),/permission/);assert.equal(calls,0);
+  await assert.rejects(()=>recognizeWithDeadline(transcriber,toneWav({amplitude:0}),undefined,{canUseHosted:()=>true}),/eligible/);assert.equal(calls,0);
+  const recognition=await recognizeWithDeadline(transcriber,original,undefined,{canUseHosted:()=>true});
+  assert.equal(recognition.text,'help');assert.equal(recognition.evidence.warnings.length,1);
+  assert.equal(request.url,'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent');
+  assert.equal(request.headers['x-goog-api-key'],'test-private-key');assert.equal(request.redirect,'error');
+  const sent=JSON.parse(request.body).contents[0].parts;
+  assert.doesNotMatch(sent[0].text,/help/);
+  assert.deepEqual(Buffer.from(sent[1].inline_data.data,'base64'),original);assert.deepEqual(original,backup);
+  assert.equal(createSpeechTranscriber({provider:'gemini',apiKey:''}),null);
+  assert.throws(()=>createGeminiTranscriber({apiKey:'test',model:'other'}),/Gemini model/);
 });

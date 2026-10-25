@@ -177,10 +177,46 @@ export function createHostedTranscriber({ apiKey = process.env.GROQ_API_KEY, mod
   };
 }
 
+export function createGeminiTranscriber({ apiKey = process.env.GEMINI_API_KEY, model = process.env.SPEECH_ML_MODEL || 'gemini-3.5-flash-lite', language = process.env.SPEECH_ML_LANGUAGE || 'en', timeout = Number(process.env.SPEECH_ML_TIMEOUT_MS || 30000), transport = fetch } = {}) {
+  if (!apiKey?.trim()) return null;
+  if (!/^gemini-[a-z0-9.-]+$/.test(model)) throw new Error('Choose a Gemini model name.');
+  if (!Number.isFinite(timeout) || timeout < 100 || timeout > 120000) throw new Error('Speech ML timeout must be between 100 and 120000 milliseconds.');
+  if (!/^[a-z]{2}$/.test(language) && language !== 'auto') throw new Error('Hosted speech ML language must be a two-letter ISO language code or auto.');
+  return {
+    modelId: model, language, timeout, externalProvider: 'gemini',
+    async suggest(audio, { signal, canUseHosted } = {}) {
+      const boundedSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout);
+      if (!assessWordAudio(audio).eligibleForRecognition) throw new Error('Recording is not eligible for recognition');
+      if (typeof canUseHosted !== 'function' || !await canUseHosted()) throw new Error('Hosted speech recognition permission is required');
+      // Same rule as Whisper: the target word is never in the prompt, so a
+      // model cannot echo the expected answer without hearing it.
+      const instruction = `Transcribe exactly the words spoken in this short recording${language === 'auto' ? '' : ` (language: ${language})`}. Do not guess or correct mispronunciations; write what is heard. If no speech is audible, return an empty string. Reply as JSON: {"text": string, "speechHeard": boolean}.`;
+      const payload = {
+        contents: [{ role: 'user', parts: [{ text: instruction }, { inline_data: { mime_type: 'audio/wav', data: Buffer.from(audio).toString('base64') } }] }],
+        // Transcribing one word needs no reasoning; default thinking alone can
+        // outlast the recognition deadline.
+        generationConfig: { temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 1024, thinkingConfig: { thinkingLevel: 'low' } },
+      };
+      const response = await transport(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey.trim() }, body: JSON.stringify(payload), redirect: 'error', signal: boundedSignal });
+      if (!response.ok) throw new Error('Hosted speech recognition unavailable');
+      const raw = await response.text();
+      if (raw.length > 65536) throw new Error('Hosted recognition response too large');
+      const answer = JSON.parse(JSON.parse(raw).candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || 'null');
+      if (typeof answer?.text !== 'string' || answer.text.length > 4000) throw new Error('Invalid recognition response');
+      return {
+        text: answer.text.trim(),
+        evidence: { segments: [], warnings: answer.speechHeard === false ? ['Recognizer reported no audible speech. Listen before using the transcript.'] : [],
+          interpretation: 'Gemini transcription is uncalibrated recognition evidence. It is not child pronunciation confidence or accuracy.' },
+      };
+    },
+  };
+}
+
 export function createSpeechTranscriber({ provider = process.env.SPEECH_ML_PROVIDER || 'local', ...options } = {}) {
   if (provider === 'local') return createLocalTranscriber(options);
   if (provider === 'groq') return createHostedTranscriber(options);
-  throw new Error('SPEECH_ML_PROVIDER must be local or groq.');
+  if (provider === 'gemini') return createGeminiTranscriber(options);
+  throw new Error('SPEECH_ML_PROVIDER must be local, groq or gemini.');
 }
 
 export async function recognizeWithDeadline(transcriber, audio, milliseconds = transcriber.timeout || 15000, options = {}) {

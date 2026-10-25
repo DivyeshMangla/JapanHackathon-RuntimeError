@@ -441,6 +441,14 @@ for reliability/abuse investigations. Operators can enable zero data retention i
 their account's Data Controls. Configure the account and review suitability for
 your institution before sending real child records. See [Groq's data controls](https://console.groq.com/docs/your-data).
 Backend-only execution does not remove the fact that a provider receives the media.
+With `MOTOR_ML_PROVIDER=gemini` and `SPEECH_ML_PROVIDER=gemini`, word attempts and
+therapist examples are transcribed by Gemini (`generateContent` with inline WAV,
+default `gemini-3.5-flash-lite` with low thinking, since larger models took over
+30 s per word; override with `SPEECH_ML_MODEL`). As with Whisper, the
+target word is never in the prompt, so recognized text is compared against it
+afterwards; no resampling or ffmpeg is needed. The same Gemini parent permission
+covers photos and recordings.
+
 Gemini API has different [age and clinical-use restrictions](https://ai.google.dev/gemini-api/terms);
 it is not an interchangeable free fallback for this child-facing app.
 
