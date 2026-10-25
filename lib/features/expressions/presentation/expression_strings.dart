@@ -42,7 +42,7 @@ abstract final class ExpressionStrings {
   static const sendFeedback = 'Send feedback to family';
   static const feedbackRequired = 'Add feedback before sending.';
   static const details = 'Picture answers';
-  static const byFeeling = 'Matches by feeling';
+  static const notAssessable = 'n/a';
   static const confusions = 'Labels to practise';
   static const allMatched = 'All picture labels matched this round.';
   static const leaveTitle = 'Leave this round?';
@@ -62,10 +62,10 @@ abstract final class ExpressionStrings {
   };
   static String question(int index, int total) => 'Picture $index of $total';
   static String pictureLabel(int index) => 'Illustrated face, picture $index';
-  static String score(int correct, int total, double accuracy) =>
-      '$correct of $total picture labels matched (${accuracy.toStringAsFixed(0)}%)';
+  static String matched(int correct, int total) =>
+      '$correct of $total pictures matched';
   static String count(Feeling feeling, int correct, int total) =>
-      '${label(feeling)}: $correct of $total';
+      '${label(feeling)} $correct/$total';
   static String confusion(Feeling expected, Feeling selected, int count) =>
       '${label(expected)} pictures labelled ${label(selected)}: $count';
   static String answer(Feeling expected, Feeling selected) =>

@@ -12,18 +12,23 @@ class AccuracyMeasure {
   final double? value;
 }
 
-/// A headline percentage, the mean of the assessable measures, above one bar
-/// per measure.
+/// A headline percentage, by default the mean of the assessable measures,
+/// above one bar per measure.
 class AccuracyChart extends StatelessWidget {
   const AccuracyChart({
     super.key,
     required this.title,
     required this.measures,
     required this.notAssessable,
+    this.overall,
   });
 
   final String title;
   final List<AccuracyMeasure> measures;
+
+  /// Headline value when it is not the mean of the bars, such as the share of
+  /// all answers when feelings had different numbers of pictures.
+  final double? overall;
 
   /// Shown in place of a percentage for a measure without a value.
   final String notAssessable;
@@ -37,9 +42,11 @@ class AccuracyChart extends StatelessWidget {
       for (final measure in measures)
         if (measure.value != null) measure.value!,
     ];
-    final overall = values.isEmpty
-        ? null
-        : values.reduce((a, b) => a + b) / values.length;
+    final overall =
+        this.overall ??
+        (values.isEmpty
+            ? null
+            : values.reduce((a, b) => a + b) / values.length);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

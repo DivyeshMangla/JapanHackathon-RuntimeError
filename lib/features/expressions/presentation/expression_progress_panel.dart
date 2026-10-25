@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../shared/widgets/accuracy_chart.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/page_list.dart';
@@ -57,19 +58,27 @@ class ExpressionResultCard extends StatelessWidget {
           style: Theme.of(context).textTheme.labelLarge,
         ),
         const SizedBox(height: AppSpacing.sm),
-        Text(
-          ExpressionStrings.score(
-            session.correct,
-            session.total,
-            session.accuracy,
-          ),
-          style: Theme.of(context).textTheme.titleMedium,
+        AccuracyChart(
+          title: ExpressionStrings.matched(session.correct, session.total),
+          overall: session.accuracy / 100,
+          notAssessable: ExpressionStrings.notAssessable,
+          measures: [
+            for (final count in session.perExpression)
+              AccuracyMeasure(
+                ExpressionStrings.count(
+                  count.feeling,
+                  count.correct,
+                  count.total,
+                ),
+                count.total == 0 ? null : count.correct / count.total,
+              ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.sm),
         Text(
           session.assistance == ExpressionAssistance.withHelp
               ? ExpressionStrings.withHelp
               : ExpressionStrings.independent,
+          style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: AppSpacing.md),
         const SectionLabel(ExpressionStrings.feedback),
@@ -78,12 +87,6 @@ class ExpressionResultCard extends StatelessWidget {
           Text(
             DateFormat.yMMMd().add_jm().format(session.reviewedAt!),
             style: Theme.of(context).textTheme.bodySmall,
-          ),
-        const SizedBox(height: AppSpacing.md),
-        const Text(ExpressionStrings.byFeeling),
-        for (final count in session.perExpression)
-          Text(
-            ExpressionStrings.count(count.feeling, count.correct, count.total),
           ),
         ExpansionTile(
           tilePadding: EdgeInsets.zero,
