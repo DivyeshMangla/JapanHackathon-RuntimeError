@@ -39,6 +39,7 @@ class MotorReviewCard extends ConsumerStatefulWidget {
 class _MotorReviewCardState extends ConsumerState<MotorReviewCard> {
   Future<Uint8List>? _photo;
   bool _working = false;
+  late bool _detailsVisible = widget.submission.reviewedAt == null;
 
   Future<void> _change(Future<void> Function() action) async {
     setState(() => _working = true);
@@ -52,7 +53,9 @@ class _MotorReviewCardState extends ConsumerState<MotorReviewCard> {
       builder: (_) => _MotorReviewDialog(submission: widget.submission),
     );
     if (decision == null || !mounted) return;
-    await _change(
+    setState(() => _working = true);
+    final saved = await runWithFailureMessage(
+      context,
       () => ref
           .read(motorActionsProvider)
           .review(
@@ -62,6 +65,19 @@ class _MotorReviewCardState extends ConsumerState<MotorReviewCard> {
             outcome: decision.outcome,
           ),
     );
+    if (!mounted) return;
+    setState(() {
+      _working = false;
+      if (saved) {
+        _photo = null;
+        _detailsVisible = false;
+      }
+    });
+    if (saved) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Feedback saved')));
+    }
   }
 
   @override
@@ -94,14 +110,13 @@ class _MotorReviewCardState extends ConsumerState<MotorReviewCard> {
           SecondaryButton(
             label: l10n.motorViewPhoto,
             icon: LucideIcons.image,
-            onPressed: () => setState(
-              () => _photo = ref
-                  .read(motorRepositoryProvider)
-                  .photo(submission.id),
-            ),
+            onPressed: () => setState(() {
+              _detailsVisible = true;
+              _photo = ref.read(motorRepositoryProvider).photo(submission.id);
+            }),
           ),
           if (_photo != null) _Photo(photo: _photo!),
-          if (report != null) _Report(report: report),
+          if (report != null && _detailsVisible) _Report(report: report),
           if (submission.status == MotorAnalysisStatus.unavailable) ...[
             const SizedBox(height: AppSpacing.sm),
             SecondaryButton(
@@ -196,6 +211,10 @@ class _Report extends StatelessWidget {
           if (report.validation != null) InfoNotice(report.validation!),
           if (report.imageQuality == 'retake') InfoNotice(l10n.motorRetake),
           Text(report.observations),
+          if (report.countEvidence?.trim().isNotEmpty == true)
+            Text(
+              '${MotorReportStrings.countEvidence}: ${report.countEvidence}',
+            ),
           if (report.expectedResult != null)
             Text(l10n.motorReportTarget(report.expectedResult!)),
           if (report.comparison != null)

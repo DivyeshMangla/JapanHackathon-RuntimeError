@@ -25,32 +25,11 @@ class WordRepository {
 
   Future<WordPractice> load() async =>
       WordPractice.fromJson(await _request(_path));
-  Future<void> enroll(String birthDate) async {
-    await _request(
-      '$_path/enrollment',
-      method: 'PUT',
-      data: {
-        'birthDate': birthDate,
-        'usesSpeech': true,
-        'therapistSelectedGoals': true,
-      },
-    );
-  }
-
-  Future<void> assign(
-    String word,
-    Uint8List picture,
-    String mime,
-    Uint8List example,
-  ) async {
+  Future<void> assign(String word, Uint8List example) async {
     await _request(
       '$_path/words',
       method: 'POST',
-      data: {
-        'word': word,
-        'picture': 'data:$mime;base64,${base64Encode(picture)}',
-        'exampleAudio': base64Encode(example),
-      },
+      data: {'word': word, 'exampleAudio': base64Encode(example)},
     );
   }
 
@@ -100,6 +79,10 @@ class WordRepository {
   }
 
   Future<void> discard() => _write(null);
+  Future<void> generateReport(String id) async {
+    await _request('$_path/attempts/$id/analyze', method: 'POST');
+  }
+
   Future<void> review(
     String id,
     String feedback,

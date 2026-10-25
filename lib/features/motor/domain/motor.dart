@@ -63,6 +63,7 @@ class MotorReport {
     this.expectedResult,
     this.expectedCount,
     this.observedCount,
+    this.countEvidence,
     this.evidence,
     this.validation,
     this.rubricVersion,
@@ -79,6 +80,7 @@ class MotorReport {
   final String? comparison;
   final String? expectedResult;
   final int? expectedCount, observedCount;
+  final String? countEvidence;
   final MotorEvidence? evidence;
   final String? validation, rubricVersion;
   final List<String> limitations;

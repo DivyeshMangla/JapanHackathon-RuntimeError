@@ -253,13 +253,8 @@ test('useful words preserve exact audio, encrypt payloads and isolate paired acc
   const ct=await f.login(child), tt=await f.login(therapist), ot=await f.login(other), st=await f.login(stranger), at=await f.login(admin);
   const path=`/useful-words/patients/${child.id}`;
   for(const token of [undefined,ot,st,at]) assert.ok([401,403].includes((await f.call(path,'GET',undefined,token)).status));
-  const enrollment={birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true};
-  assert.equal((await f.call(`${path}/enrollment`,'PUT',enrollment,ct)).status,403);
-  assert.equal((await f.call(`${path}/enrollment`,'PUT',{...enrollment,birthDate:'2000-01-01'},tt)).status,400);
-  assert.equal((await f.call(`${path}/enrollment`,'PUT',{...enrollment,usesSpeech:false},tt)).status,400);
-  assert.equal((await f.call(`${path}/enrollment`,'PUT',enrollment,tt)).status,200);
   const wav=toneWav();
-  const word=await f.call(`${path}/words`,'POST',{word:'water',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
+  const word=await f.call(`${path}/words`,'POST',{word:'water',exampleAudio:wav.toString('base64')},tt);
   assert.equal(word.status,201);
   const payload={id:randomUUID(),wordId:word.data.id,audio:wav.toString('base64')};
   assert.equal((await f.call(`${path}/attempts`,'POST',payload,ct)).status,409);
@@ -309,7 +304,6 @@ test('useful word delivery completes while recognition is stalled; suggestions n
   const child=f.add('patient'), therapist=f.add('therapist');
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
   const ct=await f.login(child), tt=await f.login(therapist), path=`/useful-words/patients/${child.id}`;
-  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:true}),'approved',now());
   const wav=toneWav();
   const word=await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
@@ -411,7 +405,6 @@ test('analysis reports are therapist-only, never score ASR text and preserve cli
   const child=f.add('patient'), therapist=f.add('therapist'), other=f.add('therapist');
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
   const ct=await f.login(child),tt=await f.login(therapist),ot=await f.login(other),path=`/useful-words/patients/${child.id}`;
-  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
   const parent=f.add('parent');f.db.prepare('UPDATE users SET parent_id=? WHERE id=?').run(parent.id,child.id);
   const parentToken=await f.login(parent);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({adult:true,participation:true,dataSharing:true,analysis:true}),'approved',now());
@@ -444,7 +437,6 @@ test('word delivery remains available when parent declines automated analysis',a
   const child=f.add('patient'),therapist=f.add('therapist');
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
   const ct=await f.login(child),tt=await f.login(therapist),path=`/useful-words/patients/${child.id}`;
-  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:false}),'approved',now());
   const wav=toneWav();
   const word=await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:wav.toString('base64')},tt);
@@ -462,7 +454,6 @@ test('capture failure skips recognition without losing delivery and latest unapp
   const child=f.add('patient'),therapist=f.add('therapist');
   f.db.prepare('UPDATE users SET therapist_id=? WHERE id=?').run(therapist.id,child.id);
   const ct=await f.login(child),tt=await f.login(therapist),path=`/useful-words/patients/${child.id}`;
-  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:true}),'approved',now());
   const word=(await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:toneWav().toString('base64')},tt)).data;
   const original=toneWav({amplitude:0}),id=randomUUID();
@@ -476,19 +467,17 @@ test('capture failure skips recognition without losing delivery and latest unapp
   assert.equal(calls,0);
 });
 
-test('published family voice feedback remains available after enrollment or therapist pairing ends',async t=>{
+test('published family voice feedback remains available after therapist pairing ends',async t=>{
   const f=await fixture(t);
   const child=f.add('patient'),therapist=f.add('therapist'),parent=f.add('parent'),stranger=f.add('parent');
   f.db.prepare('UPDATE users SET therapist_id=?,parent_id=? WHERE id=?').run(therapist.id,parent.id,child.id);
   const ct=await f.login(child),tt=await f.login(therapist),pt=await f.login(parent),st=await f.login(stranger),path=`/useful-words/patients/${child.id}`;
-  await f.call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt);
   f.db.prepare('INSERT INTO consents(id,patient_id,version,signer_name,signature_png,checks,status,signed_at) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),child.id,consentVersion,'Guardian',png,JSON.stringify({analysis:false}),'approved',now());
   const audio=toneWav().toString('base64');
   const word=(await f.call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:audio},tt)).data;
   const id=randomUUID();
   await f.call(`${path}/attempts`,'POST',{id,wordId:word.id,audio},ct);
   await f.call(`${path}/attempts/${id}/review`,'PUT',{feedback:'Try slowly.',reviewed:true,feedbackAudio:audio},tt);
-  f.db.prepare("DELETE FROM useful_word_records WHERE kind='enrollment' AND patient_id=?").run(child.id);
   for(const token of [ct,pt]) assert.equal((await f.call(`${path}/attempts/${id}/feedback`,'GET',undefined,token)).data.audio,audio);
   f.db.prepare('UPDATE users SET therapist_id=NULL WHERE id=?').run(child.id);
   for(const token of [ct,pt]) {

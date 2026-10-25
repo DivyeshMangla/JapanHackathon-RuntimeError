@@ -28,7 +28,7 @@ class WordAnalysisPanel extends StatelessWidget {
         WordStrings.reportTitle,
         style: Theme.of(context).textTheme.titleMedium,
       ),
-      const InfoNotice(WordStrings.unable),
+      InfoNotice(WordStrings.reportStatus(report?.processingStatus)),
       Text('${WordStrings.target}: ${report?.targetWord ?? targetWord}'),
       Text(
         '${WordStrings.recognized}: ${report?.recognizedWord ?? recognizedWord ?? WordStrings.unavailable}',

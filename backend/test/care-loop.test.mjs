@@ -39,8 +39,6 @@ test('all three activities deliver therapist assessments and guidance to the chi
     return { status: response.status, data: await response.json() };
   };
   const wordPath = `/useful-words/patients/${child.id}`, patientPath = `/patients/${child.id}`;
-  const birthDate = new Date(); birthDate.setUTCFullYear(birthDate.getUTCFullYear() - 7);
-  assert.equal((await call(therapist, `${wordPath}/enrollment`, 'PUT', { birthDate: birthDate.toISOString().slice(0, 10), usesSpeech: true, therapistSelectedGoals: true })).status, 200);
   const audio = toneWav().toString('base64');
   const word = await call(therapist, `${wordPath}/words`, 'POST', { word: 'help', picture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB', exampleAudio: audio });
   assert.equal(word.status, 201);

@@ -74,6 +74,12 @@ their own assessment and mark feedback reviewed to publish it to the family.
 Drawing reports include task-specific evidence and quality limitations, with a
 separate therapist assessment. Neither model has been clinically validated here.
 Original submissions remain available when optional analysis is unavailable.
+In the therapist's Say a Word review, **Generate voice report** recognizes a
+saved attempt, including attempts submitted before analysis was enabled. Failed
+recognition can be retried; pending reports refresh automatically. Reports show
+recognized text, comparison with the target and saved example, and capture
+checks. A configured speech service and the applicable parent permission are
+required. Regeneration preserves recordings and therapist feedback.
 
 Child mode uses a four-digit PIN chosen by the parent each time they start it. Already-open demo sessions without a PIN use `1234`. Account sign-in still uses the account password.
 

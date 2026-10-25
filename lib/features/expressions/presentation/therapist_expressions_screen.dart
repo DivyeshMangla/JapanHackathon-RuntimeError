@@ -153,6 +153,7 @@ class _ReviewForm extends ConsumerStatefulWidget {
 }
 
 class _ReviewFormState extends ConsumerState<_ReviewForm> {
+  late bool _editing = widget.session.reviewedAt == null;
   late final _note = TextEditingController(
     text: widget.session.reviewNote ?? '',
   );
@@ -177,6 +178,8 @@ class _ReviewFormState extends ConsumerState<_ReviewForm> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (saved) {
+      FocusScope.of(context).unfocus();
+      setState(() => _editing = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text(ExpressionStrings.reviewed)));
@@ -184,34 +187,39 @@ class _ReviewFormState extends ConsumerState<_ReviewForm> {
   }
 
   @override
-  Widget build(BuildContext context) => Form(
-    key: _form,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: AppSpacing.md),
-        TextFormField(
-          controller: _note,
-          enabled: !_saving,
-          minLines: 2,
-          maxLines: 5,
-          maxLength: 2000,
-          decoration: const InputDecoration(
-            labelText: ExpressionStrings.feedbackLabel,
-            hintText: ExpressionStrings.feedbackHint,
+  Widget build(BuildContext context) => !_editing
+      ? SecondaryButton(
+          label: 'Edit feedback',
+          onPressed: () => setState(() => _editing = true),
+        )
+      : Form(
+          key: _form,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _note,
+                enabled: !_saving,
+                minLines: 2,
+                maxLines: 5,
+                maxLength: 2000,
+                decoration: const InputDecoration(
+                  labelText: ExpressionStrings.feedbackLabel,
+                  hintText: ExpressionStrings.feedbackHint,
+                ),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? ExpressionStrings.feedbackRequired
+                    : null,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              PrimaryButton(
+                label: _saving
+                    ? ExpressionStrings.saving
+                    : ExpressionStrings.sendFeedback,
+                onPressed: _saving ? null : _save,
+              ),
+            ],
           ),
-          validator: (value) => value == null || value.trim().isEmpty
-              ? ExpressionStrings.feedbackRequired
-              : null,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        PrimaryButton(
-          label: _saving
-              ? ExpressionStrings.saving
-              : ExpressionStrings.sendFeedback,
-          onPressed: _saving ? null : _save,
-        ),
-      ],
-    ),
-  );
+        );
 }

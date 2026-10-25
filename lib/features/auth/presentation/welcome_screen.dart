@@ -61,17 +61,6 @@ class WelcomeScreen extends StatelessWidget {
                 if (!kReleaseMode) ...[
                   const SizedBox(height: AppSpacing.xl),
                   const DemoSignInPanel(),
-                  const SizedBox(height: AppSpacing.md),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () => context.push(AppRoutes.sensorCheck),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.muted,
-                      ),
-                      icon: const Icon(LucideIcons.activity),
-                      label: Text(l10n.sensorCheckOpen),
-                    ),
-                  ),
                 ],
               ],
             ),

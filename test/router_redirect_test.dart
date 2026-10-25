@@ -33,7 +33,6 @@ void main() {
       AppRoutes.welcome,
       AppRoutes.login,
       AppRoutes.parentSignUp,
-      AppRoutes.sensorCheck,
     ]) {
       expect(redirectFor(const AsyncData(null), open), isNull);
     }

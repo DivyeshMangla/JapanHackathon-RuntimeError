@@ -24,6 +24,10 @@ Future<void> main() async {
   try {
     final database = await LocalDatabase.open();
     final container = ProviderContainer(
+      // Riverpod retries failed providers with backoff and reports loading
+      // meanwhile, which hid a typed failure behind skeletons for most of a
+      // minute. Screens offer their own refresh, so failures show at once.
+      retry: (retryCount, error) => null,
       overrides: [
         localDatabaseProvider.overrideWithValue(database),
         backendClientProvider.overrideWithValue(

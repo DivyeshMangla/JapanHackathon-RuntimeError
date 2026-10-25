@@ -30,8 +30,7 @@ class _WordAssignmentFormState extends State<WordAssignmentForm>
     with WordPageActions {
   final _word = TextEditingController();
   final _audio = WordAudioController();
-  Uint8List? _picture, _example;
-  String _mime = 'image/png';
+  Uint8List? _example;
   @override
   void initState() {
     super.initState();
@@ -54,19 +53,12 @@ class _WordAssignmentFormState extends State<WordAssignmentForm>
     super.dispose();
   }
 
-  Future<void> _pick(bool picture) async {
+  Future<void> _pick() async {
     await run(() async {
-      final media = await WordMediaPicker().choose(picture: picture);
+      final media = await WordMediaPicker().choose(picture: false);
       if (media == null || !mounted) return;
-      if (picture) {
-        setState(() {
-          _picture = media.bytes;
-          _mime = media.mime;
-        });
-      } else {
-        await _audio.clear();
-        if (mounted) setState(() => _example = media.bytes);
-      }
+      await _audio.clear();
+      if (mounted) setState(() => _example = media.bytes);
     });
   }
 
@@ -74,8 +66,6 @@ class _WordAssignmentFormState extends State<WordAssignmentForm>
     if (await run(
           () => widget.repository.assign(
             _word.text.trim(),
-            _picture!,
-            _mime,
             _example ?? _audio.audio!,
           ),
         ) &&
@@ -84,7 +74,6 @@ class _WordAssignmentFormState extends State<WordAssignmentForm>
       await _audio.clear();
       if (mounted) {
         setState(() {
-          _picture = null;
           _example = null;
         });
         widget.onSaved();
@@ -104,18 +93,6 @@ class _WordAssignmentFormState extends State<WordAssignmentForm>
         decoration: const InputDecoration(labelText: WordStrings.word),
         onChanged: (_) => setState(() {}),
       ),
-      SecondaryButton(
-        label: WordStrings.picture,
-        icon: LucideIcons.image,
-        onPressed: busy ? null : () => unawaited(_pick(true)),
-      ),
-      if (_picture != null)
-        Image.memory(
-          _picture!,
-          height: AppSizes.signaturePreview,
-          errorBuilder: (_, error, stack) =>
-              const InfoNotice(WordStrings.error),
-        ),
       const SizedBox(height: AppSpacing.md),
       Text(WordStrings.example, style: Theme.of(context).textTheme.titleMedium),
       const InfoNotice(WordStrings.exampleAnalysisNotice),
@@ -123,9 +100,7 @@ class _WordAssignmentFormState extends State<WordAssignmentForm>
       SecondaryButton(
         label: WordStrings.chooseExample,
         icon: LucideIcons.fileAudio,
-        onPressed: busy || _audio.recording
-            ? null
-            : () => unawaited(_pick(false)),
+        onPressed: busy || _audio.recording ? null : () => unawaited(_pick()),
       ),
       if (_example != null) ...[
         const Text(WordStrings.selected),
@@ -145,7 +120,6 @@ class _WordAssignmentFormState extends State<WordAssignmentForm>
                 _audio.busy ||
                 _audio.recording ||
                 _word.text.trim().isEmpty ||
-                _picture == null ||
                 (_example == null && _audio.audio == null)
             ? null
             : () => unawaited(_save()),

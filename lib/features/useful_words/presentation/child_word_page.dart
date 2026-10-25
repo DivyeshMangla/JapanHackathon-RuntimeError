@@ -100,8 +100,7 @@ class _ChildWordPageState extends State<ChildWordPage> with WordPageActions {
     final word = practice != null && _index < practice.words.length
         ? practice.words[_index]
         : null;
-    final canPractice =
-        practice?.enrolled == true && practice?.consented == true;
+    final canPractice = practice?.consented == true;
     return PopScope(
       canPop: !busy && !_audio.recording,
       child: ActionPage(
@@ -143,9 +142,7 @@ class _ChildWordPageState extends State<ChildWordPage> with WordPageActions {
             color: AppColors.childMint,
           ),
           if (practice == null && busy) const LinearProgressIndicator(),
-          if (practice != null && !practice.enrolled)
-            const InfoNotice(WordStrings.waiting),
-          if (practice?.enrolled == true && !practice!.consented)
+          if (practice != null && !practice.consented)
             const InfoNotice(WordStrings.askParent),
           if (canPractice && word != null)
             _WordPracticePanel(
@@ -212,13 +209,15 @@ class _WordPicture extends StatelessWidget {
   Widget build(BuildContext context) => InkCard(
     child: Column(
       children: [
-        Image.memory(
-          base64Decode(word.picture.split(',').last),
-          height: AppSizes.signaturePad,
-          semanticLabel: word.word,
-          errorBuilder: (_, error, stack) => const Icon(LucideIcons.image),
-        ),
-        const SizedBox(height: AppSpacing.md),
+        if (word.picture.isNotEmpty) ...[
+          Image.memory(
+            base64Decode(word.picture.split(',').last),
+            height: AppSizes.signaturePad,
+            semanticLabel: word.word,
+            errorBuilder: (_, error, stack) => const Icon(LucideIcons.image),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         Text(word.word, style: Theme.of(context).textTheme.headlineLarge),
       ],
     ),

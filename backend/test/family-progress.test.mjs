@@ -138,9 +138,6 @@ test('parent and child can fetch published therapist audio but cannot fetch chil
     return { status: response.status, value: await response.json() };
   };
   const wordsPath = '/useful-words/patients/child';
-  assert.equal((await call(`${wordsPath}/enrollment`, therapist, 'PUT', {
-    birthDate: '2016-01-01', usesSpeech: true, therapistSelectedGoals: true,
-  })).status, 200);
   const wav = Buffer.alloc(100); wav.write('RIFF'); wav.write('WAVE', 8);
   const recording = wav.toString('base64');
   const word = await call(`${wordsPath}/words`, therapist, 'POST', {

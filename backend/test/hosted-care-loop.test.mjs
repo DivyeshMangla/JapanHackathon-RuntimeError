@@ -47,8 +47,6 @@ test('one scoped parent grant controls both hosted pipelines; rejected photos do
     return { status: response.status, data: await response.json() };
   };
   const patientPath = `/patients/${child.id}`, wordPath = `/useful-words/patients/${child.id}`;
-  const birth = new Date(); birth.setUTCFullYear(birth.getUTCFullYear() - 7);
-  assert.equal((await call(therapist, `${wordPath}/enrollment`, 'PUT', { birthDate: birth.toISOString().slice(0, 10), usesSpeech: true, therapistSelectedGoals: true })).status, 200);
   const audio = toneWav().toString('base64');
   const word = await call(therapist, `${wordPath}/words`, 'POST', { word: 'help', picture: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB', exampleAudio: audio });
   assert.equal(word.status, 201);

@@ -44,6 +44,65 @@ function pixelSummary({ pixels }) {
   return { low, high, meanLuminance: Math.round(total / pixels.length), pixelRange: high - low };
 }
 
+// Local contrast separates pencil from uneven paper lighting. These are only
+// geometric candidates: ruled paper, borders and other objects need vision review.
+export function detectMotorLines({ width, height, pixels }) {
+  const scale = Math.max(1, Math.ceil(Math.max(width, height) / 1000));
+  const w = Math.ceil(width / scale), h = Math.ceil(height / scale);
+  const gray = new Uint8Array(w * h).fill(255);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const i = Math.floor(y / scale) * w + Math.floor(x / scale);
+    gray[i] = Math.min(gray[i], pixels[y * width + x]);
+  }
+  const stride = w + 1, integral = new Float64Array(stride * (h + 1));
+  for (let y = 0; y < h; y++) {
+    let sum = 0;
+    for (let x = 0; x < w; x++) {
+      sum += gray[y * w + x];
+      integral[(y + 1) * stride + x + 1] = integral[y * stride + x + 1] + sum;
+    }
+  }
+  const mask = new Uint8Array(w * h), radius = Math.max(8, Math.round(Math.min(w, h) / 20));
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const left = Math.max(0, x - radius), right = Math.min(w, x + radius + 1);
+    const top = Math.max(0, y - radius), bottom = Math.min(h, y + radius + 1);
+    const mean = (integral[bottom * stride + right] - integral[top * stride + right]
+      - integral[bottom * stride + left] + integral[top * stride + left]) / ((right - left) * (bottom - top));
+    mask[y * w + x] = mean - gray[y * w + x] >= 8 ? 1 : 0;
+  }
+  const queue = new Int32Array(w * h), candidates = [];
+  for (let i = 0; i < mask.length; i++) {
+    if (!mask[i]) continue;
+    let head = 0, tail = 1, minX = w, maxX = 0, minY = h, maxY = 0;
+    let sx = 0, sy = 0, sxx = 0, sxy = 0, syy = 0;
+    queue[0] = i; mask[i] = 0;
+    while (head < tail) {
+      const p = queue[head++], x = p % w, y = Math.floor(p / w);
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      sx += x; sy += y; sxx += x * x; sxy += x * y; syy += y * y;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy, next = ny * w + nx;
+        if (nx >= 0 && nx < w && ny >= 0 && ny < h && mask[next]) {
+          mask[next] = 0; queue[tail++] = next;
+        }
+      }
+    }
+    const span = maxX - minX, vx = sxx / tail - (sx / tail) ** 2;
+    if (span < w * 0.12 || vx <= 0 || minX === 0 || minY === 0 || maxX === w - 1 || maxY === h - 1) continue;
+    const covariance = sxy / tail - sx * sy / tail ** 2;
+    const slope = covariance / vx;
+    const deviation = Math.sqrt(Math.max(0, syy / tail - (sy / tail) ** 2 - covariance * slope));
+    if (Math.abs(slope) > 0.6 || deviation > Math.max(3, span * 0.035) || tail < span * 0.6) continue;
+    candidates.push({
+      bounds: [minX / w, minY / h, (maxX + 1) / w, (maxY + 1) / h].map(v => Number(v.toFixed(3))),
+      angleDegrees: Math.round(Math.atan(slope) * 180 / Math.PI),
+    });
+  }
+  candidates.sort((a, b) => a.bounds[1] - b.bounds[1]);
+  return { method: 'local_contrast_components_v1', candidates: candidates.slice(0, 50), truncated: candidates.length > 50 };
+}
+
 function pngChunk(type, bytes) {
   const name = Buffer.from(type), size = Buffer.alloc(4), checksum = Buffer.alloc(4);
   size.writeUInt32BE(bytes.length);
@@ -115,10 +174,11 @@ export async function prepareMotorImage(photo, mime, { ffmpegPath = process.env.
     const decoded = decodePng(decodedPhoto);
     if (!decoded) return { enhanced: null, enhancement: { applied: false, method: 'none', originalPreserved: true } };
     const { low, high, meanLuminance, pixelRange } = pixelSummary(decoded);
-    const enhance = meanLuminance < 110 && pixelRange >= 4;
+    const enhance = (meanLuminance < 110 || pixelRange < 100) && pixelRange >= 4;
     return {
       enhanced: enhance ? grayscalePng(decoded, low, high) : null,
       enhancement: { applied: enhance, method: enhance ? 'global_luminance_stretch_gamma' : 'none', originalPreserved: true },
+      lineDetection: detectMotorLines(decoded),
     };
   } catch {
     return { enhanced: null, enhancement: { applied: false, method: 'none', originalPreserved: true } };

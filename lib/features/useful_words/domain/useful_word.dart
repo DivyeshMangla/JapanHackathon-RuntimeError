@@ -90,17 +90,15 @@ class WordAttempt {
 
 class WordPractice {
   const WordPractice({
-    required this.enrolled,
     required this.consented,
     required this.mockTranscription,
     required this.words,
     required this.attempts,
   });
-  final bool enrolled, consented, mockTranscription;
+  final bool consented, mockTranscription;
   final List<UsefulWord> words;
   final List<WordAttempt> attempts;
   factory WordPractice.fromJson(Map<String, dynamic> json) => WordPractice(
-    enrolled: json['enrollment'] as bool,
     consented: json['consent'] as bool,
     mockTranscription: json['mockTranscription'] as bool,
     words: List.unmodifiable(

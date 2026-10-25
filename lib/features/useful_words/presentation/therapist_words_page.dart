@@ -28,6 +28,7 @@ class TherapistWordsPage extends StatefulWidget {
 class _TherapistWordsPageState extends State<TherapistWordsPage>
     with WordPageActions {
   WordPractice? _practice;
+  Timer? _reportRefresh;
   @override
   void initState() {
     super.initState();
@@ -35,10 +36,26 @@ class _TherapistWordsPageState extends State<TherapistWordsPage>
   }
 
   Future<void> _load() async {
+    _reportRefresh?.cancel();
     await run(() async {
       final practice = await widget.repository.load();
       if (mounted) setState(() => _practice = practice);
     });
+    if (mounted &&
+        error == null &&
+        (_practice?.attempts.any((a) => a.transcriptionStatus == 'pending') ??
+            false)) {
+      _reportRefresh = Timer(
+        const Duration(seconds: 3),
+        () => unawaited(_load()),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _reportRefresh?.cancel();
+    super.dispose();
   }
 
   @override
@@ -65,17 +82,12 @@ class _TherapistWordsPageState extends State<TherapistWordsPage>
       children: [
         if (busy) const LinearProgressIndicator(),
         const InfoNotice(WordStrings.scope),
-        if (practice != null && !practice.enrolled)
-          _EnrollmentForm(
-            repository: widget.repository,
-            onSaved: () => unawaited(_load()),
-          ),
-        if (practice?.enrolled == true) ...[
+        if (practice != null) ...[
           WordAssignmentForm(
             repository: widget.repository,
             onSaved: () => unawaited(_load()),
           ),
-          if (practice!.mockTranscription)
+          if (practice.mockTranscription)
             const PlaceholderNotice(WordStrings.mock),
           for (final word in practice.words)
             Text(word.word, style: Theme.of(context).textTheme.titleMedium),
@@ -97,53 +109,4 @@ class _TherapistWordsPageState extends State<TherapistWordsPage>
       ],
     );
   }
-}
-
-class _EnrollmentForm extends StatefulWidget {
-  const _EnrollmentForm({required this.repository, required this.onSaved});
-  final WordRepository repository;
-  final VoidCallback onSaved;
-  @override
-  State<_EnrollmentForm> createState() => _EnrollmentFormState();
-}
-
-class _EnrollmentFormState extends State<_EnrollmentForm> with WordPageActions {
-  final _birth = TextEditingController();
-  bool _eligible = false;
-  @override
-  void dispose() {
-    _birth.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (await run(() => widget.repository.enroll(_birth.text.trim())) &&
-        mounted) {
-      widget.onSaved();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      TextField(
-        controller: _birth,
-        decoration: const InputDecoration(labelText: WordStrings.birth),
-        onChanged: (_) => setState(() {}),
-      ),
-      CheckboxListTile(
-        value: _eligible,
-        onChanged: busy ? null : (v) => setState(() => _eligible = v ?? false),
-        title: const Text(WordStrings.eligibility),
-      ),
-      if (error != null) InfoNotice(error!),
-      PrimaryButton(
-        label: WordStrings.enroll,
-        icon: LucideIcons.check,
-        onPressed: busy || !_eligible || _birth.text.isEmpty
-            ? null
-            : () => unawaited(_save()),
-      ),
-    ],
-  );
 }

@@ -3,6 +3,7 @@ abstract final class MotorReportStrings {
       'Automated visual observations — verify against original';
   static const expectedCount = 'Assigned count';
   static const observedCount = 'Model-observed count (unverified)';
+  static const countEvidence = 'Visible marks used for the count';
   static const alignmentEvidence = 'Alignment evidence';
   static const formationEvidence = 'Formation evidence';
   static const spacingEvidence = 'Spacing evidence';

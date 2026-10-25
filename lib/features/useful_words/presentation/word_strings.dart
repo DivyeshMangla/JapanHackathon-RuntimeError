@@ -1,11 +1,27 @@
 abstract final class WordStrings {
+  static const generateReport = 'Generate voice report';
+  static const regenerateReport = 'Generate voice report again';
+  static const reportPending = 'Recognizing speech and generating the report…';
+  static const reportReady = 'Voice recognition report ready for review';
+  static const reportFailed = 'Speech recognition failed. You can try again.';
+  static const reportPermission =
+      'Parent permission is needed for speech recognition.';
+  static const reportManual =
+      'This recording needs manual listening and review.';
+  static String reportStatus(String? status) => switch (status) {
+    'pending' => reportPending,
+    'complete' => reportReady,
+    'failed' => reportFailed,
+    'unconfigured' => mock,
+    'declined' || 'hosted_consent_required' => reportPermission,
+    'quality_blocked' => reportManual,
+    _ => unavailable,
+  };
   static const title = 'Say a word';
   static const guidance = 'Listen if you like. Try the word when you’re ready.';
   static const scope =
       'Therapist-guided speech practice. This is not a validated standalone treatment and does not guarantee speech improvement.';
   static const empty = 'Your therapist has not assigned a word yet.';
-  static const waiting =
-      'Your therapist needs to set up your speech practice first.';
   static const listen = 'Listen';
   static const record = 'Record';
   static const stopRecording = 'Stop recording';
@@ -92,21 +108,16 @@ abstract final class WordStrings {
   static const feedback = 'Therapist feedback';
   static const playFeedback = 'Listen to feedback';
   static const therapist = 'Words and recordings';
-  static const birth = 'Child’s date of birth (YYYY-MM-DD)';
-  static const eligibility =
-      'I confirm this child is under 17, uses speech, and has therapist-selected speech practice goals.';
-  static const enroll = 'Set up child practice';
   static const askParent =
       'Ask your grown-up to sign the consent in their Melo app first.';
   static const assign = 'Assign a word';
   static const word = 'Useful word';
-  static const picture = 'Choose picture (PNG or JPEG)';
   static const example = 'Example recording';
   static const exampleAnalysisNotice =
       'If the parent allows online analysis, your example recording and the child’s attempt may be sent to the online analysis provider for comparison. Originals are kept for therapist review.';
   static const chooseExample = 'Choose example WAV';
   static const assignHint =
-      'Choose a clear picture and record or choose your own example. No timer or repetition target is assigned.';
+      'Enter a word and record or choose your own example. No timer or repetition target is assigned.';
   static const required = 'Please complete this field.';
   static const save = 'Save';
   static const reviewed = 'Reviewed';
@@ -118,7 +129,6 @@ abstract final class WordStrings {
   static const voiceFeedback = 'Record feedback (optional)';
   static const saved = 'Saved';
   static const selected = 'File selected';
-  static const tooLarge =
-      'Please choose a picture up to 1.5 MB or a WAV recording up to 12 MB.';
+  static const tooLarge = 'Please choose a WAV recording up to 12 MB.';
   static const continuePractice = 'Continue';
 }

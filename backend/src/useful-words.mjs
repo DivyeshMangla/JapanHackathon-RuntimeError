@@ -120,7 +120,7 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
     } else enqueue(record.patient_id,attempt);
   }
   const route = async function(req,res,url,u) {
-    const match = url.pathname.match(/^\/api\/useful-words\/patients\/([^/]+)(?:\/(enrollment|words|attempts)(?:\/([^/]+)(?:\/(audio|reference|review|feedback))?)?)?$/);
+    const match = url.pathname.match(/^\/api\/useful-words\/patients\/([^/]+)(?:\/(words|attempts)(?:\/([^/]+)(?:\/(audio|reference|review|feedback|analyze))?)?)?$/);
     if (!match) return false;
     const [, patientId, action, itemId, subaction] = match;
     const patient = findUser(patientId);
@@ -135,34 +135,20 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
       if (!attempt) fail(404,'Attempt not found.');
       json(res,200,{audio:attempt.reviewed ? attempt.feedbackAudio : null}); return true;
     }
-    const enrollment = get('enrollment',patientId);
-    const requireEnrollment = () => { if (!enrollment || new Date(enrollment.birthDate).getTime() > Date.now()) fail(409,'Therapist enrollment is required.');
-      const birth=new Date(enrollment.birthDate), today=new Date();
-      const age=today.getUTCFullYear()-birth.getUTCFullYear()-(today.toISOString().slice(5,10)<enrollment.birthDate.slice(5,10)?1:0);
-      if (age >= 17) fail(409,'This feature is for children under 17.'); };
     const careConsent = parentConsent(patientId);
     const consent = !!careConsent;
     const analysisAllowed = analysisPermission(patientId);
     if (!action && req.method === 'GET') {
       const words = list('word',patientId).filter(w => w.therapistId === patient.therapist_id);
-      json(res,200,{ enrollment:!!enrollment, consent,
+      json(res,200,{ consent,
         consentVersion, mockTranscription:transcriber instanceof UnavailableTranscriber,
         words:words.map(({exampleAudio,...w})=>w), attempts:list('attempt',patientId).sort((a,b)=>b.date.localeCompare(a.date)).map(a=>summary(a,u.role==='therapist')) }); return true;
     }
-    if (action === 'enrollment' && req.method === 'PUT') {
-      therapist(u); const b=await body(req);
-      const birthDate=text(b.birthDate,'Date of birth',10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || !Number.isFinite(Date.parse(birthDate)) || new Date(birthDate).toISOString().slice(0,10)!==birthDate || Date.parse(birthDate)>Date.now()) fail(400,'Enter a valid date of birth.');
-      const cutoff=new Date(); cutoff.setUTCFullYear(cutoff.getUTCFullYear()-17);
-      if (Date.parse(birthDate)<=cutoff.getTime() || b.usesSpeech!==true || b.therapistSelectedGoals!==true) fail(400,'Enrollment requires a child under 17 who uses speech and has therapist-selected goals.');
-      put('enrollment',patientId,patientId,{birthDate,therapistId:u.id}); json(res,200,{ok:true}); return true;
-    }
-    requireEnrollment();
     if (action === 'words' && !itemId && req.method === 'POST') {
       therapist(u); const b=await body(req,19*1024*1024);
       wav(b.exampleAudio);
-      const picture=text(b.picture,'Picture',2000000);
-      if (!/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(picture)) fail(400,'Choose a PNG or JPEG picture up to 1.5 MB.');
+      const picture=b.picture == null || b.picture === '' ? '' : text(b.picture,'Picture',2000000);
+      if (picture && !/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(picture)) fail(400,'Choose a PNG or JPEG picture up to 1.5 MB.');
       const word={id:randomUUID(),word:text(b.word,'Word',80),picture,exampleAudio:b.exampleAudio,therapistId:u.id};
       put('word',word.id,patientId,word); json(res,201,{id:word.id}); return true;
     }
@@ -198,6 +184,21 @@ export function usefulWords({ db, dataDir, fail, text, body, json, findUser, tra
     if (action === 'attempts' && itemId) {
       const attempt=list('attempt',patientId).find(a=>a.id===itemId);
       if (!attempt) fail(404,'Attempt not found.');
+      if (subaction === 'analyze' && req.method === 'POST') {
+        therapist(u);
+        if (!analysisAllowed) fail(409,'Parent permission for speech recognition is required.');
+        if (transcriber instanceof UnavailableTranscriber) fail(409,'Configure a speech recognition service before generating a report.');
+        if (attempt.transcriptionStatus === 'pending') { json(res,202,{id:attempt.id,status:'pending'}); return true; }
+        const captureQuality=assessWordAudio(Buffer.from(attempt.audio,'base64'));
+        if (!captureQuality.eligibleForRecognition) fail(409,'This recording needs manual review. Capture checks could not support speech recognition.');
+        if (pending.size >= 20) fail(429,'Speech recognition is busy. Try again shortly.');
+        const updated={...attempt,captureQuality,transcript:null,recognitionEvidence:null,transcriptionStatus:'pending'};
+        if (updated.reference) updated.reference={...updated.reference,recognizedText:null,recognitionStatus:'pending'};
+        updated.analysisReport=reportFor(updated,'pending');
+        put('attempt',updated.id,patientId,updated);
+        enqueue(patientId,updated);
+        json(res,202,{id:updated.id,status:'pending'}); return true;
+      }
       if (subaction === 'audio' && req.method === 'GET') { therapist(u); json(res,200,{audio:attempt.audio}); return true; }
       if (subaction === 'reference' && req.method === 'GET') { therapist(u); if (!attempt.reference?.audio) fail(404,'The original example was not saved with this older attempt.'); json(res,200,{audio:attempt.reference.audio}); return true; }
       if (subaction === 'feedback' && req.method === 'GET') { json(res,200,{audio:u.role==='therapist' || attempt.reviewed ? attempt.feedbackAudio : null}); return true; }

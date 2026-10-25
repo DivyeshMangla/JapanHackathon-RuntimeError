@@ -11,6 +11,45 @@ import { hostedAnalysisDisclosureVersion } from '../src/hosted-analysis.mjs';
 import { toneWav } from './fixtures/audio.mjs';
 
 const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6o1sAAAAASUVORK5CYII=';
+
+test('therapist can generate a report for a saved attempt after permission is granted',async t=>{
+  let calls=0,finish;
+  const held=new Promise(resolve=>{finish=resolve;});
+  const f=await speechFixture(t,{externalProvider:'groq',suggest:async()=>{calls++;return held;}});
+  const submitted=await f.submit();
+  const attemptPath=`${f.path}/attempts/${submitted.value.id}`;
+  assert.equal((await f.call(`${attemptPath}/analyze`,'POST',undefined,f.tt)).status,409);
+  assert.equal(calls,0);
+  await f.grant(true);
+  assert.equal((await f.call(`${attemptPath}/analyze`,'POST',undefined,f.pt)).status,403);
+  assert.equal((await f.call(`${attemptPath}/analyze`,'POST',undefined,f.ct)).status,403);
+  await f.call(`${attemptPath}/review`,'PUT',{feedback:'Keep practising',reviewed:true,analysisCorrection:'Clinician note'},f.tt);
+  try {
+    assert.equal((await f.call(`${attemptPath}/analyze`,'POST',undefined,f.tt)).status,202);
+    assert.equal((await f.call(`${attemptPath}/analyze`,'POST',undefined,f.tt)).status,202);
+    assert.equal(calls,1);
+  } finally { finish('help'); }
+  await f.wordRoutes.waitForIdle();
+  assert.equal(calls,2);
+  const attempt=(await f.call(f.path,'GET',undefined,f.tt)).value.attempts[0];
+  assert.equal(attempt.analysisReport.processingStatus,'complete');
+  assert.equal(attempt.analysisReport.recognizedWord,'help');
+  assert.equal(attempt.reviewed,true);
+  assert.equal(attempt.feedback,'Keep practising');
+  assert.equal(attempt.analysisCorrection.text,'Clinician note');
+  assert.equal((await f.call(`${attemptPath}/audio`,'GET',undefined,f.tt)).value.audio,f.childAudio.toString('base64'));
+});
+
+test('failed speech recognition can be retried against the saved recording',async t=>{
+  let failing=true;
+  const f=await speechFixture(t,{suggest:async()=>{if(failing) throw Error('Offline');return 'help';}});
+  const submitted=await f.submit();await f.wordRoutes.waitForIdle();
+  assert.equal((await f.call(f.path,'GET',undefined,f.tt)).value.attempts[0].transcriptionStatus,'failed');
+  failing=false;
+  assert.equal((await f.call(`${f.path}/attempts/${submitted.value.id}/analyze`,'POST',undefined,f.tt)).status,202);
+  await f.wordRoutes.waitForIdle();
+  assert.equal((await f.call(f.path,'GET',undefined,f.tt)).value.attempts[0].analysisReport.processingStatus,'complete');
+});
 async function speechFixture(t, transcriber, localAnalysis=true) {
   const dataDir=await mkdtemp(join(tmpdir(),'melo-speech-api-'));
   const app=createApp({dataDir,transcriber});
@@ -30,7 +69,6 @@ async function speechFixture(t, transcriber, localAnalysis=true) {
   };
   const login=async account=>(await call('/auth/login','POST',{email:account.email,password,client:'mobile'})).value.token;
   const ct=await login(child),pt=await login(parent),tt=await login(therapist),path=`/useful-words/patients/${child.id}`;
-  assert.equal((await call(`${path}/enrollment`,'PUT',{birthDate:'2016-01-01',usesSpeech:true,therapistSelectedGoals:true},tt)).status,200);
   const reference=toneWav(),childAudio=toneWav({duration:0.8,amplitude:0.3});
   const word=(await call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:reference.toString('base64')},tt)).value.id;
   const grant=allowed=>call(`/patients/${child.id}/hosted-analysis`,'PUT',{allowed,adultConfirmed:true,disclosureVersion:hostedAnalysisDisclosureVersion},pt);

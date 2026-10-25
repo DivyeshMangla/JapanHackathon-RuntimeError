@@ -7,7 +7,7 @@ import { prepareMotorImage } from '../src/motor-image.mjs';
 import { drawingPhoto } from './fixtures/motor-photos.mjs';
 
 test('vision adapter sends image and task, validates model JSON and does not expose extra fields', async t => {
-  let request;
+  let request, blindCount = 3;
   let answer = {
     imageQuality: 'usable',
     qualityFlags: [],
@@ -26,7 +26,7 @@ test('vision adapter sends image and task, validates model JSON and does not exp
     for await (const chunk of req) raw += chunk;
     request = JSON.parse(raw);
     res.setHeader('Content-Type', 'application/json');
-    const quality = { imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Marks are visible on paper.' };
+    const quality = { imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Marks are visible on paper.', countEvidence: 'Lines at the top, middle and bottom.', observedCount: blindCount };
     res.end(JSON.stringify({ message: { content: JSON.stringify(request.format.properties.relevance ? quality : answer) } }));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -51,14 +51,20 @@ test('vision adapter sends image and task, validates model JSON and does not exp
   assert.ok(request.messages[1].content.includes('Three horizontal lines'));
   assert.equal(request.stream, false);
   assert.equal(request.format.type, 'object');
+  assert.ok(request.messages[1].content.includes('found 3 marks'));
+  blindCount = 2;
   answer = { ...answer, observedCount: 2 };
   const mismatch = await analyze(photo,motorExercises[0]);
   assert.equal(mismatch.formation,'developing');
+  assert.equal(mismatch.observedCount,2);
+  blindCount = 0;
   answer = { ...answer, observedCount: 0 };
   const wrongDrawing = await analyze(photo,motorExercises[0]);
   assert.equal(wrongDrawing.imageQuality,'usable');
   assert.equal(wrongDrawing.formation,'emerging');
-  answer = { ...answer, observedCount:3, evidence:{...answer.evidence,formation:''} };
+  blindCount = 3;
+  answer = { ...answer, observedCount: 3 };
+  answer = { ...answer, evidence:{...answer.evidence,formation:''} };
   const unsupported = await analyze(photo,motorExercises[0]);
   assert.equal(unsupported.formation,'not_assessable');
   answer = { ...answer, imageQuality: 'usable',qualityFlags:['blurred'] };
@@ -123,7 +129,7 @@ test('dark visible drawings get a tonal analysis copy and retain original bytes'
 
 test('Groq vision uses a fixed HTTPS endpoint, quality-first gate and original/reference/enhanced evidence', async () => {
   const requests = [];
-  const quality = { imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Dim ink is readable in both copies.' };
+  const quality = { imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Dim ink is readable in both copies.', countEvidence: 'Three marks stacked vertically.', observedCount: 3 };
   const comparison = { imageQuality: 'usable', qualityFlags: [], observedCount: 3, observations: 'Three horizontal marks.', comparison: 'Three marks match the target count.', alignment: 'developing', formation: 'consistent', spacing: 'developing', evidence: { alignment: 'The bottom mark slopes.', formation: 'Three continuous lines.', spacing: 'The upper gap is larger.' }, suggestion: 'Practise one line with a rest.' };
   const analyze = createMotorAnalyzer({ provider: 'groq', apiKey: 'test-key', fetchImpl: async (url, options) => {
     const body = JSON.parse(options.body);
@@ -154,7 +160,7 @@ test('unrelated and unreadable photographs request replacement before any compar
     let calls = 0;
     const analyze = createMotorAnalyzer({ provider: 'groq', apiKey: 'test-key', fetchImpl: async () => {
       calls++;
-      return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ imageQuality: 'retake', relevance, qualityFlags: relevance === 'uncertain' ? ['too_dark'] : ['unrelated'], explanation: 'Cannot read drawing marks.' }) } }] }));
+      return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ imageQuality: 'retake', relevance, qualityFlags: relevance === 'uncertain' ? ['too_dark'] : ['unrelated'], explanation: 'Cannot read drawing marks.', countEvidence: '', observedCount: null }) } }] }));
     } });
     const report = await analyze(drawingPhoto(), motorExercises[0], { canUseHosted: () => true });
     assert.equal(calls, 1);
@@ -168,7 +174,7 @@ test('hosted vision requires permission and rechecks it for every outgoing stage
   let calls = 0, allowed = false;
   const analyze = createMotorAnalyzer({ provider: 'groq', apiKey: 'test-key', fetchImpl: async () => {
     calls++; allowed = false;
-    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Visible lines.' }) } }] }));
+    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Visible lines.', countEvidence: 'Three lines.', observedCount: 3 }) } }] }));
   } });
   const context = { canUseHosted: () => allowed };
   await assert.rejects(() => analyze(drawingPhoto(), motorExercises[0], context), /permission/);

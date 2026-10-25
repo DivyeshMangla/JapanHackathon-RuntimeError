@@ -118,7 +118,8 @@ test('expression responses and feedback persist encrypted across service restart
   assert.ok(!Buffer.from(stored.answers).includes(Buffer.from('happy-1')));
   assert.ok(!Buffer.from(stored.report).includes(Buffer.from('accuracy')));
   assert.ok(!Buffer.from(stored.review_note).includes(Buffer.from(note)));
-  assert.equal((await stat(join(f.dir, 'expressions.key'))).mode & 0o777, 0o600);
+  // Windows does not apply POSIX permission bits, so the key mode is only checkable elsewhere.
+  if (process.platform !== 'win32') assert.equal((await stat(join(f.dir, 'expressions.key'))).mode & 0o777, 0o600);
   await f.restart();
   const loaded = await f.call(f.path, f.parent);
   assert.equal(loaded.status, 200);

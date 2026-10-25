@@ -39,7 +39,10 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
   late final _feedback = TextEditingController(text: widget.attempt.feedback);
   late bool _reviewed = widget.attempt.reviewed;
   late WordTherapistOutcome _outcome = widget.attempt.therapistOutcome;
-  bool _saved = false;
+  late bool _saved =
+      widget.attempt.reviewed ||
+      widget.attempt.feedback.isNotEmpty ||
+      widget.attempt.hasFeedbackAudio;
   @override
   void dispose() {
     _feedback.dispose();
@@ -63,6 +66,9 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
       ),
     );
     if (saved && mounted) {
+      FocusScope.of(context).unfocus();
+      await _audio.clear();
+      if (!mounted) return;
       setState(() => _saved = true);
       widget.onSaved();
     }
@@ -71,6 +77,23 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
   @override
   Widget build(BuildContext context) {
     final attempt = widget.attempt;
+    if (_saved) {
+      return InkCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(attempt.word, style: Theme.of(context).textTheme.titleMedium),
+            const Text(WordStrings.saved),
+            if (_feedback.text.trim().isNotEmpty) Text(_feedback.text.trim()),
+            SecondaryButton(
+              label: 'Edit feedback',
+              icon: LucideIcons.pencil,
+              onPressed: () => setState(() => _saved = false),
+            ),
+          ],
+        ),
+      );
+    }
     return InkCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -109,9 +132,27 @@ class _WordReviewCardState extends State<WordReviewCard> with WordPageActions {
             correction: _correction,
             enabled: !busy,
           ),
+          SecondaryButton(
+            label: attempt.analysisReport?.processingStatus == 'complete'
+                ? WordStrings.regenerateReport
+                : WordStrings.generateReport,
+            icon: LucideIcons.refreshCw,
+            onPressed:
+                busy ||
+                    _audio.recording ||
+                    attempt.transcriptionStatus == 'pending'
+                ? null
+                : () => unawaited(
+                    run(() async {
+                      await widget.repository.generateReport(attempt.id);
+                      widget.onSaved();
+                    }),
+                  ),
+          ),
           const Divider(),
           TextField(
             controller: _feedback,
+            enabled: !busy,
             maxLength: 2000,
             maxLines: 3,
             decoration: const InputDecoration(

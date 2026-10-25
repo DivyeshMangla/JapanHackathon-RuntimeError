@@ -58,6 +58,28 @@ class FakeWordDevice implements WordAudioDevice {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('voice report generation uses the saved attempt endpoint', () async {
+    String? requestedPath;
+    String? requestedMethod;
+    final repository = WordRepository(
+      'child',
+      (path, {method = 'GET', data}) async {
+        requestedPath = path;
+        requestedMethod = method;
+        return {'status': 'pending'};
+      },
+      () => null,
+      (_) async {},
+    );
+    await repository.generateReport('attempt');
+    expect(
+      requestedPath,
+      '/useful-words/patients/child/attempts/attempt/analyze',
+    );
+    expect(requestedMethod, 'POST');
+    expect(WordStrings.reportStatus('complete'), WordStrings.reportReady);
+    expect(WordStrings.reportStatus('failed'), WordStrings.reportFailed);
+  });
   test(
     'outbox survives failed delivery and repository restart with one immutable submission ID',
     () async {
@@ -182,7 +204,6 @@ void main() {
             return {'status': 'delivered'};
           }
           return {
-            'enrollment': true,
             'consent': true,
             'mockTranscription': true,
             'attempts': [],
@@ -269,7 +290,6 @@ void main() {
       final repo = WordRepository(
         'child',
         (path, {method = 'GET', data}) async => {
-          'enrollment': true,
           'consent': true,
           'mockTranscription': true,
           'attempts': [],
@@ -405,7 +425,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text(WordStrings.reportTitle), findsOneWidget);
-      expect(find.text(WordStrings.unable), findsOneWidget);
+      expect(find.text(WordStrings.reportReady), findsOneWidget);
+      expect(find.text(WordStrings.regenerateReport), findsOneWidget);
       expect(find.text(WordStrings.sameText), findsOneWidget);
       expect(find.text(WordStrings.accuracyUnavailable), findsOneWidget);
       expect(find.text('${WordStrings.textSimilarity}: 100.0'), findsOneWidget);
@@ -457,6 +478,17 @@ void main() {
       expect(saved!['reviewed'], true);
       expect(saved!.containsKey('analysisReport'), false);
       expect(attempt.analysisReport!.recognizedWord, 'help');
+      expect(find.byType(TextField), findsNothing);
+      expect(find.text(WordStrings.saved), findsOneWidget);
+      expect(audio.audio, isNull);
+      await tester.ensureVisible(find.text('Edit feedback'));
+      await tester.tap(find.text('Edit feedback'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsWidgets);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+        'Therapist observed a different sound.',
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();

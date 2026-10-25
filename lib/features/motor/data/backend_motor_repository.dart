@@ -169,6 +169,7 @@ class BackendMotorRepository implements MotorRepository {
               expectedResult: report['expectedResult'] as String?,
               expectedCount: report['expectedCount'] as int?,
               observedCount: report['observedCount'] as int?,
+                countEvidence: report['countEvidence'] as String?,
               validation: report['validation'] as String?,
               rubricVersion: report['rubricVersion'] as String?,
               limitations: List.unmodifiable(

@@ -6,11 +6,8 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const parentSignUp = '/sign-up';
 
-  /// Developer sensor check, reachable while signed out.
-  static const sensorCheck = '/sensor-check';
-
   /// Pages a signed-out visitor may open.
-  static const public = {welcome, login, parentSignUp, sensorCheck};
+  static const public = {welcome, login, parentSignUp};
 
   /// The child's area, opened by a parent's child mode. The path keeps the
   /// service's name for the role.

@@ -9,7 +9,6 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/parent_sign_up_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/auth/presentation/welcome_screen.dart';
-import '../../features/diagnostics/presentation/sensor_check_screen.dart';
 import '../../features/parent/presentation/parent_routes.dart';
 import '../../features/patient/presentation/patient_routes.dart';
 import '../../features/therapist/presentation/therapist_routes.dart';
@@ -44,10 +43,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.parentSignUp,
         builder: (context, state) => const ParentSignUpScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.sensorCheck,
-        builder: (context, state) => const SensorCheckScreen(),
       ),
       patientRoutes,
       parentRoutes,
