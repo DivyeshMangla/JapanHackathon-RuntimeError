@@ -233,7 +233,7 @@ void main() {
   );
 
   testWidgets(
-    'checking a saved pending photo again does not reupload its bytes',
+    'a photo still being checked counts as sent without waiting on the child',
     (tester) async {
       final repository = _Repository()
         ..failUploads = false
@@ -248,9 +248,11 @@ void main() {
         await tester.pump(const Duration(seconds: 2));
       }
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Check my photo'));
-      await tester.tap(find.text('Check my photo'));
-      await tester.pump();
+      expect(
+        find.text('Your drawing is on its way to your therapist.'),
+        findsOneWidget,
+      );
+      expect(find.text('Check my photo'), findsNothing);
       expect(repository.uploads, hasLength(1));
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 2));
