@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { hostedAnalysis, hostedAnalysisDisclosureVersion } from '../src/hosted-analysis.mjs';
 
-function fixture(file = ':memory:') {
+function fixture(file = ':memory:', provider = 'groq') {
   const db = new DatabaseSync(file);
   db.exec(`
     CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,role TEXT,status TEXT,parent_id TEXT,therapist_id TEXT);
@@ -24,7 +24,7 @@ function fixture(file = ':memory:') {
   const find = id => db.prepare('SELECT * FROM users WHERE id=?').get(id);
   let response;
   const api = hostedAnalysis({
-    db, fail, body: async req => req.value,
+    provider, db, fail, body: async req => req.value,
     json: (_, status, value) => { response = { status, value }; },
     requireRole: (u, ...roles) => { if (!roles.includes(u.role)) fail(403, 'Role denied'); },
     accessPatient: (u, id) => {
@@ -41,7 +41,7 @@ function fixture(file = ':memory:') {
     return response;
   };
   const grant = (overrides = {}) => call('parent', 'PUT', {
-    allowed: true, adultConfirmed: true, disclosureVersion: hostedAnalysisDisclosureVersion, ...overrides,
+    allowed: true, adultConfirmed: true, disclosureVersion: hostedAnalysisDisclosureVersion(provider), ...overrides,
   });
   return { db, api, find, call, grant };
 }
@@ -157,4 +157,39 @@ test('grants and revocations survive reopening without storing media, names or a
   assert.deepEqual(keys, ['patient_id', 'provider', 'parent_id', 'allowed', 'disclosure_version', 'updated_at']);
   assert.equal(f.db.prepare('SELECT COUNT(*) AS count FROM hosted_analysis_permission_events').get().count, 2);
   f.db.close();
+});
+
+test('a Gemini deployment asks for its own grant and never accepts a Groq grant', async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'melo-hosted-')), file = join(dir, 'care.sqlite');
+  const groq = fixture(file);
+  assert.equal((await groq.grant()).value.allowed, true);
+  groq.db.close();
+  const gemini = fixture(file, 'gemini');
+  t.after(() => { gemini.db.close(); rmSync(dir, { force: true, recursive: true, maxRetries: 3 }); });
+  const before = (await gemini.call()).value;
+  assert.equal(before.provider, 'gemini');
+  assert.equal(before.allowed, false);
+  assert.ok(before.disclosure.text.includes('Gemini API'));
+  assert.equal(gemini.api.allowed('child', 'groq'), false);
+  assert.equal(gemini.api.allowed('child', 'gemini'), false);
+  await assert.rejects(gemini.grant({ disclosureVersion: hostedAnalysisDisclosureVersion('groq') }), { status: 409 });
+  assert.equal((await gemini.grant()).value.allowed, true);
+  assert.equal(gemini.api.allowed('child', 'gemini'), true);
+  assert.deepEqual(gemini.db.prepare('SELECT provider FROM hosted_analysis_permissions ORDER BY provider').all().map(row => row.provider), ['gemini', 'groq']);
+});
+
+test('tables created when only Groq was accepted are migrated without losing grants', async t => {
+  const db = new DatabaseSync(':memory:');
+  t.after(() => db.close());
+  db.exec(`CREATE TABLE hosted_analysis_permissions (patient_id TEXT NOT NULL, provider TEXT NOT NULL CHECK(provider='groq'), parent_id TEXT NOT NULL,
+      allowed INTEGER NOT NULL CHECK(allowed IN (0,1)), disclosure_version TEXT NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY(patient_id,provider));
+    CREATE TABLE hosted_analysis_permission_events (seq INTEGER PRIMARY KEY AUTOINCREMENT, patient_id TEXT NOT NULL, provider TEXT NOT NULL CHECK(provider='groq'),
+      parent_id TEXT NOT NULL, allowed INTEGER NOT NULL CHECK(allowed IN (0,1)), disclosure_version TEXT NOT NULL, updated_at TEXT NOT NULL);
+    INSERT INTO hosted_analysis_permissions VALUES ('child','groq','parent',1,'v','2026-10-25T10:00:00Z');
+    INSERT INTO hosted_analysis_permission_events(patient_id,provider,parent_id,allowed,disclosure_version,updated_at) VALUES ('child','groq','parent',1,'v','2026-10-25T10:00:00Z');`);
+  hostedAnalysis({ db, provider: 'gemini', fail: () => {}, body: async () => ({}), json: () => {}, requireRole: () => {}, accessPatient: () => {} });
+  db.prepare("INSERT INTO hosted_analysis_permissions VALUES ('child','gemini','parent',1,'v','2026-10-25T11:00:00Z')").run();
+  assert.equal(db.prepare('SELECT COUNT(*) AS count FROM hosted_analysis_permissions').get().count, 2);
+  assert.equal(db.prepare('SELECT COUNT(*) AS count FROM hosted_analysis_permission_events').get().count, 1);
+  assert.throws(() => db.prepare("INSERT INTO hosted_analysis_permissions VALUES ('child','other','parent',1,'v','x')").run());
 });

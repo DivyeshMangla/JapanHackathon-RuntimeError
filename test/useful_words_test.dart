@@ -424,6 +424,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.text(WordStrings.matchTitle), findsOneWidget);
+      expect(find.text('100%'), findsWidgets);
+      await tester.tap(find.text(WordStrings.details));
+      await tester.pumpAndSettle();
       expect(find.text(WordStrings.reportTitle), findsOneWidget);
       expect(find.text(WordStrings.reportReady), findsOneWidget);
       expect(find.text(WordStrings.regenerateReport), findsOneWidget);

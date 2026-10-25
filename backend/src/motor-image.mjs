@@ -46,7 +46,7 @@ function pixelSummary({ pixels }) {
 
 // Local contrast separates pencil from uneven paper lighting. These are only
 // geometric candidates: ruled paper, borders and other objects need vision review.
-export function detectMotorLines({ width, height, pixels }) {
+function inkMask({ width, height, pixels }) {
   const scale = Math.max(1, Math.ceil(Math.max(width, height) / 1000));
   const w = Math.ceil(width / scale), h = Math.ceil(height / scale);
   const gray = new Uint8Array(w * h).fill(255);
@@ -62,14 +62,20 @@ export function detectMotorLines({ width, height, pixels }) {
       integral[(y + 1) * stride + x + 1] = integral[y * stride + x + 1] + sum;
     }
   }
-  const mask = new Uint8Array(w * h), radius = Math.max(8, Math.round(Math.min(w, h) / 20));
+  const mask = new Uint8Array(w * h), depth = new Uint8Array(w * h), radius = Math.max(8, Math.round(Math.min(w, h) / 20));
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const left = Math.max(0, x - radius), right = Math.min(w, x + radius + 1);
     const top = Math.max(0, y - radius), bottom = Math.min(h, y + radius + 1);
     const mean = (integral[bottom * stride + right] - integral[top * stride + right]
       - integral[bottom * stride + left] + integral[top * stride + left]) / ((right - left) * (bottom - top));
-    mask[y * w + x] = mean - gray[y * w + x] >= 8 ? 1 : 0;
+    depth[y * w + x] = Math.max(0, Math.min(255, Math.round(mean - gray[y * w + x])));
+    mask[y * w + x] = depth[y * w + x] >= 8 ? 1 : 0;
   }
+  return { w, h, mask, depth };
+}
+
+export function detectMotorLines(decoded) {
+  const { w, h, mask } = inkMask(decoded);
   const queue = new Int32Array(w * h), candidates = [];
   for (let i = 0; i < mask.length; i++) {
     if (!mask[i]) continue;
@@ -101,6 +107,57 @@ export function detectMotorLines({ width, height, pixels }) {
   }
   candidates.sort((a, b) => a.bounds[1] - b.bounds[1]);
   return { method: 'local_contrast_components_v1', candidates: candidates.slice(0, 50), truncated: candidates.length > 50 };
+}
+
+// Vision models anchor on the expected number of forms, so the count of
+// separate pen marks is measured from pixels instead. Gaps of about 1.5% of
+// the page are closed so a stroke lifted mid-letter stays one mark, and
+// specks and marks cut off by the photo edge are ignored. Paper grain and
+// shadows are far fainter than the drawn strokes, so a mark only counts when
+// it is at least a third as dark as the darkest one. A null count means no
+// clear ink was found and the vision model's count is used instead.
+export function countMotorMarks(decoded) {
+  const { w, h, mask, depth } = inkMask(decoded);
+  const gap = Math.max(2, Math.round(Math.max(w, h) * 0.015));
+  const closed = new Uint8Array(w * h);
+  const rows = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    let last = -Infinity;
+    for (let x = 0; x < w; x++) if (mask[y * w + x]) last = x; else if (x - last <= gap) rows[y * w + x] = 1;
+    let next = Infinity;
+    for (let x = w - 1; x >= 0; x--) if (mask[y * w + x]) next = x; else if (next - x > gap) rows[y * w + x] = 0;
+    for (let x = 0; x < w; x++) if (mask[y * w + x]) rows[y * w + x] = 1;
+  }
+  for (let x = 0; x < w; x++) {
+    let last = -Infinity;
+    for (let y = 0; y < h; y++) if (rows[y * w + x]) last = y; else if (y - last <= gap) closed[y * w + x] = 1;
+    let next = Infinity;
+    for (let y = h - 1; y >= 0; y--) if (rows[y * w + x]) next = y; else if (next - y > gap) closed[y * w + x] = 0;
+    for (let y = 0; y < h; y++) if (rows[y * w + x]) closed[y * w + x] = 1;
+  }
+  const minExtent = Math.max(w, h) * 0.04, queue = new Int32Array(w * h), marks = [];
+  for (let i = 0; i < closed.length; i++) {
+    if (!closed[i]) continue;
+    let head = 0, tail = 1, minX = w, maxX = 0, minY = h, maxY = 0, ink = 0, inked = 0;
+    queue[0] = i; closed[i] = 0;
+    while (head < tail) {
+      const p = queue[head++], x = p % w, y = Math.floor(p / w);
+      if (mask[p]) { ink += depth[p]; inked++; }
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy, next = ny * w + nx;
+        if (nx >= 0 && nx < w && ny >= 0 && ny < h && closed[next]) { closed[next] = 0; queue[tail++] = next; }
+      }
+    }
+    const touchesEdge = minX === 0 || minY === 0 || maxX === w - 1 || maxY === h - 1;
+    if (touchesEdge || Math.max(maxX - minX, maxY - minY) + 1 < minExtent) continue;
+    marks.push({ strength: ink / inked, bounds: [minX / w, minY / h, (maxX + 1) / w, (maxY + 1) / h].map(v => Number(v.toFixed(3))) });
+  }
+  const darkest = Math.max(0, ...marks.map(mark => mark.strength));
+  const drawn = marks.filter(mark => mark.strength >= Math.max(20, darkest * 0.35))
+    .map(({ strength, bounds }) => ({ strength: Math.round(strength), bounds }));
+  return { method: 'separate_ink_marks_v2', count: drawn.length ? drawn.length : null, marks: drawn.slice(0, 50) };
 }
 
 function pngChunk(type, bytes) {
@@ -179,6 +236,7 @@ export async function prepareMotorImage(photo, mime, { ffmpegPath = process.env.
       enhanced: enhance ? grayscalePng(decoded, low, high) : null,
       enhancement: { applied: enhance, method: enhance ? 'global_luminance_stretch_gamma' : 'none', originalPreserved: true },
       lineDetection: detectMotorLines(decoded),
+      markCount: countMotorMarks(decoded),
     };
   } catch {
     return { enhanced: null, enhancement: { applied: false, method: 'none', originalPreserved: true } };

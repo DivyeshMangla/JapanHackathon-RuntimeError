@@ -47,6 +47,25 @@ abstract final class ProgressStrings {
       'Without help: ${value.quizIndependentCorrect} of ${value.quizIndependentTotal} correct';
   static String assistedChoices(ActivityProgress value) =>
       'With adult help: ${value.quizAssistedCorrect} of ${value.quizAssistedTotal} correct';
+  static const trendTitle = 'Week by week';
+  static const trendTooEarly =
+      'A week-by-week trend appears after two weeks of assessed practice.';
+  static const trendNoScore = '–';
+
+  static String trendGoal(ProgressActivity value) => switch (value) {
+    ProgressActivity.words => 'Share of words your therapist marked correct',
+    ProgressActivity.drawing =>
+      'Share of drawings your therapist marked on track',
+    ProgressActivity.expressions =>
+      'Share of pictures matched to the right feeling',
+  };
+  static String trendChange(int first, int last) => last > first
+      ? 'Up from $first% to $last%'
+      : last < first
+      ? 'Down from $first% to $last%'
+      : 'Steady at $last%';
+  static String trendSemantics(List<WeeklyProgress> weeks) =>
+      'Weekly scores: ${weeks.map((week) => '${week.score}%').join(', ')}';
   static String reviewed(String name, String date) => '$name · reviewed $date';
   static String practiceDate(String date) => 'Practice sent $date';
 }

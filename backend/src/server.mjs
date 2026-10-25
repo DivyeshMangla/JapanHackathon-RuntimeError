@@ -55,7 +55,11 @@ export function createApp({ motorAnalyzer = createMotorAnalyzer(), dataDir = pro
     const days = db.prepare("SELECT COUNT(DISTINCT substr(completed_at,1,10)) AS n FROM progress WHERE patient_id=? AND completed_at>=?").get(p.id, firstDay.toISOString()).n;
     return { ...publicUser(p), therapist_name: findUser(p.therapist_id)?.name || null, parent_name: findUser(p.parent_id)?.name || null, consent_status: consent?.status || 'missing', has_plan: !!plan, active_days: days, ...activity };
   };
-  const hosted = hostedAnalysis({db,body,fail,json,accessPatient,requireRole});
+  const speechProvider = transcriber ? transcriber.externalProvider : process.env.SPEECH_ML_PROVIDER === 'groq' ? 'groq' : null;
+  const onlineProviders = [...new Set([motorAnalyzer.externalProvider, speechProvider].filter(Boolean))];
+  // Parents grant online analysis for one named provider at a time.
+  if (onlineProviders.length > 1) throw new Error('Photo and voice analysis must use the same online provider.');
+  const hosted = hostedAnalysis({db,body,fail,json,accessPatient,requireRole,provider:onlineProviders[0] || 'groq'});
   const wordRoutes = usefulWords({ db, dataDir, fail, text, body, json, findUser, transcriber, canUseHosted: hosted.allowed });
   const motor = motorApi({db,dataDir,analyze:motorAnalyzer,accessPatient,requireRole,body,text,fail,json,canUseHosted:hosted.allowed});
   const expressions = expressionsApi({db,dataDir,accessPatient,requireRole,body,text,fail,json});

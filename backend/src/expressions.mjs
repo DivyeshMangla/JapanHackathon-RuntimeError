@@ -71,6 +71,17 @@ export function expressionsApi({ db, dataDir, accessPatient, requireRole, body, 
   const assignmentJson = row => row ? { id: row.id, expressionIds: open(row.expression_ids, `assignment:${row.patient_id}:${row.id}`), enabled: row.enabled === 1, updatedAt: row.updated_at } : null;
   const sessionJson = row => ({ id: row.id, assignmentId: row.assignment_id, createdAt: row.created_at, ...open(row.report, `report:${row.patient_id}:${row.id}`), reviewNote: row.review_note ? open(row.review_note, `review:${row.patient_id}:${row.id}`) : null, reviewedBy: row.reviewed_by, reviewedAt: row.reviewed_at });
   const snapshot = (patientId, limit) => db.prepare(`SELECT * FROM expression_sessions WHERE patient_id=? ORDER BY created_at DESC,rowid DESC${limit ? ' LIMIT 100' : ''}`).all(patientId).map(sessionJson);
+  const assign = (patientId, therapistId, ids, enabled, at = now()) => {
+    const id = randomUUID();
+    db.prepare('INSERT INTO expression_assignments VALUES (?,?,?,?,?,?)').run(id, patientId, therapistId, seal(expressionIds.filter(value => ids.includes(value)), `assignment:${patientId}:${id}`), Number(enabled), at);
+    return id;
+  };
+  const record = (id, patientId, assignmentId, answers, assistance, at = now()) => {
+    const report = { ...scoreExpressionAnswers(answers), assistance };
+    db.prepare('INSERT INTO expression_sessions(id,patient_id,assignment_id,answers,report,created_at) VALUES (?,?,?,?,?,?)').run(id, patientId, assignmentId, seal(answers, `answers:${patientId}:${id}`), seal(report, `report:${patientId}:${id}`), at);
+  };
+  const review = (session, note, reviewerId, at = now()) =>
+    db.prepare('UPDATE expression_sessions SET review_note=?,reviewed_by=?,reviewed_at=? WHERE id=?').run(seal(note, `review:${session.patient_id}:${session.id}`), reviewerId, at, session.id);
   function validateAnswers(answers, ids) {
     const pictures = new Set(expressionPictures(ids));
     if (!Array.isArray(answers) || answers.length !== pictures.size) fail(400, 'Answer each assigned picture once.');
@@ -83,6 +94,9 @@ export function expressionsApi({ db, dataDir, accessPatient, requireRole, body, 
   }
   return {
     snapshot,
+    assign,
+    record,
+    review,
     async handle(req, res, path, user) {
       const recordMatch = path.match(/^\/api\/patients\/([^/]+)\/expressions$/);
       if (recordMatch) {
@@ -99,8 +113,7 @@ export function expressionsApi({ db, dataDir, accessPatient, requireRole, body, 
           const ids = input.expressionIds;
           if (!Array.isArray(ids) || ids.length < 2 || ids.length > expressionIds.length || new Set(ids).size !== ids.length || !ids.every(id => expressionIds.includes(id)) || typeof input.enabled !== 'boolean') fail(400, 'Choose two to six different feelings and whether practice is enabled.');
           // Keep assignment versions so old sessions still have an unambiguous answer set.
-          const id = randomUUID();
-          db.prepare('INSERT INTO expression_assignments VALUES (?,?,?,?,?,?)').run(id, patient.id, user.id, seal(expressionIds.filter(value => ids.includes(value)), `assignment:${patient.id}:${id}`), Number(input.enabled), now());
+          const id = assign(patient.id, user.id, ids, input.enabled);
           audit(db, user.id, 'Assigned feelings practice', patient.id, id);
           json(res, 200, { assignment: assignmentJson(latest(patient.id)) });
           return true;
@@ -130,8 +143,7 @@ export function expressionsApi({ db, dataDir, accessPatient, requireRole, body, 
         }
         if (latest(patient.id)?.id !== assignment.id || assignment.enabled !== 1) fail(409, 'Your therapist changed this practice. Reload and start a new round.');
         if (patient.status !== 'active') fail(409, 'This child’s account is disabled.');
-        const report = { ...scoreExpressionAnswers(answers), assistance: input.assistance };
-        db.prepare('INSERT INTO expression_sessions(id,patient_id,assignment_id,answers,report,created_at) VALUES (?,?,?,?,?,?)').run(id, patient.id, assignment.id, seal(answers, `answers:${patient.id}:${id}`), seal(report, `report:${patient.id}:${id}`), now());
+        record(id, patient.id, assignment.id, answers, input.assistance);
         audit(db, user.id, 'Completed feelings practice', patient.id, id);
         json(res, 201, { session: sessionJson(db.prepare('SELECT * FROM expression_sessions WHERE id=?').get(id)) });
         return true;
@@ -145,7 +157,7 @@ export function expressionsApi({ db, dataDir, accessPatient, requireRole, body, 
       if (req.method !== 'POST') fail(405, 'Method not allowed.');
       const input = await body(req, 8192);
       const note = text(input.note, 'Therapist feedback', 2000);
-      db.prepare('UPDATE expression_sessions SET review_note=?,reviewed_by=?,reviewed_at=? WHERE id=?').run(seal(note, `review:${session.patient_id}:${session.id}`), user.id, now(), session.id);
+      review(session, note, user.id);
       audit(db, user.id, 'Reviewed feelings practice', session.patient_id, session.id);
       json(res, 200, { ok: true });
       return true;

@@ -40,7 +40,7 @@ async function fixture(t, analyzer) {
     return { status: response.status, body };
   };
   const upload = (id = randomUUID()) => ({ id, planId, exerciseId: 'motor-lines', practiceDay: now().slice(0, 10), photo: drawingPhoto().toString('base64') });
-  const grant = allowed => app.db.prepare("INSERT INTO hosted_analysis_permissions VALUES(?,'groq',?,?,?,?) ON CONFLICT(patient_id,provider) DO UPDATE SET allowed=excluded.allowed").run(child.id, parent.id, Number(allowed), hostedAnalysisDisclosureVersion, now());
+  const grant = allowed => app.db.prepare("INSERT INTO hosted_analysis_permissions VALUES(?,'groq',?,?,?,?) ON CONFLICT(patient_id,provider) DO UPDATE SET allowed=excluded.allowed").run(child.id, parent.id, Number(allowed), hostedAnalysisDisclosureVersion(), now());
   return { ...app, child, therapist, parent, stranger, call, upload, grant, path: `/patients/${child.id}` };
 }
 

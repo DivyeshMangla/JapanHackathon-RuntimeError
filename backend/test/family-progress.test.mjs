@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/server.mjs';
 import { newSession } from '../src/auth.mjs';
-import { familyProgress } from '../src/family-progress.mjs';
+import { familyProgress, weeklyTrend } from '../src/family-progress.mjs';
 
 function fixture(overrides = {}) {
   const users = new Map([
@@ -186,4 +186,21 @@ test('parent and child can fetch published therapist audio but cannot fetch chil
   // already published to the family. Refresh tokens after advancing the clock.
   t.mock.timers.enable({ apis: ['Date'], now: new Date('2040-10-25T12:00:00Z').getTime() });
   await assertHistoricalFeedback([newSession(app.db, 'parent'), newSession(app.db, 'child')]);
+});
+
+test('weekly trend scores each week since the first practice and leaves unscored weeks empty', () => {
+  const rows = [
+    { at: '2026-10-06T09:00:00Z', score: [1, 4] },
+    { at: '2026-10-08T09:00:00Z', score: [2, 4] },
+    { at: '2026-10-14T09:00:00Z', score: null },
+    { at: '2026-10-21T09:00:00Z', score: [4, 4] },
+  ];
+  assert.deepEqual(weeklyTrend(rows, row => row.at, row => row.score, new Date('2026-10-25T12:00:00Z')), [
+    { weekStart: '2026-10-05', attempts: 2, score: 38 },
+    { weekStart: '2026-10-12', attempts: 1, score: null },
+    { weekStart: '2026-10-19', attempts: 1, score: 100 },
+  ]);
+  assert.deepEqual(weeklyTrend([], row => row.at, row => row.score), []);
+  const old = [{ at: '2026-01-05T09:00:00Z', score: [1, 1] }];
+  assert.equal(weeklyTrend(old, row => row.at, row => row.score, new Date('2026-10-25T12:00:00Z')).length, 8, 'only the last eight weeks are shown');
 });

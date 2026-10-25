@@ -3,9 +3,9 @@ abstract final class HostedAnalysisStrings {
   static const on = 'Online analysis is on for this child.';
   static const off = 'Online analysis is off for this child.';
   static const explanation =
-      'With your permission, Groq can analyze practice photos and voice '
-      'recordings for the therapist. Practice and therapist feedback '
-      'are available either way.';
+      'With your permission, an online service can analyze practice for the '
+      'therapist. The details below name the service and what it receives. '
+      'Practice and therapist feedback are available either way.';
   static const careConsentRequired =
       'Approved care consent is needed before you can choose online analysis.';
   static const saving = 'Saving…';

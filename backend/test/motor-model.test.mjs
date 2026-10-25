@@ -6,6 +6,9 @@ import { motorReference } from '../src/motor-reference.mjs';
 import { prepareMotorImage } from '../src/motor-image.mjs';
 import { drawingPhoto } from './fixtures/motor-photos.mjs';
 
+// Exercises the vision model's own count, used when no clear ink is measured.
+const withoutMeasuredCount = async (...args) => ({ ...await prepareMotorImage(...args), markCount: null });
+
 test('vision adapter sends image and task, validates model JSON and does not expose extra fields', async t => {
   let request, blindCount = 3;
   let answer = {
@@ -38,6 +41,7 @@ test('vision adapter sends image and task, validates model JSON and does not exp
     provider: 'ollama',
     endpoint: `http://127.0.0.1:${server.address().port}/api/chat`,
     model: 'vision-test',
+    prepareImage: withoutMeasuredCount,
   });
   const photo = motorReference(motorExercises[0]);
   const report = await analyze(photo, motorExercises[0]);
@@ -184,4 +188,46 @@ test('hosted vision requires permission and rechecks it for every outgoing stage
   assert.equal(calls, 1);
   const unconfigured = createMotorAnalyzer({ provider: 'groq', apiKey: '', fetchImpl: async () => { throw new Error('Must not send'); } });
   await assert.rejects(() => unconfigured(drawingPhoto(), motorExercises[0], { canUseHosted: () => true }), /not configured/);
+});
+
+test('separate ink marks measured from pixels override counts the vision model gives', async () => {
+  const requests = [];
+  const quality = { imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Readable lines.', countEvidence: 'Two lines.', observedCount: 2 };
+  const comparison = { imageQuality: 'usable', qualityFlags: [], observedCount: 2, observations: 'Two lines.', comparison: 'Two of three lines.', alignment: 'developing', formation: 'developing', spacing: 'developing', evidence: { alignment: 'Level.', formation: 'Continuous.', spacing: 'Even.' }, suggestion: 'Add a line.' };
+  const analyze = createMotorAnalyzer({ provider: 'ollama', fetchImpl: async (_url, options) => {
+    requests.push(JSON.parse(options.body));
+    return new Response(JSON.stringify({ message: { content: JSON.stringify(requests.length === 1 ? quality : comparison) } }));
+  } });
+  const report = await analyze(drawingPhoto(), motorExercises[0]);
+  assert.match(requests[1].messages[1].content, /Pixel analysis of the original found 3 separate drawn marks/);
+  assert.equal(report.observedCount, 3);
+  assert.equal(report.countMethod, 'separate_ink_marks_v2');
+  assert.equal(report.markCount.marks.length, 3);
+  assert.equal(report.observations, 'Pixel analysis found 3 separate drawn marks in the photo.');
+  assert.equal(report.formation, 'not_assessable');
+});
+
+test('Gemini vision uses its fixed HTTPS endpoint with the server key and rechecks permission', async () => {
+  const requests = [];
+  const quality = { imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Readable.', countEvidence: 'Three lines.', observedCount: 3 };
+  const comparison = { imageQuality: 'usable', qualityFlags: [], observedCount: 3, observations: 'Three lines.', comparison: 'Three of three.', alignment: 'developing', formation: 'consistent', spacing: 'developing', evidence: { alignment: 'Slight slope.', formation: 'Continuous.', spacing: 'Uneven.' }, suggestion: 'Rest between lines.' };
+  let permissionChecks = 0;
+  const analyze = createMotorAnalyzer({ provider: 'gemini', apiKey: 'gemini-test-key', fetchImpl: async (url, options) => {
+    requests.push({ url: String(url), options, body: JSON.parse(options.body) });
+    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(requests.length === 1 ? quality : comparison) } }] }));
+  } });
+  assert.equal(analyze.externalProvider, 'gemini');
+  const report = await analyze(drawingPhoto(), motorExercises[0], { canUseHosted: async () => { permissionChecks++; return true; } });
+  assert.equal(report.provider, 'gemini');
+  assert.equal(report.observedCount, 3);
+  assert.equal(permissionChecks, 2);
+  for (const request of requests) {
+    assert.equal(request.url, 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
+    assert.equal(request.options.headers.Authorization, 'Bearer gemini-test-key');
+    assert.equal(request.options.redirect, 'error');
+    assert.equal(request.body.model, 'gemini-3.8-flash');
+    assert.equal(request.body.reasoning_effort, 'low');
+  }
+  const unconfigured = createMotorAnalyzer({ provider: 'gemini', apiKey: '', fetchImpl: async () => { throw new Error('Must not send'); } });
+  await assert.rejects(() => unconfigured(drawingPhoto(), motorExercises[0], { canUseHosted: () => true }), /Gemini vision is not configured/);
 });

@@ -3,13 +3,54 @@ import { motorExercises } from './motor.mjs';
 const cleanNote = value => typeof value === 'string' ? value.trim() : '';
 const outcome = value => ['correct', 'on_track', 'needs_practice'].includes(value) ? value : 'not_assessed';
 const latest = values => values.filter(Boolean).sort().at(-1) || null;
+const trendWeeks = 8;
+const weekStart = value => {
+  const day = new Date(value);
+  day.setUTCHours(0, 0, 0, 0);
+  day.setUTCDate(day.getUTCDate() - (day.getUTCDay() + 6) % 7);
+  return day;
+};
+
+// Weeks run Monday to Sunday (UTC) from the first practice, so a family sees
+// change since the child started rather than a fixed window of empty weeks.
+// A score is the share of scored work that met the goal; unscored work
+// (not yet assessed) only adds to the practice count.
+export function weeklyTrend(rows, date, score, today = new Date()) {
+  const dates = rows.map(date).filter(Boolean);
+  if (!dates.length) return [];
+  const last = weekStart(today);
+  const first = new Date(Math.max(weekStart(dates.sort()[0]).getTime(), last.getTime() - (trendWeeks - 1) * 7 * 86400000));
+  const weeks = [];
+  for (let start = first; start <= last; start = new Date(start.getTime() + 7 * 86400000)) {
+    const end = start.getTime() + 7 * 86400000;
+    const inWeek = rows.filter(row => {
+      const at = new Date(date(row)).getTime();
+      return at >= start.getTime() && at < end;
+    });
+    const scores = inWeek.map(score).filter(value => value !== null);
+    const earned = scores.reduce((sum, [met]) => sum + met, 0);
+    const possible = scores.reduce((sum, [, total]) => sum + total, 0);
+    weeks.push({
+      weekStart: start.toISOString().slice(0, 10),
+      attempts: inWeek.length,
+      score: possible ? Math.round(100 * earned / possible) : null,
+    });
+  }
+  return weeks;
+}
 
 // This projection is deliberately separate from clinical records: families
 // receive published clinician guidance, never recognition output or AI reports.
-export function familyProgress({ fail, json, findUser, wordSnapshot = () => [], motorSnapshot = () => [], expressionSnapshot = () => [] }) {
+export function familyProgress({ clock = () => new Date(), fail, json, findUser, wordSnapshot = () => [], motorSnapshot = () => [], expressionSnapshot = () => [] }) {
   const reviewerName = id => id ? findUser(id)?.name || null : null;
-  const metrics = (kind, rows, date, reviewed, assessment = () => 'not_assessed') => ({
+  const goalScore = (reviewed, assessment, met) => row => {
+    if (!reviewed(row)) return null;
+    const value = assessment(row);
+    return value === met ? [1, 1] : value === 'needs_practice' ? [0, 1] : null;
+  };
+  const metrics = (kind, rows, date, reviewed, assessment = () => 'not_assessed', score = goalScore(reviewed, assessment, kind === 'drawing' ? 'on_track' : 'correct')) => ({
     kind,
+    trend: weeklyTrend(rows, date, score, clock()),
     attempts: rows.length,
     reviewed: rows.filter(reviewed).length,
     lastPracticedAt: latest(rows.map(date)),
@@ -33,7 +74,7 @@ export function familyProgress({ fail, json, findUser, wordSnapshot = () => [], 
     const wordMetrics = metrics('words', words, row => row.date, row => row.reviewed === true, row => outcome(row.therapistOutcome));
     const drawingMetrics = metrics('drawing', drawings, row => row.created_at, row => !!row.reviewed_at, row => outcome(row.therapist_outcome));
     const expressionMetrics = {
-      ...metrics('expressions', expressions, row => row.createdAt, row => !!row.reviewedAt),
+      ...metrics('expressions', expressions, row => row.createdAt, row => !!row.reviewedAt, undefined, row => row.total ? [row.correct, row.total] : null),
       quizCorrect: expressions.reduce((sum, row) => sum + row.correct, 0),
       quizTotal: expressions.reduce((sum, row) => sum + row.total, 0),
       quizIndependentCorrect: expressions.filter(row => row.assistance === 'independent').reduce((sum, row) => sum + row.correct, 0),

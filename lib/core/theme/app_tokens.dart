@@ -30,6 +30,9 @@ abstract final class AppSizes {
   /// Fixed column for step numbers and small counters.
   static const double counterColumn = 32;
 
+  /// Height of a bar in an accuracy chart.
+  static const double chartBar = 12;
+
   /// Fits a 360px-wide phone inside the gutter and the white quiet zone.
   static const double qrCode = 280;
   static const double signaturePad = 180;
@@ -54,6 +57,9 @@ abstract final class AppSizes {
 
   /// The mascot on the child's home page and in celebrations.
   static const double childMascot = 96;
+
+  /// Height of the tallest bar in a weekly progress trend.
+  static const double trendChart = 96;
 
   /// Width of the full logo on launch. Android 12+ masks its splash icon to a
   /// 192dp circle, and the logo fits that circle at this width; the native

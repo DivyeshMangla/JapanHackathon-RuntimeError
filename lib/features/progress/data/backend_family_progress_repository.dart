@@ -56,6 +56,13 @@ class BackendFamilyProgressRepository implements FamilyProgressRepository {
     quizIndependentTotal: json['quizIndependentTotal'] as int? ?? 0,
     quizAssistedCorrect: json['quizAssistedCorrect'] as int? ?? 0,
     quizAssistedTotal: json['quizAssistedTotal'] as int? ?? 0,
+    trend: List.unmodifiable(json.objects('trend').map(_week)),
+  );
+
+  WeeklyProgress _week(JsonObject json) => WeeklyProgress(
+    weekStart: DateTime.parse(json['weekStart']! as String),
+    attempts: json['attempts']! as int,
+    score: json['score'] as int?,
   );
 
   TherapistFeedback _feedback(JsonObject json) => TherapistFeedback(

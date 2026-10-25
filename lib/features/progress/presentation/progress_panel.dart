@@ -114,7 +114,10 @@ class _ProgressContentState extends ConsumerState<_ProgressContent> {
   @override
   Widget build(BuildContext context) {
     final progress = widget.progress;
-    final summary = ProgressSummary(progress: progress);
+    final summary = ProgressSummary(
+      progress: progress,
+      showTrend: !widget.childFriendly,
+    );
     final feedback = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

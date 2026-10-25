@@ -71,7 +71,7 @@ async function speechFixture(t, transcriber, localAnalysis=true) {
   const ct=await login(child),pt=await login(parent),tt=await login(therapist),path=`/useful-words/patients/${child.id}`;
   const reference=toneWav(),childAudio=toneWav({duration:0.8,amplitude:0.3});
   const word=(await call(`${path}/words`,'POST',{word:'help',picture:`data:image/png;base64,${png}`,exampleAudio:reference.toString('base64')},tt)).value.id;
-  const grant=allowed=>call(`/patients/${child.id}/hosted-analysis`,'PUT',{allowed,adultConfirmed:true,disclosureVersion:hostedAnalysisDisclosureVersion},pt);
+  const grant=allowed=>call(`/patients/${child.id}/hosted-analysis`,'PUT',{allowed,adultConfirmed:true,disclosureVersion:hostedAnalysisDisclosureVersion()},pt);
   const submit=()=>call(`${path}/attempts`,'POST',{id:randomUUID(),wordId:word,audio:childAudio.toString('base64')},ct);
   return {...app,call,child,parent,therapist,ct,pt,tt,path,reference,childAudio,word,grant,submit};
 }

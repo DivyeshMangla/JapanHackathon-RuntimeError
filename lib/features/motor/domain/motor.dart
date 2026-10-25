@@ -86,6 +86,28 @@ class MotorReport {
   final List<String> limitations;
 }
 
+/// How close a report is to the assigned target, each from 0 to 1, or null
+/// when the report could not assess it. Extra forms count against the target
+/// just as missing ones do.
+extension MotorReportScores on MotorReport {
+  double? get countScore {
+    final expected = expectedCount, observed = observedCount;
+    if (expected == null || observed == null || expected == 0) return null;
+    return (1 - (observed - expected).abs() / expected).clamp(0.0, 1.0);
+  }
+
+  double? get alignmentScore => _ratingScore(alignment);
+  double? get formationScore => _ratingScore(formation);
+  double? get spacingScore => _ratingScore(spacing);
+
+  static double? _ratingScore(String rating) => switch (rating) {
+    'emerging' => 1 / 3,
+    'developing' => 2 / 3,
+    'consistent' => 1,
+    _ => null,
+  };
+}
+
 /// One photo of a child's drawing.
 class MotorSubmission {
   const MotorSubmission({

@@ -599,20 +599,6 @@
   "motorViewPhoto": "View original photo / reload",
   "motorPhotoLoadFailed": "Could not load this photo. Try again using View original photo.",
   "motorRetake": "The model could not assess this photo. Check the original and consider requesting a clearer photo.",
-  "motorReportMetrics": "Alignment: {alignment} · Formation: {formation} · Spacing: {spacing}",
-  "@motorReportMetrics": {
-    "placeholders": {
-      "alignment": {
-        "type": "String"
-      },
-      "formation": {
-        "type": "String"
-      },
-      "spacing": {
-        "type": "String"
-      }
-    }
-  },
   "motorModel": "Model: {model} · unvalidated visual observations",
   "@motorModel": {
     "placeholders": {
@@ -631,10 +617,6 @@
     }
   },
   "motorReviewAction": "Add or update therapist feedback",
-  "motorEmerging": "emerging",
-  "motorDeveloping": "developing",
-  "motorConsistent": "consistent",
-  "motorNotAssessable": "not assessable",
   "back": "Back",
   "navFamily": "Family",
   "welcomeTagline": "Little steps, every day. Guided activities for children, with their parents and therapists.",

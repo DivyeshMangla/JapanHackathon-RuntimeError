@@ -4,6 +4,20 @@ enum ProgressActivity { words, drawing, expressions }
 
 enum ClinicianAssessment { correct, onTrack, needsPractice, notAssessed }
 
+/// One Monday-to-Sunday week of practice. [score] is the percentage of scored
+/// work that met the goal, or null when nothing that week was scored.
+class WeeklyProgress {
+  const WeeklyProgress({
+    required this.weekStart,
+    required this.attempts,
+    this.score,
+  });
+
+  final DateTime weekStart;
+  final int attempts;
+  final int? score;
+}
+
 class ActivityProgress {
   const ActivityProgress({
     required this.activity,
@@ -19,6 +33,7 @@ class ActivityProgress {
     this.quizIndependentTotal = 0,
     this.quizAssistedCorrect = 0,
     this.quizAssistedTotal = 0,
+    this.trend = const [],
   });
 
   final ProgressActivity activity;
@@ -34,6 +49,10 @@ class ActivityProgress {
   final int quizIndependentTotal;
   final int quizAssistedCorrect;
   final int quizAssistedTotal;
+  final List<WeeklyProgress> trend;
+
+  List<WeeklyProgress> get scoredWeeks =>
+      trend.where((week) => week.score != null).toList();
 
   int get awaitingReview => attempts - reviewed;
 }

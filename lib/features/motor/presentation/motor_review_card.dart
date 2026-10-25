@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/errors/app_failure.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/l10n.dart';
+import '../../../shared/widgets/accuracy_chart.dart';
 import '../../../shared/widgets/action_page.dart';
 import '../../../shared/widgets/buttons.dart';
 import '../../../shared/widgets/failure_feedback.dart';
@@ -192,66 +193,81 @@ class _Report extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    String rating(String value) => switch (value) {
-      'emerging' => l10n.motorEmerging,
-      'developing' => l10n.motorDeveloping,
-      'consistent' => l10n.motorConsistent,
-      _ => l10n.motorNotAssessable,
-    };
+    final text = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            MotorReportStrings.title,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          if (report.validation != null) InfoNotice(report.validation!),
-          if (report.imageQuality == 'retake') InfoNotice(l10n.motorRetake),
-          Text(report.observations),
-          if (report.countEvidence?.trim().isNotEmpty == true)
-            Text(
-              '${MotorReportStrings.countEvidence}: ${report.countEvidence}',
+          if (report.imageQuality == 'retake')
+            InfoNotice(context.l10n.motorRetake)
+          else
+            AccuracyChart(
+              title: MotorReportStrings.chartTitle,
+              notAssessable: MotorReportStrings.notAssessable,
+              measures: [
+                if (report.expectedCount != null)
+                  AccuracyMeasure(
+                    '${MotorReportStrings.count} '
+                    '${report.observedCount ?? MotorReportStrings.notAssessable}'
+                    '/${report.expectedCount}',
+                    report.countScore,
+                  ),
+                AccuracyMeasure(
+                  MotorReportStrings.formation,
+                  report.formationScore,
+                ),
+                AccuracyMeasure(
+                  MotorReportStrings.alignment,
+                  report.alignmentScore,
+                ),
+                AccuracyMeasure(
+                  MotorReportStrings.spacing,
+                  report.spacingScore,
+                ),
+              ],
             ),
-          if (report.expectedResult != null)
-            Text(l10n.motorReportTarget(report.expectedResult!)),
-          if (report.comparison != null)
-            Text(l10n.motorReportComparison(report.comparison!)),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            l10n.motorReportMetrics(
-              rating(report.alignment),
-              rating(report.formation),
-              rating(report.spacing),
-            ),
-          ),
-          if (report.expectedCount != null)
-            Text(
-              '${MotorReportStrings.expectedCount}: ${report.expectedCount}',
-            ),
-          if (report.observedCount != null)
-            Text(
-              '${MotorReportStrings.observedCount}: ${report.observedCount}',
-            ),
-          if (report.evidence != null)
-            _ReportEvidence(evidence: report.evidence!),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: AppSpacing.sm),
           Text(report.suggestion),
-          for (final limitation in report.limitations) Text(limitation),
-          if (report.rubricVersion != null)
-            Text(
-              '${MotorReportStrings.rubric}: ${report.rubricVersion}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            l10n.motorModel(report.model),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text(MotorReportStrings.automated, style: text.bodySmall),
+          _ReportDetails(report: report),
         ],
       ),
+    );
+  }
+}
+
+/// The model's full wording stays one tap away for the therapist to verify.
+class _ReportDetails extends StatelessWidget {
+  const _ReportDetails({required this.report});
+
+  final MotorReport report;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final small = Theme.of(context).textTheme.bodySmall;
+    return ExpansionTile(
+      title: const Text(MotorReportStrings.details),
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(report.observations),
+        if (report.countEvidence?.trim().isNotEmpty == true)
+          Text('${MotorReportStrings.countEvidence}: ${report.countEvidence}'),
+        if (report.expectedResult != null)
+          Text(l10n.motorReportTarget(report.expectedResult!)),
+        if (report.comparison != null)
+          Text(l10n.motorReportComparison(report.comparison!)),
+        if (report.evidence != null)
+          _ReportEvidence(evidence: report.evidence!),
+        const SizedBox(height: AppSpacing.xs),
+        if (report.validation != null) Text(report.validation!, style: small),
+        for (final limitation in report.limitations)
+          Text(limitation, style: small),
+        Text(l10n.motorModel(report.model), style: small),
+      ],
     );
   }
 }

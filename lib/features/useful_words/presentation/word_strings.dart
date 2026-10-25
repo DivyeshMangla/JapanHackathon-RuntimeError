@@ -54,6 +54,13 @@ abstract final class WordStrings {
       'Speech recognition is not configured. Original recordings are delivered for therapist assessment. Automated pronunciation accuracy is unavailable.';
   static const reportTitle =
       'Automated observations requiring therapist review';
+  static const matchTitle = 'Speech recognition match';
+  static const matchWord = 'Target word';
+  static const matchExample = 'Your example';
+  static const matchCaption =
+      'Recognized text only, not pronunciation accuracy. Listen before rating.';
+  static const notAssessable = 'n/a';
+  static const details = 'Details';
   static const unable = 'Unable to assess reliably';
   static const target = 'Target word';
   static const recognized = 'Recognized text (unverified)';

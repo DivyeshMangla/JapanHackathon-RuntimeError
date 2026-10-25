@@ -40,6 +40,7 @@ lib/l10n/generated/
 # Connected service: runtime data, recordings and secrets
 backend/data/
 backend/.env
+.env
 backend/.env.*
 !backend/.env.example
 **/node_modules/

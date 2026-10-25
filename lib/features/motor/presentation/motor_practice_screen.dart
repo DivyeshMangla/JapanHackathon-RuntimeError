@@ -100,7 +100,9 @@ class _MotorPracticeScreenState extends ConsumerState<MotorPracticeScreen> {
         });
         return;
       }
-      if (submission == null || submission.checkingPhoto) return;
+      // A photo still being checked is already delivered; the drawing home
+      // keeps refreshing and shows a retake request if one arrives later.
+      if (submission == null) return;
       _savedPending = false;
     } finally {
       if (mounted) setState(() => _checkingPhoto = false);

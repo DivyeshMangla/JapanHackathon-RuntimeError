@@ -45,13 +45,15 @@ test('bright paper with faint pencil gets contrast enhancement and line evidence
 });
 
 test('disagreeing stages cannot publish contradictory prose or confident ratings', async () => {
+  // Without a measured ink count, the blind vision count is the reference.
+  const prepareImage = async (...args) => ({ ...await prepareMotorImage(...args), markCount: null });
   const requests = [];
   const quality = { imageQuality: 'usable', relevance: 'drawing_attempt', qualityFlags: [], explanation: 'Readable paper.', countEvidence: 'One upper line and one lower line.', observedCount: 2 };
   const comparison = { imageQuality: 'usable', qualityFlags: [], observedCount: 3, observations: 'Three perfect lines.', comparison: 'Matches all three.', alignment: 'consistent', formation: 'consistent', spacing: 'consistent', evidence: { alignment: 'Parallel.', formation: 'Three continuous lines.', spacing: 'Equal gaps.' }, suggestion: 'Move on.' };
   const analyze = createMotorAnalyzer({ provider: 'ollama', fetchImpl: async (_url, options) => {
     requests.push(JSON.parse(options.body));
     return new Response(JSON.stringify({ message: { content: JSON.stringify(requests.length === 1 ? quality : comparison) } }));
-  } });
+  }, prepareImage });
   const report = await analyze(drawingPhoto(), motorExercises[0]);
   assert.match(requests[0].messages[1].content, /candidate line regions/);
   assert.match(requests[1].messages[1].content, /One upper line and one lower line/);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../shared/widgets/accuracy_chart.dart';
 import '../../../shared/widgets/action_page.dart';
 import '../domain/pronunciation_report.dart';
 import 'word_strings.dart';
@@ -21,14 +22,83 @@ class WordAnalysisPanel extends StatelessWidget {
   final TextEditingController correction;
   final bool enabled;
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) {
+    final status = report?.processingStatus;
+    double? share(WordTextComparison? comparison) =>
+        comparison?.textSimilarityPercent == null
+        ? null
+        : comparison!.textSimilarityPercent! / 100;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (status == 'complete')
+          AccuracyChart(
+            title: WordStrings.matchTitle,
+            notAssessable: WordStrings.notAssessable,
+            measures: [
+              AccuracyMeasure(
+                WordStrings.matchWord,
+                share(report!.textSimilarity),
+              ),
+              if (report!.reference != null)
+                AccuracyMeasure(
+                  WordStrings.matchExample,
+                  share(report!.referenceTranscriptComparison),
+                ),
+            ],
+          )
+        else
+          InfoNotice(WordStrings.reportStatus(status)),
+        Text(
+          WordStrings.matchCaption,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        _ReportDetails(
+          report: report,
+          targetWord: targetWord,
+          recognizedWord: recognizedWord,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextField(
+          controller: correction,
+          enabled: enabled,
+          maxLength: 4000,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: WordStrings.correction,
+            helperText: WordStrings.correctionHint,
+            helperMaxLines: 4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The automated wording and capture measurements stay one tap away for the
+/// therapist to verify.
+class _ReportDetails extends StatelessWidget {
+  const _ReportDetails({
+    required this.report,
+    required this.targetWord,
+    required this.recognizedWord,
+  });
+  final PronunciationReport? report;
+  final String targetWord;
+  final String? recognizedWord;
+  @override
+  Widget build(BuildContext context) => ExpansionTile(
+    title: const Text(WordStrings.details),
+    tilePadding: EdgeInsets.zero,
+    childrenPadding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Text(
         WordStrings.reportTitle,
-        style: Theme.of(context).textTheme.titleMedium,
+        style: Theme.of(context).textTheme.titleSmall,
       ),
-      InfoNotice(WordStrings.reportStatus(report?.processingStatus)),
+      if (report?.processingStatus == 'complete')
+        InfoNotice(WordStrings.reportStatus(report!.processingStatus)),
       Text('${WordStrings.target}: ${report?.targetWord ?? targetWord}'),
       Text(
         '${WordStrings.recognized}: ${report?.recognizedWord ?? recognizedWord ?? WordStrings.unavailable}',
@@ -61,18 +131,6 @@ class WordAnalysisPanel extends StatelessWidget {
             child: Text(limitation),
           ),
       ],
-      const SizedBox(height: AppSpacing.md),
-      TextField(
-        controller: correction,
-        enabled: enabled,
-        maxLength: 4000,
-        maxLines: 3,
-        decoration: const InputDecoration(
-          labelText: WordStrings.correction,
-          helperText: WordStrings.correctionHint,
-          helperMaxLines: 4,
-        ),
-      ),
     ],
   );
 }
