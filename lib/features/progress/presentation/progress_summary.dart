@@ -8,17 +8,11 @@ import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../domain/family_progress.dart';
 import 'progress_strings.dart';
-import 'progress_trend.dart';
 
 class ProgressSummary extends StatelessWidget {
-  const ProgressSummary({
-    super.key,
-    required this.progress,
-    this.showTrend = false,
-  });
+  const ProgressSummary({super.key, required this.progress});
 
   final FamilyProgress progress;
-  final bool showTrend;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -34,7 +28,7 @@ class ProgressSummary extends StatelessWidget {
           message: ProgressStrings.noPracticeBody,
         ),
       for (final activity in progress.activities) ...[
-        _ActivityProgressCard(progress: activity, showTrend: showTrend),
+        _ActivityProgressCard(progress: activity),
         const SizedBox(height: AppSpacing.md),
       ],
     ],
@@ -42,13 +36,9 @@ class ProgressSummary extends StatelessWidget {
 }
 
 class _ActivityProgressCard extends StatelessWidget {
-  const _ActivityProgressCard({
-    required this.progress,
-    required this.showTrend,
-  });
+  const _ActivityProgressCard({required this.progress});
 
   final ActivityProgress progress;
-  final bool showTrend;
 
   @override
   Widget build(BuildContext context) {
@@ -91,10 +81,6 @@ class _ActivityProgressCard extends StatelessWidget {
               Text(ProgressStrings.assistedChoices(progress)),
             const SizedBox(height: AppSpacing.xs),
             Text(ProgressStrings.quizHelp, style: text.bodySmall),
-          ],
-          if (showTrend && progress.trend.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            ProgressTrend(progress: progress),
           ],
         ],
       ),

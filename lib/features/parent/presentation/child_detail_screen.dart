@@ -13,6 +13,7 @@ import '../../../shared/widgets/ink_card.dart';
 import '../../../shared/widgets/page_list.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../../progress/presentation/controllers/progress_controllers.dart';
+import '../../progress/presentation/improvement_section.dart';
 import '../../progress/presentation/progress_panel.dart';
 import '../../progress/presentation/progress_strings.dart';
 import 'controllers/family_controllers.dart';
@@ -60,7 +61,9 @@ class ChildDetailScreen extends ConsumerWidget {
                 child: PageList(
                   children: [
                     StartChildModeButton(child: child, primary: true),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.xl),
+                    ImprovementSection(child: child),
+                    const SizedBox(height: AppSpacing.xl),
                     _ConsentOnFile(childId: childId),
                     const SizedBox(height: AppSpacing.lg),
                     ParentHostedAnalysisPanel(childId: childId),

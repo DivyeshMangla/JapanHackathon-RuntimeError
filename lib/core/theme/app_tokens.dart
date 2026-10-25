@@ -58,8 +58,8 @@ abstract final class AppSizes {
   /// The mascot on the child's home page and in celebrations.
   static const double childMascot = 96;
 
-  /// Height of the tallest bar in a weekly progress trend.
-  static const double trendChart = 96;
+  /// Height of a weekly progress graph, including its date labels.
+  static const double trendChart = 168;
 
   /// Width of the full logo on launch. Android 12+ masks its splash icon to a
   /// 192dp circle, and the logo fits that circle at this width; the native

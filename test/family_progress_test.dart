@@ -4,8 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:melo/core/errors/app_failure.dart';
 import 'package:melo/core/theme/app_theme.dart';
 import 'package:melo/core/utils/l10n.dart';
+import 'package:melo/features/auth/domain/user.dart';
 import 'package:melo/features/progress/domain/family_progress.dart';
 import 'package:melo/features/progress/presentation/controllers/progress_controllers.dart';
+import 'package:melo/features/progress/presentation/improvement_section.dart';
 import 'package:melo/features/progress/presentation/progress_panel.dart';
 import 'package:melo/features/progress/presentation/progress_strings.dart';
 
@@ -170,5 +172,87 @@ void main() {
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('parents see an improvement graph for each practised activity', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    WeeklyProgress week(int day, int? score) => WeeklyProgress(
+      weekStart: DateTime(2026, 9, day),
+      attempts: 2,
+      score: score,
+    );
+    final improving = FamilyProgress(
+      patientId: 'child',
+      activities: [
+        ActivityProgress(
+          activity: ProgressActivity.expressions,
+          attempts: 6,
+          reviewed: 3,
+          clinicianCorrect: 0,
+          clinicianNeedsPractice: 0,
+          trend: [week(1, 44), week(8, null), week(15, 69), week(22, 100)],
+        ),
+        ActivityProgress(
+          activity: ProgressActivity.drawing,
+          attempts: 1,
+          reviewed: 1,
+          clinicianCorrect: 0,
+          clinicianNeedsPractice: 1,
+          trend: [week(22, 0)],
+        ),
+        const ActivityProgress(
+          activity: ProgressActivity.words,
+          attempts: 0,
+          reviewed: 0,
+          clinicianCorrect: 0,
+          clinicianNeedsPractice: 0,
+        ),
+      ],
+      feedback: const [],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          familyProgressProvider('child').overrideWith((ref) => improving),
+        ],
+        child: page(
+          ImprovementSection(
+            child: User(
+              id: 'child',
+              role: UserRole.patient,
+              name: 'Ananya',
+              email: '',
+              createdAt: DateTime(2026, 9),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(ProgressStrings.improvementTitle('Ananya')),
+      findsOneWidget,
+    );
+    expect(find.text(ProgressStrings.trendChange(44, 100)), findsOneWidget);
+    expect(find.text(ProgressStrings.trendTooEarly), findsOneWidget);
+    expect(
+      find.text(ProgressStrings.activity(ProgressActivity.words)),
+      findsNothing,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label ==
+                ProgressStrings.trendSemantics(
+                  improving.activities.first.scoredWeeks,
+                ),
+      ),
+      findsOneWidget,
+    );
   });
 }

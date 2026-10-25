@@ -47,10 +47,12 @@ abstract final class ProgressStrings {
       'Without help: ${value.quizIndependentCorrect} of ${value.quizIndependentTotal} correct';
   static String assistedChoices(ActivityProgress value) =>
       'With adult help: ${value.quizAssistedCorrect} of ${value.quizAssistedTotal} correct';
-  static const trendTitle = 'Week by week';
+  static String improvementTitle(String name) => 'How $name is improving';
+  static const improvementHelp =
+      'Each point is one week of practice, scored by your therapist or the picture game.';
+  static const noImprovementTitle = 'Improvement graphs are on their way';
   static const trendTooEarly =
       'A week-by-week trend appears after two weeks of assessed practice.';
-  static const trendNoScore = '–';
 
   static String trendGoal(ProgressActivity value) => switch (value) {
     ProgressActivity.words => 'Share of words your therapist marked correct',
