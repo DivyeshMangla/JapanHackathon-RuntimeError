@@ -35,40 +35,51 @@ class _StartChildModeButtonState extends ConsumerState<StartChildModeButton> {
     final l10n = context.l10n;
     final name = widget.child.firstName;
     var chosenPin = '';
+    var showPinError = false;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialog) => AlertDialog(
-        title: Text(l10n.childModeStartTitle(name)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l10n.childModeStartBody(name)),
-            TextField(
-              onChanged: (value) => chosenPin = value,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.childModeParentPassword,
+      builder: (dialog) => StatefulBuilder(
+        builder: (context, updateDialog) => AlertDialog(
+          scrollable: true,
+          title: Text(l10n.childModeStartTitle(name)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.childModeStartBody(name)),
+              TextField(
+                onChanged: (value) => chosenPin = value,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: l10n.childModeParentPassword,
+                  errorText: showPinError
+                      ? l10n.childModePasswordRequired
+                      : null,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(4),
-              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                if (chosenPin.length != 4) {
+                  updateDialog(() => showPinError = true);
+                  return;
+                }
+                Navigator.pop(dialog, true);
+              },
+              child: Text(l10n.childModeStartAction),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialog, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              if (chosenPin.length == 4) Navigator.pop(dialog, true);
-            },
-            child: Text(l10n.childModeStartAction),
-          ),
-        ],
       ),
     );
     if (confirmed != true || !mounted) return;

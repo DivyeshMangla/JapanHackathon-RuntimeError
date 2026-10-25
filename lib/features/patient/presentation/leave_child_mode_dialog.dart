@@ -59,6 +59,7 @@ class _LeaveChildModeDialogState extends ConsumerState<LeaveChildModeDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return AlertDialog(
+      scrollable: true,
       title: Text(l10n.childModeLeaveTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,

@@ -15,6 +15,12 @@ typedef JsonObject = Map<String, Object?>;
 const _connectTimeout = Duration(seconds: 10);
 const _responseTimeout = Duration(seconds: 30);
 
+/// Original camera photos are several megabytes, and a phone's upload over a
+/// tunnel can be slow, so large bodies get time in proportion to their size
+/// on top of the usual wait for the answer.
+const _slowUploadBytesPerSecond = 32 * 1024;
+const _maxUploadTimeout = Duration(minutes: 10);
+
 /// Where the session token is kept between launches.
 abstract interface class SessionTokenStore {
   Future<String?> read();
@@ -114,11 +120,19 @@ class BackendClient {
       final request = await client.openUrl(method, uri);
       final token = _token;
       if (token != null) request.headers.set('Authorization', 'Bearer $token');
+      var timeout = _responseTimeout;
       if (body != null) {
+        final encoded = utf8.encode(jsonEncode(body));
         request.headers.contentType = ContentType.json;
-        request.write(jsonEncode(body));
+        request.contentLength = encoded.length;
+        request.add(encoded);
+        final upload = Duration(
+          seconds: encoded.length ~/ _slowUploadBytesPerSecond,
+        );
+        timeout = _responseTimeout + upload;
+        if (timeout > _maxUploadTimeout) timeout = _maxUploadTimeout;
       }
-      final response = await request.close().timeout(_responseTimeout);
+      final response = await request.close().timeout(timeout);
       final builder = BytesBuilder(copy: false);
       await for (final chunk in response.timeout(_responseTimeout)) {
         builder.add(chunk);

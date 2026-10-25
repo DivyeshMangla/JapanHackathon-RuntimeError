@@ -15,6 +15,7 @@ import 'package:melo/features/parent/domain/consent.dart';
 import 'package:melo/features/parent/presentation/add_child_screen.dart';
 import 'package:melo/features/parent/presentation/controllers/family_controllers.dart';
 import 'package:melo/features/parent/presentation/parent_home_screen.dart';
+import 'package:melo/features/parent/presentation/start_child_mode_button.dart';
 import 'package:melo/features/patient/presentation/child_home_screen.dart';
 import 'package:melo/features/patient/presentation/leave_child_mode_dialog.dart';
 
@@ -150,6 +151,42 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Leave child mode'));
     await tester.pumpAndSettle();
     expect(find.text('Enter a four-digit PIN.'), findsOneWidget);
+  });
+
+  testWidgets('starting child mode explains an incomplete PIN', (tester) async {
+    await _pump(
+      tester,
+      Scaffold(body: StartChildModeButton(child: _child)),
+      width: 390,
+      scale: 1,
+    );
+    await tester.tap(find.text('Start child mode for Ananya'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Start child mode'));
+    await tester.pumpAndSettle();
+    expect(find.text('Enter a four-digit PIN.'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '123');
+    await tester.tap(find.widgetWithText(TextButton, 'Start child mode'));
+    await tester.pumpAndSettle();
+    expect(find.text('Enter a four-digit PIN.'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('child mode PIN dialog fits with enlarged text', (tester) async {
+    await _pump(
+      tester,
+      Scaffold(body: StartChildModeButton(child: _child)),
+    );
+    await tester.tap(find.text('Start child mode for Ananya'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('leaving child mode fits with enlarged text', (tester) async {
+    await _pump(tester, const Scaffold(body: LeaveChildModeDialog()));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('parent home offers child mode for each child', (tester) async {
